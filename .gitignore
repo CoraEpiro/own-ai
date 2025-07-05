@@ -1,0 +1,19 @@
+# Ignore all node_modules folders
+node_modules/
+**/node_modules/
+
+# Ignore all .env files
+.env
+**/.env
+.env.local
+**/.env.local
+
+# Ignore build output
+frontend/dist/
+backend/dist/
+
+# Ignore OS and editor files
+.DS_Store
+*.log
+.vscode/
+.idea/ 
