@@ -1,16 +1,3 @@
-.katex-display {
-  margin: 1.5em 0 !important;
-  padding: 1em 0.5em !important;
-  background: rgba(0,0,0,0.03);
-  border-radius: 0.5em;
-  text-align: center;
-  font-size: 1.25em;
-}
-
-.katex {
-  font-size: 1.1em;
-}
-
 .prose blockquote {
   margin: 1.5em 0 !important;
   padding: 0.5em 1em !important;

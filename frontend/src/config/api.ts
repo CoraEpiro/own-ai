@@ -9,11 +9,6 @@ export const API_BASE_URL = isDevelopment
   ? 'http://localhost:3001/api'  // Local backend
   : 'https://own-ai-production.up.railway.app/api'; // Deployed backend
 
-// Configure axios defaults
-export const configureAxios = () => {
-  return API_BASE_URL;
-};
-
 // Helper function to get full API URL
 export const getApiUrl = (endpoint: string) => {
   return `${API_BASE_URL}${endpoint}`;

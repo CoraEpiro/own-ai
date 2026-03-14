@@ -1,6 +1,3 @@
-require('dotenv').config();
-console.log('DEBUG ENV:', process.env.OPENAI_API_KEY, process.env.CLAUDE_API_KEY, process.env.GEMINI_API_KEY);
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -13,6 +10,8 @@ import { modelsRoutes } from './routes/models';
 import { errorHandler } from './middleware/errorHandler';
 import { logConfigStatus } from './config';
 import { streamChatRoutes } from './routes/streamChat';
+import { uploadRoutes } from './routes/upload';
+import { audioRoutes } from './routes/audio';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,7 +20,6 @@ const PORT = process.env.PORT || 3001;
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://own-is145gjpt-coraepiros-projects.vercel.app',
   'https://own-ai-alpha.vercel.app',
   process.env.FRONTEND_URL,
   'https://own-ai.aliguliyev.com'
@@ -52,7 +50,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
@@ -86,6 +84,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stream-chat', streamChatRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/audio', audioRoutes);
 app.use('/api/models', modelsRoutes);
 
 // Error handling middleware

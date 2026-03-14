@@ -1,3 +1,155 @@
+@import 'katex/dist/katex.min.css';
+
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* ── Smooth theme transitions ────────────────────────────── */
+.theme-transition {
+  transition: background-color 0.4s ease,
+              border-color 0.4s ease,
+              color 0.35s ease,
+              box-shadow 0.35s ease;
+}
+
+/* ── Custom scrollbar ────────────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(155, 155, 155, 0.3);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 155, 155, 0.5);
+}
+
+/* ── Typing cursor animation ─────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ── Message entrance ────────────────────────────────────── */
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-msg-in {
+  animation: msg-in 0.35s ease-out both;
+}
+
+/* ── Fade in ─────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+/* ── Scale-in animation for file previews ──────────────────── */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out both;
+}
+
+/* ── Drop zone pulse animation ──────────────────────────── */
+@keyframes drop-zone-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+}
+.animate-drop-zone {
+  animation: drop-zone-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Recording pulse ───────────────────────────────────── */
+@keyframes recording-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+.animate-recording-pulse {
+  animation: recording-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Thinking sparkle animation ──────────────────────────── */
+@keyframes sparkle-spin {
+  0% { transform: rotate(0deg) scale(1); opacity: 1; }
+  25% { transform: rotate(90deg) scale(1.2); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1); opacity: 0.6; }
+  75% { transform: rotate(270deg) scale(1.2); opacity: 0.8; }
+  100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+.thinking-sparkle {
+  display: inline-block;
+  font-size: 14px;
+  animation: sparkle-spin 2s ease-in-out infinite;
+}
+
+/* Thinking text area */
+.thinking-text {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128,128,128,0.3) transparent;
+}
+.thinking-text::-webkit-scrollbar {
+  width: 4px;
+}
+.thinking-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thinking-text::-webkit-scrollbar-thumb {
+  background: rgba(128,128,128,0.3);
+  border-radius: 2px;
+}
+
+/* ── Action buttons (copy, thumbs, retry, TTS) ─────────── */
+.action-btn {
+  padding: 6px;
+  border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.dark .action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Subtle glow for inputs ──────────────────────────────── */
+.input-glow {
+  transition: box-shadow 0.25s ease;
+}
+.input-glow:focus {
+  box-shadow: 0 0 0 3px var(--ring-color, rgba(16,163,127,0.3));
+}

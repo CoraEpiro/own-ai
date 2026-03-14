@@ -9,6 +9,18 @@ export interface LLMModel {
   };
   isAvailable: boolean;
   description?: string;
+  capabilities?: string[];
+  category?: string;
+  contextWindow?: number;
+}
+
+export interface Attachment {
+  id: string;
+  type: 'image' | 'document';
+  mimeType: string;
+  fileName: string;
+  url: string;
+  size: number;
 }
 
 export interface Message {
@@ -19,6 +31,8 @@ export interface Message {
   model?: string;
   tokens?: number;
   cost?: number;
+  attachments?: Attachment[];
+  reasoningContent?: string;
 }
 
 export interface Conversation {

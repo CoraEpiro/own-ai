@@ -1,9 +1,9 @@
-// Database service for user and chat operations using Supabase
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '../config';
 
-// Initialize Supabase client with service role key for server-side operations
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// ── Types ──────────────────────────────────────────────
 
 export interface User {
   id: string;
@@ -12,161 +12,211 @@ export interface User {
   created_at: Date;
 }
 
-export interface ChatMessage {
+export interface ConversationRow {
   id: string;
   user_id: string;
+  title: string;
+  model: string;
+  summary: string | null;
+  system_prompt: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessageRow {
+  id: string;
+  user_id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant';
   message: string;
-  timestamp: Date;
   model?: string;
   tokens_used?: number;
   cost?: number;
+  timestamp: string;
+  attachments?: any[];
 }
 
-// User operations
+// ── User Operations ────────────────────────────────────
+
 export const getUserByEmail = async (email: string): Promise<User | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error) {
-      console.error('Error fetching user by email:', error);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in getUserByEmail:', error);
-    return null;
-  }
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+  if (error) return null;
+  return data;
 };
 
 export const createUser = async (userData: { email: string; password: string }): Promise<User> => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([
-        {
-          email: userData.email,
-          password: userData.password,
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating user:', error);
-      throw new Error('Failed to create user');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in createUser:', error);
-    throw error;
-  }
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{ email: userData.email, password: userData.password }])
+    .select()
+    .single();
+  if (error) throw new Error('Failed to create user');
+  return data;
 };
 
 export const getUserById = async (userId: string): Promise<User | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching user by ID:', error);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in getUserById:', error);
-    return null;
-  }
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error) return null;
+  return data;
 };
 
-// Chat operations
-export const getChatHistory = async (userId: string): Promise<ChatMessage[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('user_id', userId)
-      .order('timestamp', { ascending: true });
+// ── Conversation Operations ────────────────────────────
 
-    if (error) {
-      console.error('Error fetching chat history:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error in getChatHistory:', error);
-    return [];
-  }
+export const createConversation = async (
+  userId: string,
+  title: string,
+  model: string
+): Promise<ConversationRow> => {
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert([{ user_id: userId, title, model }])
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create conversation: ${error.message}`);
+  return data;
 };
 
-export const saveChatMessage = async (
-  userId: string, 
-  message: string, 
-  model?: string, 
-  tokensUsed?: number, 
-  cost?: number
-): Promise<ChatMessage> => {
-  try {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert([
-        {
-          user_id: userId,
-          message,
-          model,
-          tokens_used: tokensUsed,
-          cost,
-        }
-      ])
-      .select()
-      .single();
+export const getConversations = async (userId: string) => {
+  // Get conversations with aggregated message stats
+  const { data: conversations, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
 
-    if (error) {
-      console.error('Error saving chat message:', error);
-      throw new Error('Failed to save chat message');
-    }
+  if (error || !conversations) return [];
 
-    return data;
-  } catch (error) {
-    console.error('Error in saveChatMessage:', error);
-    throw error;
-  }
+  // Get message counts and totals for each conversation
+  const results = await Promise.all(
+    conversations.map(async (conv) => {
+      const { data: messages } = await supabase
+        .from('chat_messages')
+        .select('tokens_used, cost')
+        .eq('conversation_id', conv.id);
+
+      const messageCount = messages?.length || 0;
+      const totalTokens = messages?.reduce((s, m) => s + (m.tokens_used || 0), 0) || 0;
+      const totalCost = messages?.reduce((s, m) => s + (m.cost || 0), 0) || 0;
+
+      return { ...conv, messageCount, totalTokens, totalCost };
+    })
+  );
+
+  return results;
 };
 
-// Usage tracking
-export const getUserUsage = async (userId: string): Promise<{
-  totalTokens: number;
-  totalCost: number;
-  messageCount: number;
-}> => {
-  try {
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .select('tokens_used, cost')
-      .eq('user_id', userId);
+export const getConversationById = async (
+  conversationId: string,
+  userId: string
+): Promise<ConversationRow | null> => {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('id', conversationId)
+    .eq('user_id', userId)
+    .single();
+  if (error) return null;
+  return data;
+};
 
-    if (error) {
-      console.error('Error fetching user usage:', error);
-      return { totalTokens: 0, totalCost: 0, messageCount: 0 };
-    }
+export const getConversationMessages = async (
+  conversationId: string
+): Promise<ChatMessageRow[]> => {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('timestamp', { ascending: true });
+  if (error) return [];
+  return data || [];
+};
 
-    const totalTokens = data?.reduce((sum, msg) => sum + (msg.tokens_used || 0), 0) || 0;
-    const totalCost = data?.reduce((sum, msg) => sum + (msg.cost || 0), 0) || 0;
-    const messageCount = data?.length || 0;
+export const saveConversationMessage = async (
+  userId: string,
+  conversationId: string,
+  role: 'user' | 'assistant',
+  content: string,
+  model?: string,
+  tokensUsed?: number,
+  cost?: number,
+  attachments?: any[]
+): Promise<ChatMessageRow> => {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert([{
+      user_id: userId,
+      conversation_id: conversationId,
+      role,
+      message: content,
+      model,
+      tokens_used: tokensUsed,
+      cost,
+      ...(attachments?.length ? { attachments } : {}),
+    }])
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to save message: ${error.message}`);
 
-    return { totalTokens, totalCost, messageCount };
-  } catch (error) {
-    console.error('Error in getUserUsage:', error);
-    return { totalTokens: 0, totalCost: 0, messageCount: 0 };
-  }
-}; 
+  // Touch conversation updated_at
+  await supabase
+    .from('conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  return data;
+};
+
+export const deleteConversation = async (conversationId: string, userId: string) => {
+  const { error } = await supabase
+    .from('conversations')
+    .delete()
+    .eq('id', conversationId)
+    .eq('user_id', userId);
+  if (error) throw new Error(`Failed to delete conversation: ${error.message}`);
+};
+
+export const updateConversationTitle = async (conversationId: string, title: string) => {
+  await supabase
+    .from('conversations')
+    .update({ title })
+    .eq('id', conversationId);
+};
+
+export const updateConversationSummary = async (conversationId: string, summary: string) => {
+  await supabase
+    .from('conversations')
+    .update({ summary })
+    .eq('id', conversationId);
+};
+
+export const updateConversationSystemPrompt = async (conversationId: string, systemPrompt: string) => {
+  await supabase
+    .from('conversations')
+    .update({ system_prompt: systemPrompt })
+    .eq('id', conversationId);
+};
+
+// ── Usage Tracking ─────────────────────────────────────
+
+export const getUserUsage = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('tokens_used, cost')
+    .eq('user_id', userId);
+
+  if (error) return { totalTokens: 0, totalCost: 0, messageCount: 0 };
+
+  return {
+    totalTokens: data?.reduce((s, m) => s + (m.tokens_used || 0), 0) || 0,
+    totalCost: data?.reduce((s, m) => s + (m.cost || 0), 0) || 0,
+    messageCount: data?.length || 0,
+  };
+};

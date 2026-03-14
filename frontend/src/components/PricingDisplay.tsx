@@ -10,7 +10,6 @@ interface PricingDisplayProps {
   outputCost?: number;
   totalCost?: number;
   isEstimate?: boolean;
-  showDetails?: boolean;
   variant?: 'user' | 'assistant';
 }
 
