@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "@dqbd/tiktoken": "^1.0.21",
     "@supabase/supabase-js": "^2.50.3"
   }
 }
