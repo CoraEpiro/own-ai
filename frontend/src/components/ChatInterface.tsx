@@ -1,18 +1,21 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Send, Bot, Moon, Sun, LogOut, BarChart3,
-  User as UserIcon, Plus, Trash2, ChevronDown, MessageSquare,
+  User as UserIcon, Plus, Trash2, ChevronDown, ChevronRight, MessageSquare,
   Sparkles, Zap, Menu, X, Settings, Brain, Code2, PenLine, GraduationCap, Search,
   Paperclip, FileText, Image as ImageIcon, FileSpreadsheet, FileCode,
-  Upload, File, Mic, MicOff, Globe,
+  Upload, File, Mic, MicOff, Globe, Waves,
+  FolderPlus, Folder as FolderIcon, FolderOpen, MoreHorizontal, Database,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { LLMModel, Message, Conversation, ConversationWithMessages, Attachment } from '../types';
+import { LLMModel, Message, Conversation, ConversationWithMessages, Attachment, Folder, Bucket } from '../types';
 import { estimateTokens, formatTokens, formatCurrency } from '../utils/pricing';
 import AIMessage from './AIMessage';
+import VoiceMode from './VoiceMode';
+import { VoiceId, RealtimeModelId } from '../hooks/useVoiceMode';
 import { getApiUrl } from '../config/api';
 import { getProviderTheme, ProviderTheme } from '../config/themes';
 
@@ -162,6 +165,20 @@ const ChatInterface: React.FC = () => {
   const [deepSearch, setDeepSearch] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [voiceModeActive, setVoiceModeActive] = useState(false);
+  const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
+  // Folders
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState('');
+  const [moveMenuConvId, setMoveMenuConvId] = useState<string | null>(null);
+  // Buckets
+  const [availableBuckets, setAvailableBuckets] = useState<Bucket[]>([]);
+  const [attachedBucketIds, setAttachedBucketIds] = useState<Set<string>>(new Set());
+  const [showBucketSelector, setShowBucketSelector] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -179,7 +196,6 @@ const ChatInterface: React.FC = () => {
     () => getProviderTheme(currentModel?.provider ?? 'OpenAI'),
     [currentModel?.provider],
   );
-  const dk = darkMode;
 
   // ── Token estimation (for message metadata) ────────────────────────────
   const inputTokens = estimateTokens(input);
@@ -200,18 +216,30 @@ const ChatInterface: React.FC = () => {
     })();
   }, []);
 
-  // ── Load conversations ─────────────────────────────────────────────────
+  // ── Load conversations, folders, buckets ────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get(getApiUrl('/chat'));
-        setConversations(data);
+        const [convRes, folderRes, bucketRes] = await Promise.all([
+          axios.get(getApiUrl('/chat'), { headers: authHeaders }),
+          axios.get(getApiUrl('/folders'), { headers: authHeaders }),
+          axios.get(getApiUrl('/buckets'), { headers: authHeaders }),
+        ]);
+        setConversations(convRes.data);
+        setFolders(folderRes.data);
+        setAvailableBuckets(bucketRes.data);
       } catch { /* silent */ }
     })();
   }, []);
 
-  // ── Auto-scroll ────────────────────────────────────────────────────────
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  // ── Auto-scroll: only when user sends a message, NOT during streaming ──
+  const shouldScrollRef = useRef(false);
+  useEffect(() => {
+    if (shouldScrollRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      shouldScrollRef.current = false;
+    }
+  }, [messages]);
 
   // ── Auto-resize textarea ───────────────────────────────────────────────
   useEffect(() => {
@@ -339,6 +367,7 @@ const ChatInterface: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
+    shouldScrollRef.current = true; // scroll to show user's message, then stop
 
     const assistantId = Date.now().toString() + Math.random().toString(36).slice(2);
     setMessages(prev => [
@@ -376,6 +405,7 @@ const ChatInterface: React.FC = () => {
       if (uploadedAttachments.length) body.attachments = uploadedAttachments;
       if (currentModel?.capabilities?.includes('reasoning')) body.reasoningEffort = reasoningEffort;
       if (deepSearch) body.deepSearch = true;
+      if (!currentConversationId && attachedBucketIds.size > 0) body.bucketIds = Array.from(attachedBucketIds);
 
       const response = await fetch(getApiUrl('/stream-chat'), {
         method: 'POST',
@@ -458,11 +488,15 @@ const ChatInterface: React.FC = () => {
   // ── Other handlers ─────────────────────────────────────────────────────
   const loadConversation = async (id: string) => {
     try {
-      const { data } = await axios.get(getApiUrl(`/chat/${id}`));
+      const { data } = await axios.get(getApiUrl(`/chat/${id}`), {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
       const conv: ConversationWithMessages = data.conversation;
       setMessages(conv.messages);
+      shouldScrollRef.current = true;
       setCurrentConversationId(id);
       setSelectedModel(conv.model);
+      setAttachedBucketIds(new Set(conv.buckets?.map(b => b.id) || []));
       setMobileSidebar(false);
     } catch { toast.error('Failed to load conversation'); }
   };
@@ -482,15 +516,130 @@ const ChatInterface: React.FC = () => {
 
   const handleLogout = () => { logout(); navigate('/auth'); };
 
+  // ── Auth headers helper ─────────────────────────────────────────────
+  const authHeaders = useMemo(() => ({ Authorization: `Bearer ${localStorage.getItem('token')}` }), []);
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) return;
+    try {
+      const { data } = await axios.post(getApiUrl('/folders'), { name: newFolderName.trim() }, { headers: authHeaders });
+      setFolders(prev => [...prev, data]);
+      setNewFolderName('');
+      setShowNewFolder(false);
+    } catch { toast.error('Failed to create folder'); }
+  };
+
+  const renameFolder = async (id: string) => {
+    if (!editingFolderName.trim()) return;
+    try {
+      await axios.put(getApiUrl(`/folders/${id}`), { name: editingFolderName.trim() }, { headers: authHeaders });
+      setFolders(prev => prev.map(f => f.id === id ? { ...f, name: editingFolderName.trim() } : f));
+      setEditingFolderId(null);
+    } catch { toast.error('Failed to rename folder'); }
+  };
+
+  const removeFolder = async (id: string) => {
+    try {
+      await axios.delete(getApiUrl(`/folders/${id}`), { headers: authHeaders });
+      setFolders(prev => prev.filter(f => f.id !== id));
+      setConversations(prev => prev.map(c => c.folderId === id ? { ...c, folderId: null } : c));
+    } catch { toast.error('Failed to delete folder'); }
+  };
+
+  const moveToFolder = async (conversationId: string, folderId: string | null) => {
+    try {
+      await axios.put(getApiUrl('/folders/move'), { conversationId, folderId }, { headers: authHeaders });
+      setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, folderId } : c));
+      setMoveMenuConvId(null);
+    } catch { toast.error('Failed to move'); }
+  };
+
+  const toggleBucket = async (bucketId: string) => {
+    const next = new Set(attachedBucketIds);
+    if (next.has(bucketId)) {
+      next.delete(bucketId);
+      if (currentConversationId) {
+        axios.post(getApiUrl('/buckets/detach'), { conversationId: currentConversationId, bucketId }, { headers: authHeaders }).catch(() => {});
+      }
+    } else {
+      next.add(bucketId);
+      if (currentConversationId) {
+        axios.post(getApiUrl('/buckets/attach'), { conversationId: currentConversationId, bucketId }, { headers: authHeaders }).catch(() => {});
+      }
+    }
+    setAttachedBucketIds(next);
+  };
+
+  // Grouped conversations by folder
+  const conversationsByFolder = useMemo(() => {
+    const grouped: Record<string, Conversation[]> = { __unfiled: [] };
+    folders.forEach(f => { grouped[f.id] = []; });
+    conversations.forEach(conv => {
+      const key = conv.folderId && grouped[conv.folderId] ? conv.folderId : '__unfiled';
+      grouped[key].push(conv);
+    });
+    return grouped;
+  }, [conversations, folders]);
+
   const toggleDarkMode = () => {
     setDarkMode(d => !d);
     document.documentElement.classList.toggle('dark');
+  };
+
+  /** Shared conversation item renderer for sidebar (used in both folder and unfiled sections) */
+  const renderConversationItem = (conv: Conversation, inFolder: boolean) => {
+    const active = currentConversationId === conv.id;
+    const moveTargets = inFolder
+      ? folders.filter(f => f.id !== conv.folderId)
+      : folders;
+    const showMoveMenu = moveMenuConvId === conv.id && (inFolder || folders.length > 0);
+    return (
+      <div
+        key={conv.id}
+        className={`group relative cursor-pointer rounded-lg transition-all duration-150 ${inFolder ? 'p-2 pl-7' : 'p-2.5'}`}
+        style={{
+          background: active ? theme.sidebarActive : undefined,
+          borderLeft: active ? `3px solid ${theme.accent}` : '3px solid transparent',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = theme.sidebarHover; }}
+        onMouseLeave={e => { e.currentTarget.style.background = active ? theme.sidebarActive : 'transparent'; }}
+        onClick={() => loadConversation(conv.id)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-gray-200 truncate font-medium">{conv.title}</div>
+            {sidebarOpen && <div className="text-[11px] text-gray-500 truncate mt-0.5">{new Date(conv.updatedAt).toLocaleDateString()} &middot; {conv.messageCount} msgs</div>}
+          </div>
+          {sidebarOpen && (
+            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+              {(inFolder || folders.length > 0) && (
+                <button onClick={e => { e.stopPropagation(); setMoveMenuConvId(moveMenuConvId === conv.id ? null : conv.id); }} className="p-1 text-gray-500 hover:text-gray-300" title="Move"><MoreHorizontal className="h-3.5 w-3.5" /></button>
+              )}
+              <button onClick={e => { e.stopPropagation(); deleteConversation(conv.id); }} className="p-1 text-gray-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+            </div>
+          )}
+        </div>
+        {showMoveMenu && (
+          <div className="absolute right-0 top-full mt-1 z-50 rounded-lg shadow-xl py-1 text-xs min-w-[140px]" style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}>
+            {inFolder && (
+              <button onClick={e => { e.stopPropagation(); moveToFolder(conv.id, null); }} className="w-full text-left px-3 py-1.5 hover:bg-white/10" style={{ color: darkMode ? '#ccc' : '#333' }}>Remove from folder</button>
+            )}
+            {moveTargets.map(f => (
+              <button key={f.id} onClick={e => { e.stopPropagation(); moveToFolder(conv.id, f.id); }} className="w-full text-left px-3 py-1.5 hover:bg-white/10" style={{ color: darkMode ? '#ccc' : '#333' }}>
+                Move to {f.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const newChat = () => {
     setMessages([]); setInput(''); setCurrentConversationId(null); setMobileSidebar(false);
     setSystemPrompt(''); setSelectedPersona('default');
     setPendingFiles([]); setPendingPreviews([]);
+    setAttachedBucketIds(new Set());
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -540,6 +689,7 @@ const ChatInterface: React.FC = () => {
   //  RENDER
   // ═════════════════════════════════════════════════════════════════════════
   return (
+    <>
     <div
       className="flex h-screen overflow-hidden"
       onDragEnter={handleDragEnter}
@@ -749,8 +899,8 @@ const ChatInterface: React.FC = () => {
                 <div className="flex items-center gap-2 pt-1 border-t" style={{ borderColor: theme.sidebarBorder }}>
                   <span className="text-[10px] text-gray-500">Voice:</span>
                   <select
-                    value={localStorage.getItem('tts-voice') || 'nova'}
-                    onChange={e => { localStorage.setItem('tts-voice', e.target.value); }}
+                    value={ttsVoice}
+                    onChange={e => { setTtsVoice(e.target.value); localStorage.setItem('tts-voice', e.target.value); }}
                     className="text-[11px] bg-transparent text-gray-300 rounded px-1 py-0.5 focus:outline-none cursor-pointer"
                     style={{ border: `1px solid ${theme.sidebarBorder}` }}
                   >
@@ -764,49 +914,98 @@ const ChatInterface: React.FC = () => {
           </div>
         )}
 
-        {/* Conversations */}
-        <div className="flex-1 px-3 space-y-0.5 overflow-y-auto scrollbar-thin">
-          {sidebarOpen && conversations.length > 0 && (
-            <div className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2 mt-1">Conversations</div>
-          )}
-          {conversations.length === 0 && sidebarOpen ? (
-            <div className="text-xs text-gray-600 italic mt-2">No conversations yet</div>
-          ) : (
-            conversations.map(conv => {
-              const active = currentConversationId === conv.id;
-              return (
-                <div
-                  key={conv.id}
-                  className="group relative cursor-pointer rounded-lg p-2.5 transition-all duration-150"
-                  style={{
-                    background: active ? theme.sidebarActive : undefined,
-                    borderLeft: active ? `3px solid ${theme.accent}` : '3px solid transparent',
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = theme.sidebarHover; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? theme.sidebarActive : 'transparent'; }}
-                  onClick={() => loadConversation(conv.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-200 truncate font-medium">{conv.title}</div>
-                      {sidebarOpen && (
-                        <div className="text-[11px] text-gray-500 truncate mt-0.5">
-                          {new Date(conv.updatedAt).toLocaleDateString()} &middot; {conv.messageCount} msgs
-                        </div>
-                      )}
-                    </div>
-                    {sidebarOpen && (
-                      <button
-                        onClick={e => { e.stopPropagation(); deleteConversation(conv.id); }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
+        {/* Conversations grouped by folders */}
+        <div className="flex-1 px-3 overflow-y-auto scrollbar-thin">
+
+          {/* New Folder button */}
+          {sidebarOpen && (
+            <div className="mb-1 mt-1">
+              {showNewFolder ? (
+                <div className="flex items-center gap-1 px-1">
+                  <input
+                    autoFocus
+                    value={newFolderName}
+                    onChange={e => setNewFolderName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') createFolder(); if (e.key === 'Escape') setShowNewFolder(false); }}
+                    placeholder="Folder name..."
+                    className="flex-1 text-xs bg-transparent text-gray-200 placeholder-gray-600 rounded px-2 py-1 focus:outline-none"
+                    style={{ border: `1px solid ${theme.sidebarBorder}` }}
+                  />
+                  <button onClick={createFolder} className="p-1 text-gray-400 hover:text-green-400"><Plus className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setShowNewFolder(false)} className="p-1 text-gray-400 hover:text-red-400"><X className="h-3.5 w-3.5" /></button>
                 </div>
-              );
-            })
+              ) : (
+                <button
+                  onClick={() => setShowNewFolder(true)}
+                  className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-1 py-1"
+                >
+                  <FolderPlus className="h-3.5 w-3.5" /> New Folder
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Render each folder */}
+          {folders.map(folder => {
+            const folderConvs = conversationsByFolder[folder.id] || [];
+            const collapsed = collapsedFolders.has(folder.id);
+            return (
+              <div key={folder.id} className="mb-1">
+                {/* Folder header */}
+                <div
+                  className="group flex items-center gap-1 px-1.5 py-1.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => setCollapsedFolders(prev => {
+                    const next = new Set(prev);
+                    next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id);
+                    return next;
+                  })}
+                >
+                  {collapsed ? <ChevronRight className="h-3 w-3 text-gray-500 flex-shrink-0" /> : <ChevronDown className="h-3 w-3 text-gray-500 flex-shrink-0" />}
+                  {collapsed ? <FolderIcon className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" /> : <FolderOpen className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />}
+                  {editingFolderId === folder.id ? (
+                    <input
+                      autoFocus
+                      value={editingFolderName}
+                      onChange={e => setEditingFolderName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') renameFolder(folder.id); if (e.key === 'Escape') setEditingFolderId(null); }}
+                      onBlur={() => renameFolder(folder.id)}
+                      onClick={e => e.stopPropagation()}
+                      className="flex-1 text-xs bg-transparent text-gray-200 rounded px-1 py-0 focus:outline-none min-w-0"
+                      style={{ border: `1px solid ${theme.accent}` }}
+                    />
+                  ) : (
+                    <span className="flex-1 text-xs text-gray-300 truncate font-medium">{folder.name}</span>
+                  )}
+                  <span className="text-[10px] text-gray-600 mr-1">{folderConvs.length}</span>
+                  {sidebarOpen && editingFolderId !== folder.id && (
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+                      <button onClick={e => { e.stopPropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.name); }} className="p-0.5 text-gray-500 hover:text-gray-300">
+                        <PenLine className="h-3 w-3" />
+                      </button>
+                      <button onClick={e => { e.stopPropagation(); removeFolder(folder.id); }} className="p-0.5 text-gray-500 hover:text-red-400">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* Folder conversations */}
+                {!collapsed && folderConvs.map(conv => renderConversationItem(conv, true))}
+              </div>
+            );
+          })}
+
+          {/* Unfiled conversations */}
+          {(conversationsByFolder['__unfiled'] || []).length > 0 && (
+            <div className="mt-1">
+              {sidebarOpen && folders.length > 0 && (
+                <div className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold px-1.5 py-1">Chats</div>
+              )}
+              {(conversationsByFolder['__unfiled'] || []).map(conv => renderConversationItem(conv, false))}
+            </div>
+          )}
+
+          {conversations.length === 0 && sidebarOpen && (
+            <div className="text-xs text-gray-600 italic mt-2 px-1">No conversations yet</div>
           )}
         </div>
 
@@ -825,7 +1024,8 @@ const ChatInterface: React.FC = () => {
           {sidebarOpen && (
             <div className="mt-2.5 flex items-center gap-0.5">
               <button onClick={() => navigate('/dashboard')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Dashboard"><BarChart3 className="h-4 w-4" /></button>
-              <button onClick={() => navigate('/profile')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Profile"><UserIcon className="h-4 w-4" /></button>
+              <button onClick={() => navigate('/buckets')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Knowledge Buckets"><Database className="h-4 w-4" /></button>
+              <button onClick={() => navigate('/profile')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Settings"><UserIcon className="h-4 w-4" /></button>
               <button onClick={toggleDarkMode} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Theme">
                 {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
@@ -840,11 +1040,11 @@ const ChatInterface: React.FC = () => {
       {/* ══════════════════════════════════════════════════════════════════
           MAIN CHAT AREA
          ══════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 relative" style={{ background: dk ? theme.mainBgDark : theme.mainBg }}>
+      <div className="flex-1 flex flex-col min-w-0 relative" style={{ background: darkMode ? theme.mainBgDark : theme.mainBg }}>
 
         {/* Mobile hamburger — no visible header bar */}
         <div className="md:hidden absolute top-3 left-4 z-20">
-          <button onClick={() => setMobileSidebar(true)} className="p-1.5" style={{ color: dk ? theme.textSecondaryDark : theme.textSecondary }}>
+          <button onClick={() => setMobileSidebar(true)} className="p-1.5" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
             <Menu className="h-5 w-5" />
           </button>
         </div>
@@ -853,7 +1053,7 @@ const ChatInterface: React.FC = () => {
         <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-2 pb-48 scrollbar-thin">
           {/* Model name — top center, like ChatGPT */}
           <div className="pt-2 pb-1 text-center">
-            <span className="text-sm font-medium" style={{ color: dk ? theme.textSecondaryDark : theme.textSecondary }}>
+            <span className="text-sm font-medium" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
               {currentModel?.name || 'Own AI'}
             </span>
           </div>
@@ -863,16 +1063,16 @@ const ChatInterface: React.FC = () => {
               {/* Provider icon */}
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
-                style={{ background: dk ? theme.aiIconBgDark : theme.aiIconBg }}
+                style={{ background: darkMode ? theme.aiIconBgDark : theme.aiIconBg }}
               >
-                <span style={{ color: dk ? theme.aiIconColorDark : theme.aiIconColor, fontSize: '28px', lineHeight: 1 }}>
+                <span style={{ color: darkMode ? theme.aiIconColorDark : theme.aiIconColor, fontSize: '28px', lineHeight: 1 }}>
                   {theme.aiIcon}
                 </span>
               </div>
-              <h2 className="text-3xl font-semibold mb-2" style={{ color: dk ? theme.textPrimaryDark : theme.textPrimary }}>
+              <h2 className="text-3xl font-semibold mb-2" style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}>
                 What can I help with?
               </h2>
-              <p className="text-sm mb-10" style={{ color: dk ? theme.textSecondaryDark : theme.textSecondary }}>
+              <p className="text-sm mb-10" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
                 {currentModel ? currentModel.name : 'Choose a model to get started'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
@@ -882,14 +1082,14 @@ const ChatInterface: React.FC = () => {
                     onClick={() => { setInput(s.text); inputRef.current?.focus(); }}
                     className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm transition-all duration-200"
                     style={{
-                      background: dk ? theme.inputBgDark : theme.inputBg,
-                      border: `1px solid ${dk ? theme.inputBorderDark : theme.inputBorder}`,
-                      color: dk ? theme.textPrimaryDark : theme.textSecondary,
+                      background: darkMode ? theme.inputBgDark : theme.inputBg,
+                      border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
+                      color: darkMode ? theme.textPrimaryDark : theme.textSecondary,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = dk ? theme.textPrimaryDark : theme.textPrimary; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = dk ? theme.inputBorderDark : theme.inputBorder; e.currentTarget.style.color = dk ? theme.textPrimaryDark : theme.textSecondary; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = darkMode ? theme.textPrimaryDark : theme.textPrimary; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = darkMode ? theme.inputBorderDark : theme.inputBorder; e.currentTarget.style.color = darkMode ? theme.textPrimaryDark : theme.textSecondary; }}
                   >
-                    <s.icon className="h-4 w-4 flex-shrink-0 transition-colors" style={{ color: dk ? theme.textSecondaryDark : theme.textSecondary }} />
+                    <s.icon className="h-4 w-4 flex-shrink-0 transition-colors" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }} />
                     <span>{s.text}</span>
                   </button>
                 ))}
@@ -910,9 +1110,9 @@ const ChatInterface: React.FC = () => {
                         {/* Provider icon */}
                         <div
                           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                          style={{ background: dk ? theme.aiIconBgDark : theme.aiIconBg }}
+                          style={{ background: darkMode ? theme.aiIconBgDark : theme.aiIconBg }}
                         >
-                          <span style={{ color: dk ? theme.aiIconColorDark : theme.aiIconColor, fontSize: '16px', lineHeight: 1 }}>
+                          <span style={{ color: darkMode ? theme.aiIconColorDark : theme.aiIconColor, fontSize: '16px', lineHeight: 1 }}>
                             {theme.aiIcon}
                           </span>
                         </div>
@@ -931,17 +1131,17 @@ const ChatInterface: React.FC = () => {
                           {/* Metadata — subtle, below action buttons */}
                           <div className="flex items-center gap-2 mt-1">
                             {message.model && (
-                              <span className="text-[11px]" style={{ color: dk ? theme.metaTextDark : theme.metaText }}>
+                              <span className="text-[11px]" style={{ color: darkMode ? theme.metaTextDark : theme.metaText }}>
                                 {message.model}
                               </span>
                             )}
                             {message.cost != null && (
-                              <span className="text-[11px]" style={{ color: dk ? theme.metaTextDark : theme.metaText }}>
+                              <span className="text-[11px]" style={{ color: darkMode ? theme.metaTextDark : theme.metaText }}>
                                 $ {formatCurrency(message.cost)}
                               </span>
                             )}
                             {message.tokens != null && (
-                              <span className="text-[11px]" style={{ color: dk ? theme.metaTextDark : theme.metaText }}>
+                              <span className="text-[11px]" style={{ color: darkMode ? theme.metaTextDark : theme.metaText }}>
                                 # {formatTokens(message.tokens)}
                               </span>
                             )}
@@ -955,8 +1155,8 @@ const ChatInterface: React.FC = () => {
                       <div
                         className="max-w-[70%] px-5 py-3"
                         style={{
-                          background: dk ? theme.userBubbleDark : theme.userBubble,
-                          color: dk ? theme.userBubbleTextDark : theme.userBubbleText,
+                          background: darkMode ? theme.userBubbleDark : theme.userBubble,
+                          color: darkMode ? theme.userBubbleTextDark : theme.userBubbleText,
                           borderRadius: theme.userBubbleRadius,
                         }}
                       >
@@ -971,20 +1171,19 @@ const ChatInterface: React.FC = () => {
               ))}
 
               {/* Thinking indicator with reasoning text & timer */}
-              {loading && (() => {
-                const last = [...messages].reverse().find(m => m.role === 'assistant');
-                return !last || !last.content;
-              })() && (
-                <ThinkingIndicator
-                  modelName={currentModel?.name ?? 'AI'}
-                  reasoningContent={(() => {
-                    const last = [...messages].reverse().find(m => m.role === 'assistant');
-                    return last?.reasoningContent || '';
-                  })()}
-                  theme={theme}
-                  darkMode={dk}
-                />
-              )}
+              {(() => {
+                if (!loading) return null;
+                const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant');
+                if (lastAssistant?.content) return null;
+                return (
+                  <ThinkingIndicator
+                    modelName={currentModel?.name ?? 'AI'}
+                    reasoningContent={lastAssistant?.reasoningContent || ''}
+                    theme={theme}
+                    darkMode={darkMode}
+                  />
+                );
+              })()}
 
               <div ref={messagesEndRef} />
             </div>
@@ -995,9 +1194,9 @@ const ChatInterface: React.FC = () => {
         <div className="absolute bottom-0 left-0 right-0 z-10 theme-transition">
           {/* Gradient fade */}
           <div className="h-16 pointer-events-none" style={{
-            background: `linear-gradient(to bottom, transparent, ${dk ? theme.mainBgDark : theme.mainBg})`,
+            background: `linear-gradient(to bottom, transparent, ${darkMode ? theme.mainBgDark : theme.mainBg})`,
           }} />
-          <div className="px-4 md:px-6 pb-4 pt-0" style={{ background: dk ? theme.mainBgDark : theme.mainBg }}>
+          <div className="px-4 md:px-6 pb-4 pt-0" style={{ background: darkMode ? theme.mainBgDark : theme.mainBg }}>
           <div className="max-w-[52rem] mx-auto">
 
             {/* File previews */}
@@ -1007,13 +1206,13 @@ const ChatInterface: React.FC = () => {
                   <div key={i} className="relative group animate-scale-in">
                     {file.type.startsWith('image/') ? (
                       <div className="relative">
-                        <img src={pendingPreviews[i]} alt={file.name} className="h-16 w-16 object-cover rounded-xl" style={{ border: `2px solid ${dk ? theme.inputBorderDark : theme.inputBorder}` }} />
+                        <img src={pendingPreviews[i]} alt={file.name} className="h-16 w-16 object-cover rounded-xl" style={{ border: `2px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}` }} />
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-b-xl truncate">{file.name}</div>
                       </div>
                     ) : (
-                      <div className="h-16 w-24 rounded-xl flex flex-col items-center justify-center gap-1 px-2" style={{ background: dk ? theme.inputBgDark : theme.inputBg, border: `2px solid ${dk ? theme.inputBorderDark : theme.inputBorder}` }}>
+                      <div className="h-16 w-24 rounded-xl flex flex-col items-center justify-center gap-1 px-2" style={{ background: darkMode ? theme.inputBgDark : theme.inputBg, border: `2px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}` }}>
                         {(() => { const Icon = getFileIcon(file.name, file.type); return <Icon className="h-5 w-5" style={{ color: theme.accent }} />; })()}
-                        <span className="text-[9px] truncate max-w-full font-medium" style={{ color: dk ? '#ccc' : '#555' }}>{file.name}</span>
+                        <span className="text-[9px] truncate max-w-full font-medium" style={{ color: darkMode ? '#ccc' : '#555' }}>{file.name}</span>
                       </div>
                     )}
                     <button onClick={() => removeFile(i)} className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
@@ -1028,9 +1227,9 @@ const ChatInterface: React.FC = () => {
             <div
               className="rounded-3xl transition-all duration-200 overflow-hidden"
               style={{
-                background: dk ? theme.inputBgDark : theme.inputBg,
-                border: `1px solid ${dk ? theme.inputBorderDark : theme.inputBorder}`,
-                boxShadow: dk ? '0 2px 16px rgba(0,0,0,0.3)' : '0 1px 8px rgba(0,0,0,0.06)',
+                background: darkMode ? theme.inputBgDark : theme.inputBg,
+                border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
+                boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.3)' : '0 1px 8px rgba(0,0,0,0.06)',
               }}
               onClick={() => inputRef.current?.focus()}
             >
@@ -1039,7 +1238,7 @@ const ChatInterface: React.FC = () => {
                 <button
                   onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5"
-                  style={{ color: pendingFiles.length > 0 ? theme.accent : dk ? '#666' : '#b0b0b0' }}
+                  style={{ color: pendingFiles.length > 0 ? theme.accent : darkMode ? '#666' : '#b0b0b0' }}
                   title="Attach files"
                 >
                   <Paperclip className="h-[18px] w-[18px]" />
@@ -1053,18 +1252,18 @@ const ChatInterface: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   placeholder={uploading ? 'Uploading...' : deepSearch ? 'Search the web...' : theme.placeholder}
                   className="flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-600"
-                  style={{ color: dk ? theme.textPrimaryDark : theme.textPrimary }}
+                  style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}
                   rows={1}
                   maxLength={10000}
                   disabled={uploading}
                 />
 
-                {/* Mic button */}
+                {/* Mic button (speech-to-text) */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleMicToggle(); }}
                   disabled={isTranscribing}
                   className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5 ${isRecording ? 'animate-pulse' : ''}`}
-                  style={{ color: isRecording ? '#ef4444' : isTranscribing ? theme.accent : dk ? '#666' : '#b0b0b0' }}
+                  style={{ color: isRecording ? '#ef4444' : isTranscribing ? theme.accent : darkMode ? '#666' : '#b0b0b0' }}
                   title={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing...' : 'Voice input'}
                 >
                   {isTranscribing ? (
@@ -1076,11 +1275,21 @@ const ChatInterface: React.FC = () => {
                   )}
                 </button>
 
+                {/* Real-time voice mode button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setVoiceModeActive(true); }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5"
+                  style={{ color: darkMode ? '#666' : '#b0b0b0' }}
+                  title="Real-time voice conversation"
+                >
+                  <Waves className="h-[18px] w-[18px]" />
+                </button>
+
                 <button
                   onClick={handleSend}
                   disabled={(!input.trim() && !pendingFiles.length) || loading || uploading}
                   className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mb-0.5"
-                  style={{ background: (!input.trim() && !pendingFiles.length) || loading ? (dk ? '#444' : '#d9d9d9') : theme.accent, color: '#fff' }}
+                  style={{ background: (!input.trim() && !pendingFiles.length) || loading ? (darkMode ? '#444' : '#d9d9d9') : theme.accent, color: '#fff' }}
                 >
                   {uploading ? (
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1103,10 +1312,10 @@ const ChatInterface: React.FC = () => {
                         style={{
                           background: reasoningEffort === level
                             ? theme.accent
-                            : dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                           color: reasoningEffort === level
                             ? '#fff'
-                            : dk ? '#aaa' : '#888',
+                            : darkMode ? '#aaa' : '#888',
                         }}
                       >
                         {level === 'low' ? '⚡ Low' : level === 'medium' ? '🧠 Medium' : '💎 High'}
@@ -1121,8 +1330,8 @@ const ChatInterface: React.FC = () => {
                     onClick={() => setDeepSearch(prev => !prev)}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
                     style={{
-                      background: deepSearch ? theme.accent : dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                      color: deepSearch ? '#fff' : dk ? '#aaa' : '#888',
+                      background: deepSearch ? theme.accent : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      color: deepSearch ? '#fff' : darkMode ? '#aaa' : '#888',
                     }}
                     title="Search the web"
                   >
@@ -1130,10 +1339,57 @@ const ChatInterface: React.FC = () => {
                     Search
                   </button>
                 )}
+
+                {/* Bucket selector */}
+                {availableBuckets.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowBucketSelector(prev => !prev)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
+                      style={{
+                        background: attachedBucketIds.size > 0 ? theme.accent : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                        color: attachedBucketIds.size > 0 ? '#fff' : darkMode ? '#aaa' : '#888',
+                      }}
+                      title="Attach knowledge buckets"
+                    >
+                      <Database className="h-3 w-3" />
+                      {attachedBucketIds.size > 0 ? `${attachedBucketIds.size} bucket${attachedBucketIds.size > 1 ? 's' : ''}` : 'Buckets'}
+                    </button>
+                    {showBucketSelector && (
+                      <div
+                        className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl py-2 min-w-[200px] z-50"
+                        style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
+                      >
+                        <div className="px-3 py-1 text-[11px] font-semibold" style={{ color: darkMode ? '#888' : '#999' }}>
+                          Attach Knowledge
+                        </div>
+                        {availableBuckets.map(bucket => (
+                          <label
+                            key={bucket.id}
+                            className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-white/5 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={attachedBucketIds.has(bucket.id)}
+                              onChange={() => toggleBucket(bucket.id)}
+                              className="rounded accent-blue-500"
+                            />
+                            <span className="text-xs truncate" style={{ color: darkMode ? '#ddd' : '#333' }}>{bucket.name}</span>
+                          </label>
+                        ))}
+                        <div className="border-t mt-1 pt-1 px-3" style={{ borderColor: darkMode ? '#444' : '#eee' }}>
+                          <button onClick={() => { setShowBucketSelector(false); navigate('/buckets'); }} className="text-[11px] hover:underline" style={{ color: theme.accent }}>
+                            Manage buckets →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            <p className="text-center text-[11px] mt-2.5" style={{ color: dk ? '#555' : '#b0b0b0' }}>
+            <p className="text-center text-[11px] mt-2.5" style={{ color: darkMode ? '#555' : '#b0b0b0' }}>
               {theme.disclaimer}
             </p>
           </div>
@@ -1141,6 +1397,26 @@ const ChatInterface: React.FC = () => {
         </div>
       </div>
     </div>
+
+      {/* Voice Mode Overlay */}
+      {voiceModeActive && (
+        <VoiceMode
+          onClose={(convId) => {
+            setVoiceModeActive(false);
+            // Refresh sidebar to show the new voice conversation
+            if (convId) {
+              axios.get(getApiUrl('/chat'), { headers: authHeaders }).then(({ data }) => {
+                setConversations(data);
+              }).catch(() => {});
+            }
+          }}
+          theme={theme}
+          darkMode={darkMode}
+          voice={(localStorage.getItem('voiceMode_voice') as VoiceId) || 'ash'}
+          model={(localStorage.getItem('voiceMode_model') as RealtimeModelId) || 'gpt-realtime-1.5'}
+        />
+      )}
+    </>
   );
 };
 

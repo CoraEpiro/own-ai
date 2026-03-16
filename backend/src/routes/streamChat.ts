@@ -11,6 +11,11 @@ import {
   updateConversationTitle,
   updateConversationSummary,
   updateConversationSystemPrompt,
+  getUserBio,
+  getBucketContentForContext,
+  attachBucketToConversation,
+  getUserMemories,
+  addMemory,
 } from '../services/databaseService';
 import { streamToProvider } from '../services/providers';
 
@@ -110,6 +115,74 @@ async function generateSummary(
   }
 }
 
+async function extractMemories(
+  userId: string,
+  userMessage: string,
+  assistantResponse: string,
+  existingMemories: string[]
+) {
+  try {
+    // Skip trivial messages
+    if (userMessage.length < 20) return;
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return;
+
+    const existingList = existingMemories.length
+      ? `\nExisting memories (do NOT duplicate these):\n${existingMemories.map(m => `- ${m}`).join('\n')}`
+      : '';
+
+    const resp = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract personal facts about the user from this conversation exchange. Only extract concrete, reusable facts (name, preferences, location, job, projects, interests, etc.). Return a JSON array of short strings (max 200 chars each). If no new facts, return []. Do NOT include facts that are already known.${existingList}`,
+          },
+          {
+            role: 'user',
+            content: `User said: "${userMessage.substring(0, 500)}"\n\nAssistant replied: "${assistantResponse.substring(0, 500)}"`,
+          },
+        ],
+        max_tokens: 200,
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+      },
+      { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
+    );
+
+    const raw = (resp.data as any).choices?.[0]?.message?.content?.trim();
+    if (!raw) return;
+
+    let facts: string[] = [];
+    try {
+      const parsed = JSON.parse(raw);
+      facts = Array.isArray(parsed) ? parsed : (parsed.facts || parsed.memories || []);
+    } catch {
+      return;
+    }
+
+    // Save each new fact (addMemory handles cap + dedup by content length)
+    for (const fact of facts) {
+      if (typeof fact === 'string' && fact.trim().length > 5) {
+        // Simple duplicate check: skip if any existing memory is very similar
+        const lower = fact.toLowerCase().trim();
+        const isDuplicate = existingMemories.some(em => {
+          const emLower = em.toLowerCase();
+          return emLower === lower || emLower.includes(lower) || lower.includes(emLower);
+        });
+        if (!isDuplicate) {
+          await addMemory(userId, fact.trim());
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Memory extraction failed (non-blocking):', err);
+  }
+}
+
 // ── Main Stream Endpoint ───────────────────────────────
 
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
@@ -117,10 +190,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
   let { prompt, model = 'gpt-5.4', conversationId, systemPrompt, attachments = [], reasoningEffort, deepSearch } = req.body;
-  console.log(`[stream-chat] prompt="${prompt?.substring(0, 50)}", model=${model}, attachments=${attachments.length}`);
-  if (attachments.length) {
-    attachments.forEach((a: any) => console.log(`  attachment: ${a.fileName} type=${a.type} extractedText=${a.extractedText ? a.extractedText.length + 'chars' : 'none'} base64=${a.base64 ? 'yes' : 'no'}`));
-  }
+  console.log(`[stream-chat] model=${model}, attachments=${attachments.length}, prompt="${prompt?.substring(0, 60)}…"`);
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
     return res.status(400).json({ error: 'Missing prompt' });
   }
@@ -132,18 +202,32 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     // Get or create conversation
     let isNewConversation = false;
-    if (conversationId) {
-      const existing = await getConversationById(conversationId, userId);
-      if (!existing) return res.status(404).json({ error: 'Conversation not found' });
-    } else {
+    if (!conversationId) {
       const title = generateTitle(prompt);
-      const conv = await createConversation(userId, title, model);
-      conversationId = conv.id;
+      const newConv = await createConversation(userId, title, model);
+      conversationId = newConv.id;
       isNewConversation = true;
+      // Attach buckets if provided for new conversation
+      const bucketIds = req.body.bucketIds;
+      if (bucketIds?.length) {
+        await Promise.all(bucketIds.map((bId: string) => attachBucketToConversation(conversationId, bId)));
+      }
     }
 
-    // Load conversation history
-    const historyRows = await getConversationMessages(conversationId);
+    // Load history, conversation details, user bio, bucket context, and memories in parallel
+    const [historyRows, conv, userBio, bucketContext, memoryRows] = await Promise.all([
+      getConversationMessages(conversationId),
+      getConversationById(conversationId, userId),
+      getUserBio(userId),
+      getBucketContentForContext(conversationId),
+      getUserMemories(userId),
+    ]);
+
+    // For existing conversations, verify access
+    if (!isNewConversation && !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
     // Re-inject file content from stored attachments so the AI retains file context
     const historyMessages = historyRows.map(r => {
       let content = r.message;
@@ -157,9 +241,24 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return { role: r.role, content };
     });
 
-    // Build messages with optional system prompt + summary context
-    const conv = await getConversationById(conversationId, userId);
+    // Build messages array — order matters for LLM context priority
     const allMessages: Array<{ role: string; content: string; attachments?: any[] }> = [];
+
+    // User bio — global persistent context
+    if (userBio) {
+      allMessages.push({ role: 'system', content: `About the user:\n${userBio}` });
+    }
+
+    // User memories — learned facts from past conversations
+    if (memoryRows.length) {
+      const memoryText = memoryRows.map(m => `- ${m.content}`).join('\n');
+      allMessages.push({ role: 'system', content: `User memories (things you've learned about this user):\n${memoryText}` });
+    }
+
+    // Knowledge bucket context — attached reference knowledge
+    if (bucketContext) {
+      allMessages.push({ role: 'system', content: `Reference knowledge:\n${bucketContext}` });
+    }
 
     // System prompt (custom persona) takes priority
     const effectiveSystemPrompt = systemPrompt || conv?.system_prompt;
@@ -274,6 +373,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       ];
       generateSummary(conversationId, allMsgs);
     }
+
+    // Extract memories from this exchange (async, non-blocking)
+    extractMemories(
+      userId,
+      prompt,
+      assistantText,
+      memoryRows.map(m => m.content),
+    );
   } catch (error: any) {
     console.error('Stream chat error:', error);
     if (!res.headersSent) {

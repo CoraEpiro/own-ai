@@ -12,4 +12,13 @@ export const API_BASE_URL = isDevelopment
 // Helper function to get full API URL
 export const getApiUrl = (endpoint: string) => {
   return `${API_BASE_URL}${endpoint}`;
+};
+
+// WebSocket URL helper for real-time features
+export const getWsUrl = (path: string): string => {
+  if (isDevelopment) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${path}`;
+  }
+  return `wss://own-ai-production.up.railway.app${path}`;
 }; 

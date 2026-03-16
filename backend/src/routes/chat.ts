@@ -4,6 +4,7 @@ import {
   getConversationById,
   getConversationMessages,
   deleteConversation,
+  getConversationBuckets,
 } from '../services/databaseService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
@@ -20,6 +21,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
     userId: conv.user_id,
     title: conv.title,
     model: conv.model,
+    folderId: conv.folder_id || null,
     createdAt: conv.created_at,
     updatedAt: conv.updated_at,
     messageCount: conv.messageCount,
@@ -56,18 +58,22 @@ router.get('/:conversationId', authMiddleware, async (req: AuthRequest, res) => 
     })),
   }));
 
+  const attachedBuckets = await getConversationBuckets(conv.id);
+
   res.json({
     conversation: {
       id: conv.id,
       userId: conv.user_id,
       title: conv.title,
       model: conv.model,
+      folderId: conv.folder_id || null,
       createdAt: conv.created_at,
       updatedAt: conv.updated_at,
       messageCount: formattedMessages.length,
       totalTokens: formattedMessages.reduce((s, m) => s + (m.tokens || 0), 0),
       totalCost: formattedMessages.reduce((s, m) => s + (m.cost || 0), 0),
       messages: formattedMessages,
+      buckets: attachedBuckets,
     },
   });
 });

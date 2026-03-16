@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -12,8 +13,13 @@ import { logConfigStatus } from './config';
 import { streamChatRoutes } from './routes/streamChat';
 import { uploadRoutes } from './routes/upload';
 import { audioRoutes } from './routes/audio';
+import { folderRoutes } from './routes/folders';
+import { bucketRoutes } from './routes/buckets';
+import { memoryRoutes } from './routes/memories';
+import { setupRealtimeWebSocket } from './routes/realtimeVoice';
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // CORS configuration
@@ -87,6 +93,9 @@ app.use('/api/stream-chat', streamChatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/audio', audioRoutes);
 app.use('/api/models', modelsRoutes);
+app.use('/api/folders', folderRoutes);
+app.use('/api/buckets', bucketRoutes);
+app.use('/api/memories', memoryRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -99,7 +108,10 @@ app.use('*', (req, res) => {
 // Log config status after dotenv loads
 logConfigStatus();
 
-app.listen(PORT, () => {
+// Attach WebSocket relay for real-time voice
+setupRealtimeWebSocket(server, allowedOrigins as string[]);
+
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 Allowed origins:`, allowedOrigins);
