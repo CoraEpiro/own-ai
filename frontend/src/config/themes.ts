@@ -259,12 +259,12 @@ const auto: ProviderTheme = {
   accentSoft: '#F3E8FF',
   accentSoftDark: 'rgba(139,92,246,0.08)',
   accentRing: 'rgba(139,92,246,0.45)',
-  sidebar: '#1E1B24', // Dark neutral with purple hint
-  sidebarHover: '#2D2A35',
-  sidebarActive: '#3C3946',
-  sidebarBorder: '#4C1D95',
+  sidebar: '#18181b', // Zinc-900 (Neutral dark)
+  sidebarHover: '#27272a', // Zinc-800
+  sidebarActive: '#3f3f46', // Zinc-700
+  sidebarBorder: '#3f3f46', // Neutral border
   mainBg: '#ffffff',
-  mainBgDark: '#1E1B24',
+  mainBgDark: '#1E1B24', // Keep purple tint for main window
   headerBg: '#ffffff',
   headerBgDark: '#1E1B24',
   headerBorder: '#E9D5FF',

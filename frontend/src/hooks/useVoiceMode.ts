@@ -45,6 +45,15 @@ export const REALTIME_MODELS = [
     textInputPer1M: 0.60,
     textOutputPer1M: 2.40,
   },
+  {
+    id: 'claude-3.5-sonnet',
+    label: 'Claude 3.5 Sonnet',
+    description: 'Anthropic voice via STT/TTS',
+    audioInputPer1M: 0.00, // Using separate STT pricing
+    audioOutputPer1M: 0.00, // Using separate TTS pricing
+    textInputPer1M: 3.00,
+    textOutputPer1M: 15.00,
+  },
 ] as const;
 
 export type RealtimeModelId = (typeof REALTIME_MODELS)[number]['id'];
