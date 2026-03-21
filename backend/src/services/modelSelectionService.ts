@@ -29,7 +29,7 @@ const HEURISTIC_RULES = {
   },
   search: {
     keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'recent', 'live', 'population', 'stats', 'statistics'],
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     confidence: 0.90,
   },
   simple: {
@@ -109,8 +109,8 @@ function getRecommendationForCategory(category: string): { model: string; reason
       };
     case 'search':
       return {
-        model: 'gemini-2.0-flash',
-        reasoning: 'Your query requires real-time information. Gemini 2.0 Flash includes Google Search grounding for up-to-date answers.',
+        model: 'gemini-2.5-flash',
+        reasoning: 'Your query requires real-time information. Gemini 2.5 Flash includes Google Search grounding for up-to-date answers.',
         confidence: 0.90,
         alternatives: ['gpt-5.4'],
         enableDeepSearch: true,
@@ -129,7 +129,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         model: 'claude-haiku-4-5-20251001',
         reasoning: 'This is a straightforward question or explanation task. Claude Haiku is fast, accurate, and very cost-effective for simple queries.',
         confidence: 0.80,
-        alternatives: ['gemini-2.0-flash', 'gpt-5-mini'],
+        alternatives: ['gemini-2.5-flash', 'gpt-5-mini'],
         enableDeepSearch: false,
       };
   }
@@ -155,7 +155,16 @@ export function recommendModelHeuristic(
   conversationContext?: any[]
 ): ModelRecommendation {
   const analysis = analyzePromptHeuristic(prompt, attachments);
-  const recommendation = getRecommendationForCategory(analysis.category);
+  let recommendation = getRecommendationForCategory(analysis.category);
+
+  // Fallback: if recommended model is gemini-2.0-flash, switch to 2.5
+  if (recommendation.model === 'gemini-2.0-flash') {
+    recommendation.model = 'gemini-2.5-flash';
+  }
+  // Check alternatives too
+  if (recommendation.alternatives) {
+    recommendation.alternatives = recommendation.alternatives.map(m => m === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : m);
+  }
 
   // Calculate tokens
   const inputTokens = estimateTokens(prompt);
