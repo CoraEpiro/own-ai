@@ -46,16 +46,22 @@ export async function streamGoogle(
   };
 
   if (options?.deepSearch) {
-    body.tools = [
-      {
-        googleSearchRetrieval: {
-          dynamicRetrievalConfig: {
-            mode: "MODE_DYNAMIC",
-            dynamicThreshold: 0.3
+    // Gemini 2.5 and newer models use "google_search" tool
+    // Older models use "googleSearchRetrieval"
+    if (model.includes('gemini-2.5')) {
+      body.tools = [{ google_search: {} }];
+    } else {
+      body.tools = [
+        {
+          googleSearchRetrieval: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_DYNAMIC",
+              dynamicThreshold: 0.3
+            }
           }
         }
-      }
-    ];
+      ];
+    }
 
     // Handle search modes
     const contents = body.contents;

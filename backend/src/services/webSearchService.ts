@@ -55,19 +55,14 @@ export async function performWebSearch(query: string, options: SearchOptions = {
 
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         contents: [{
           role: 'user',
           parts: [{ text: `Search the web and provide a comprehensive, factual summary for this query. ${systemContext}\n\nQuery: ${finalQuery}` }]
         }],
         tools: [{
-          googleSearchRetrieval: {
-            dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC",
-              dynamicThreshold: 0.3
-            }
-          }
+          google_search: {}
         }],
         generationConfig: {
           temperature: 0.3,
