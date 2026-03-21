@@ -225,9 +225,10 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       }));
 
       // 3. TTS (OpenAI)
+      const ttsVoice = mapVoiceToOpenAITts(voice);
       const ttsResp = await axios.post('https://api.openai.com/v1/audio/speech', {
         model: 'tts-1',
-        voice: voice,
+        voice: ttsVoice,
         input: assistantText,
         response_format: 'pcm', // Request RAW PCM
         speed: 1.1
@@ -751,6 +752,19 @@ function mapVoiceToGemini(voice: string): string {
     'verse': 'Aoede'
   };
   return map[voice] || 'Puck';
+}
+
+function mapVoiceToOpenAITts(voice: string): string {
+  // Claude mode can receive non-OpenAI voice IDs from UI; map them to valid OpenAI TTS voices.
+  const map: Record<string, string> = {
+    verse: 'ash',
+    Puck: 'alloy',
+    Charon: 'echo',
+    Kore: 'shimmer',
+    Fenrir: 'ash',
+    Aoede: 'coral',
+  };
+  return map[voice] || voice;
 }
 
 function calculateRMS(buffer: Buffer): number {
