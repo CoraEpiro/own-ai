@@ -259,10 +259,10 @@ const auto: ProviderTheme = {
   accentSoft: '#F3E8FF',
   accentSoftDark: 'rgba(139,92,246,0.08)',
   accentRing: 'rgba(139,92,246,0.45)',
-  sidebar: '#2E1065', // Very dark purple
-  sidebarHover: '#4C1D95',
-  sidebarActive: '#5B21B6',
-  sidebarBorder: '#6D28D9',
+  sidebar: '#1E1B24', // Dark neutral with purple hint
+  sidebarHover: '#2D2A35',
+  sidebarActive: '#3C3946',
+  sidebarBorder: '#4C1D95',
   mainBg: '#ffffff',
   mainBgDark: '#1E1B24',
   headerBg: '#ffffff',
