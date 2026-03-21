@@ -472,8 +472,8 @@ function handleOpenAIConnection(clientWs: WebSocket, request: IncomingMessage) {
         openaiWs.close();
       }
     });
-  });
 }
+
 
 /**
  * Handles connection to Gemini Live API
@@ -631,4 +631,3 @@ function mapVoiceToGemini(voice: string): string {
 }
 
 console.log('[realtime-ws] WebSocket relay ready on /ws/realtime');
-}
