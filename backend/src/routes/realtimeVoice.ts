@@ -520,32 +520,37 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
 
   // Gemini Live API WebSocket URL
   const host = 'generativelanguage.googleapis.com';
-  const path = `/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+  const path = `/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
   const geminiWs = new WebSocket(`wss://${host}${path}`);
 
   let geminiReady = false;
+  let userSpeaking = false;
+  let silenceStart = 0;
+  let bufferedTurnHasAudio = false;
+  const VAD_THRESHOLD = 700;
+  const SILENCE_DURATION_MS = 700;
 
   geminiWs.on('open', () => {
     console.log(`[realtime-ws] Gemini connected for user ${userId}`);
     geminiReady = true;
 
-    // 1. Send Setup Message
+    // 1. Send config message (v1beta protocol)
     const setupMsg = {
-      setup: {
+      config: {
         model: `models/${liveModel}`,
-        generation_config: {
-          response_modalities: ["AUDIO"],
-          speech_config: {
-            voice_config: {
-              prebuilt_voice_config: {
-                voice_name: mapVoiceToGemini(voice)
-              }
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: mapVoiceToGemini(voice)
             }
           }
         },
-        system_instruction: {
-            parts: [{ text: "You are Gemini, a helpful AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI." }]
-        }
+        systemInstruction: {
+          parts: [{ text: 'You are Gemini, a helpful AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI.' }]
+        },
+        inputAudioTranscription: {},
+        outputAudioTranscription: {},
       }
     };
     geminiWs.send(JSON.stringify(setupMsg));
@@ -583,6 +588,24 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
         }
       }
 
+      // Input transcription (user speech)
+      const inputText = msg.serverContent?.inputTranscription?.text;
+      if (inputText) {
+        clientWs.send(JSON.stringify({
+          type: 'conversation.item.input_audio_transcription.completed',
+          transcript: inputText,
+        }));
+      }
+
+      // Output transcription (assistant speech)
+      const outputText = msg.serverContent?.outputTranscription?.text;
+      if (outputText) {
+        clientWs.send(JSON.stringify({
+          type: 'response.audio_transcript.delta',
+          delta: outputText,
+        }));
+      }
+
       // Handle Turn Complete
       if (msg.serverContent?.turnComplete) {
         clientWs.send(JSON.stringify({ type: 'response.done' }));
@@ -612,17 +635,48 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
       const msg = JSON.parse(str);
       
       // OpenAI format -> Gemini format
-      if (msg.type === 'input_audio_buffer.append') {
-        // Send audio chunk
+      if (msg.type === 'input_audio_buffer.append' && msg.audio) {
+        const chunk = Buffer.from(msg.audio, 'base64');
+        const rms = calculateRMS(chunk);
+
+        if (rms > VAD_THRESHOLD) {
+          if (!userSpeaking) {
+            userSpeaking = true;
+            silenceStart = 0;
+            clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_started' }));
+          }
+        } else if (userSpeaking) {
+          if (silenceStart === 0) silenceStart = Date.now();
+          if (Date.now() - silenceStart > SILENCE_DURATION_MS) {
+            userSpeaking = false;
+            silenceStart = 0;
+            clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_stopped' }));
+
+            if (geminiReady && bufferedTurnHasAudio) {
+              geminiWs.send(JSON.stringify({
+                realtimeInput: {
+                  activityEnd: true,
+                }
+              }));
+              bufferedTurnHasAudio = false;
+            }
+          }
+        }
+
+        // Gemini expects 16kHz PCM input
+        const pcm16k = downsamplePcm16_24kTo16k(chunk);
         const geminiAudioMsg = {
-          realtime_input: {
-            media_chunks: [{
-              mime_type: "audio/pcm",
-              data: msg.audio // Base64
-            }]
+          realtimeInput: {
+            audio: {
+              data: pcm16k.toString('base64'),
+              mimeType: 'audio/pcm;rate=16000'
+            }
           }
         };
-        if (geminiReady) geminiWs.send(JSON.stringify(geminiAudioMsg));
+        if (geminiReady) {
+          bufferedTurnHasAudio = true;
+          geminiWs.send(JSON.stringify(geminiAudioMsg));
+        }
       }
       
       // Handle custom events if needed
@@ -652,6 +706,29 @@ function mapVoiceToGemini(voice: string): string {
     'verse': 'Aoede'
   };
   return map[voice] || 'Puck';
+}
+
+function calculateRMS(buffer: Buffer): number {
+  if (buffer.length < 2) return 0;
+  const int16 = new Int16Array(buffer.buffer, buffer.byteOffset, Math.floor(buffer.length / 2));
+  if (!int16.length) return 0;
+  let sum = 0;
+  for (let i = 0; i < int16.length; i++) {
+    sum += int16[i] * int16[i];
+  }
+  return Math.sqrt(sum / int16.length);
+}
+
+function downsamplePcm16_24kTo16k(input: Buffer): Buffer {
+  if (input.length < 2) return input;
+  const in16 = new Int16Array(input.buffer, input.byteOffset, Math.floor(input.length / 2));
+  const outLen = Math.max(1, Math.floor(in16.length * (2 / 3)));
+  const out16 = new Int16Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const srcIndex = Math.min(in16.length - 1, Math.floor(i * 1.5));
+    out16[i] = in16[srcIndex];
+  }
+  return Buffer.from(out16.buffer);
 }
 
 function mapGeminiRealtimeModel(model: string | undefined): string {
