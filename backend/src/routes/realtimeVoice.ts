@@ -184,7 +184,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
         model: model,
         max_tokens: 1024,
         messages: [{ role: 'user', content: userText }],
-        system: "You are a helpful voice assistant. Keep responses concise and conversational."
+        system: "You are Claude, a helpful AI assistant created by Anthropic. Respond naturally and conversationally. Do not identify as OpenAI."
       }, {
         headers: {
           'x-api-key': claudeKey,
@@ -219,8 +219,12 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       const ttsAudio = Buffer.from(ttsResp.data);
       
       // Send audio in chunks
-      const CHUNK_SIZE = 24000; // ~0.5s chunks
+      const CHUNK_SIZE = 6000; // ~0.25s chunks at 24kHz
       for (let i = 0; i < ttsAudio.length; i += CHUNK_SIZE) {
+        if (isSpeaking) {
+             console.log('[claude-voice] User interrupted, stopping playback');
+             break;
+        }
         const chunk = ttsAudio.subarray(i, i + CHUNK_SIZE);
         clientWs.send(JSON.stringify({
           type: 'response.audio.delta',
@@ -522,6 +526,9 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
               }
             }
           }
+        },
+        systemInstruction: {
+            parts: [{ text: "You are Gemini, a helpful, friendly AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI." }]
         }
       }
     };
