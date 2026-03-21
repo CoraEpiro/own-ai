@@ -1356,7 +1356,7 @@ const ChatInterface: React.FC = () => {
 
             {/* ── Main input box ─────────────────────────────────────── */}
             <div
-              className="rounded-3xl transition-all duration-200 overflow-hidden"
+              className="rounded-3xl transition-all duration-200"
               style={{
                 background: darkMode ? theme.inputBgDark : theme.inputBg,
                 border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
