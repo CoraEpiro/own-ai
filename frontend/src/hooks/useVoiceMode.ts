@@ -98,6 +98,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const assistantSpeakingRef = useRef(false);
 
   // Audio playback scheduling
   const playbackTimeRef = useRef(0);
@@ -146,6 +147,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
   const interruptPlayback = useCallback(() => {
     const now = audioContextRef.current?.currentTime ?? 0;
     playbackTimeRef.current = now;
+    assistantSpeakingRef.current = false;
     for (const source of activeSourcesRef.current) {
       try {
         source.stop();
@@ -240,6 +242,20 @@ export function useVoiceMode(): UseVoiceModeReturn {
       if (ws.readyState !== WebSocket.OPEN) return;
 
       const pcm16: Int16Array = event.data;
+      // Local barge-in: do not wait for backend speech_started event.
+      // If user mic has clear speech energy while assistant is speaking, cut playback now.
+      if (assistantSpeakingRef.current) {
+        let sum = 0;
+        for (let i = 0; i < pcm16.length; i++) {
+          const s = pcm16[i];
+          sum += s * s;
+        }
+        const rms = Math.sqrt(sum / Math.max(1, pcm16.length));
+        if (rms > 1400) {
+          interruptPlayback();
+          setState('listening');
+        }
+      }
       const uint8 = new Uint8Array(pcm16.buffer);
       let binary = '';
       for (let i = 0; i < uint8.length; i++) {
@@ -255,7 +271,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
 
     source.connect(workletNode);
     workletNode.connect(audioCtx.destination); // Required for worklet to process
-  }, []);
+  }, [interruptPlayback]);
 
   // ── WebSocket Message Handler ───────────────────────────
 
@@ -276,6 +292,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
         case 'input_audio_buffer.speech_started':
           // Barge-in: user started speaking, stop assistant audio immediately.
           interruptPlayback();
+          assistantSpeakingRef.current = false;
           setState('listening');
           // Clear previous AI transcript when user starts new turn
           setTranscript('');
@@ -290,6 +307,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
 
         case 'response.audio.delta':
           if (msg.delta) {
+            assistantSpeakingRef.current = true;
             setState('speaking');
             playAudioChunk(msg.delta);
           }
@@ -320,6 +338,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
         case 'response.done':
           // AI finished — save the turn, stay in ready state
           // Keep transcript visible until next speech starts
+          assistantSpeakingRef.current = false;
           setState('ready');
           saveTurn();
           break;
@@ -340,6 +359,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
           break;
 
         case 'error': {
+          assistantSpeakingRef.current = false;
           const errorMsg = msg.error?.message || msg.message || '';
           console.warn('[voice] OpenAI event:', errorMsg);
 
