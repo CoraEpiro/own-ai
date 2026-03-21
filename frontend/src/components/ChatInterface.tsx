@@ -196,9 +196,37 @@ const ChatInterface: React.FC = () => {
   const dragCounterRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const typingTargetRef = useRef<Record<string, string>>({});
+  const typingTimersRef = useRef<Record<string, number>>({});
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const scheduleTypewriter = useCallback((assistantId: string, chunk: string) => {
+    if (!chunk) return;
+    typingTargetRef.current[assistantId] = (typingTargetRef.current[assistantId] || '') + chunk;
+
+    if (!typingTimersRef.current[assistantId]) {
+      typingTimersRef.current[assistantId] = window.setInterval(() => {
+        let shouldStop = false;
+        setMessages(prevMsgs => prevMsgs.map(m => {
+          if (m.id !== assistantId) return m;
+          const target = typingTargetRef.current[assistantId] || '';
+          const current = m.content || '';
+          if (!target || current.length >= target.length) {
+            shouldStop = true;
+            return m;
+          }
+          const step = Math.min(3, target.length - current.length);
+          return { ...m, content: target.slice(0, current.length + step) };
+        }));
+        if (shouldStop) {
+          clearInterval(typingTimersRef.current[assistantId]);
+          delete typingTimersRef.current[assistantId];
+        }
+      }, 18);
+    }
+  }, []);
 
   // ── Derived theme ──────────────────────────────────────────────────────
   const currentModel = models.find(m => m.id === selectedModel);
@@ -520,7 +548,7 @@ const ChatInterface: React.FC = () => {
             const content = delta?.content;
             if (content) {
               fullText += content;
-              setMessages(prev => prev.map(m => (m.id === assistantId ? { ...m, content: fullText } : m)));
+              scheduleTypewriter(assistantId, content);
             }
           } catch {}
         }
@@ -529,6 +557,11 @@ const ChatInterface: React.FC = () => {
       setLoading(false);
 
       if (metaReceived) {
+        if (typingTimersRef.current[assistantId]) {
+          clearInterval(typingTimersRef.current[assistantId]);
+          delete typingTimersRef.current[assistantId];
+        }
+        delete typingTargetRef.current[assistantId];
         setMessages(prev =>
           prev.map(m =>
             m.id === assistantId
@@ -554,12 +587,25 @@ const ChatInterface: React.FC = () => {
         }
       } catch {}
     } catch (error: any) {
+      if (typingTimersRef.current[assistantId]) {
+        clearInterval(typingTimersRef.current[assistantId]);
+        delete typingTimersRef.current[assistantId];
+      }
+      delete typingTargetRef.current[assistantId];
       setLoading(false);
       const errorContent = error.message || 'Failed to stream response.';
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: `**Error:** ${errorContent}` } : m));
       toast.error(errorContent);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      Object.values(typingTimersRef.current).forEach(timer => clearInterval(timer));
+      typingTimersRef.current = {};
+      typingTargetRef.current = {};
+    };
+  }, []);
 
   // ── Other handlers ─────────────────────────────────────────────────────
   const loadConversation = async (id: string) => {

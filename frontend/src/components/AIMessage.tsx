@@ -1,8 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
+import mermaid from 'mermaid';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
@@ -57,6 +59,52 @@ function CopyButton({ text }: { text: string }) {
     >
       {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
+  );
+}
+
+function MermaidBlock({ code, darkMode }: { code: string; darkMode: boolean }) {
+  const [svg, setSvg] = useState('');
+  const [error, setError] = useState('');
+  const id = useMemo(() => `mermaid-${Math.random().toString(36).slice(2)}`, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const render = async () => {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: darkMode ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
+        const { svg } = await mermaid.render(id, code);
+        if (!cancelled) {
+          setSvg(svg);
+          setError('');
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message || 'Failed to render Mermaid diagram');
+        }
+      }
+    };
+    render();
+    return () => { cancelled = true; };
+  }, [code, darkMode, id]);
+
+  if (error) {
+    return (
+      <div className="my-4">
+        <div className="text-xs mb-1 text-red-500">{error}</div>
+        <pre className="p-3 rounded-lg bg-zinc-800 text-zinc-200 overflow-x-auto text-sm">{code}</pre>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="my-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3"
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
   );
 }
 
@@ -205,12 +253,16 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
       {/* Markdown content */}
       <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-code:before:hidden prose-code:after:hidden prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none prose-table:rounded-lg prose-table:border prose-table:border-gray-200 dark:prose-table:border-zinc-700 prose-th:bg-gray-100 dark:prose-th:bg-zinc-800 prose-blockquote:border-l-4 prose-blockquote:border-blue-400 dark:prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-900/10">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
+          remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
           rehypePlugins={[rehypeKatex]}
           components={{
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
               const codeText = String(children).replace(/\n$/, '');
+
+              if (!inline && match && match[1].toLowerCase() === 'mermaid') {
+                return <MermaidBlock code={codeText} darkMode={darkMode} />;
+              }
 
               if (!inline && match) {
                 return (
