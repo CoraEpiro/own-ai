@@ -54,6 +54,15 @@ export const REALTIME_MODELS = [
     textInputPer1M: 3.00,
     textOutputPer1M: 15.00,
   },
+  {
+    id: 'gemini-2.5-flash',
+    label: 'Gemini 2.5 Flash',
+    description: 'Google Native Realtime',
+    audioInputPer1M: 10.00,
+    audioOutputPer1M: 20.00,
+    textInputPer1M: 0.15,
+    textOutputPer1M: 0.60,
+  },
 ] as const;
 
 export type RealtimeModelId = (typeof REALTIME_MODELS)[number]['id'];

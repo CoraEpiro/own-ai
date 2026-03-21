@@ -1643,8 +1643,19 @@ const ChatInterface: React.FC = () => {
           }}
           theme={theme}
           darkMode={darkMode}
-          voice={(localStorage.getItem('voiceMode_voice') as VoiceId) || 'ash'}
-          model={(localStorage.getItem('voiceMode_model') as RealtimeModelId) || 'gpt-realtime-1.5'}
+          // Intelligently select voice model based on current chat model
+          model={(() => {
+            if (currentModel?.provider === 'Google') return 'gemini-2.5-flash';
+            if (currentModel?.provider === 'Anthropic') return 'claude-3.5-sonnet';
+            if (currentModel?.id === 'gpt-5-mini') return 'gpt-realtime-mini';
+            return 'gpt-realtime-1.5';
+          })()}
+          // Intelligently select default voice
+          voice={(() => {
+            if (currentModel?.provider === 'Google') return 'coral'; // Bright
+            if (currentModel?.provider === 'Anthropic') return 'verse'; // Dynamic
+            return 'ash'; // Default OpenAI
+          })()}
         />
       )}
     </>
