@@ -96,7 +96,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         model: 'o3-mini',
         reasoning: 'This task requires step-by-step logical reasoning. o3-mini is specialized for complex mathematical and logical proofs.',
         confidence: 0.90,
-        alternatives: ['gpt-5.4', 'claude-opus-4-20250514'],
+        alternatives: ['gpt-5.4', 'claude-opus-4-5-20251114'],
         enableDeepSearch: false,
       };
     case 'coding':
@@ -104,7 +104,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         model: 'gpt-5.4',
         reasoning: 'This is a coding task. GPT-5.4 excels at debugging, refactoring, and implementing complex TypeScript/JavaScript patterns.',
         confidence: 0.85,
-        alternatives: ['claude-sonnet-4-20250514', 'gpt-5-mini'],
+        alternatives: ['claude-sonnet-4-5-20251114', 'gpt-5-mini'],
         enableDeepSearch: false,
       };
     case 'search':
@@ -120,7 +120,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         model: 'gpt-5.4',
         reasoning: 'You have image attachments. GPT-5.4 has excellent vision capabilities and can analyze images while providing code or analysis.',
         confidence: 0.85,
-        alternatives: ['claude-opus-4-20250514'],
+        alternatives: ['claude-opus-4-5-20251114'],
         enableDeepSearch: false,
       };
     case 'simple':

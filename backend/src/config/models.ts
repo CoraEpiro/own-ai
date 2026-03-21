@@ -99,8 +99,8 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   //  Anthropic
   // ═══════════════════════════════════════════════════════
   {
-    id: 'claude-opus-4-20250514',
-    name: 'Claude Opus 4',
+    id: 'claude-opus-4-5-20251114',
+    name: 'Claude Opus 4.5',
     provider: 'Anthropic',
     description: 'Most capable Claude model. Exceptional at complex reasoning and code.',
     maxTokens: 32768,
@@ -112,8 +112,8 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     category: 'flagship',
   },
   {
-    id: 'claude-sonnet-4-20250514',
-    name: 'Claude Sonnet 4',
+    id: 'claude-sonnet-4-5-20251114',
+    name: 'Claude Sonnet 4.5',
     provider: 'Anthropic',
     description: 'Balanced model. Great at reasoning and code.',
     maxTokens: 8192,
