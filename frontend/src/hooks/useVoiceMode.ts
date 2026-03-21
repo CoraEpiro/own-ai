@@ -97,6 +97,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
   const streamRef = useRef<MediaStream | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
 
   // Audio playback scheduling
   const playbackTimeRef = useRef(0);
@@ -130,12 +131,29 @@ export function useVoiceMode(): UseVoiceModeReturn {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
+    activeSourcesRef.current.push(source);
+    source.onended = () => {
+      activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source);
+    };
 
     // Schedule seamlessly after previous chunk
     const now = ctx.currentTime;
     const startTime = Math.max(now, playbackTimeRef.current);
     source.start(startTime);
     playbackTimeRef.current = startTime + buffer.duration;
+  }, []);
+
+  const interruptPlayback = useCallback(() => {
+    const now = audioContextRef.current?.currentTime ?? 0;
+    playbackTimeRef.current = now;
+    for (const source of activeSourcesRef.current) {
+      try {
+        source.stop();
+      } catch {
+        // source may already be ended/stopped
+      }
+    }
+    activeSourcesRef.current = [];
   }, []);
 
   // ── Save completed turn ─────────────────────────────────
@@ -256,6 +274,8 @@ export function useVoiceMode(): UseVoiceModeReturn {
           break;
 
         case 'input_audio_buffer.speech_started':
+          // Barge-in: user started speaking, stop assistant audio immediately.
+          interruptPlayback();
           setState('listening');
           // Clear previous AI transcript when user starts new turn
           setTranscript('');
@@ -341,7 +361,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     } catch {
       // Non-JSON message, ignore
     }
-  }, [playAudioChunk, saveTurn]);
+  }, [playAudioChunk, saveTurn, interruptPlayback]);
 
   // ── Connect ─────────────────────────────────────────────
 
@@ -353,6 +373,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     setConversationId(null);
     setProviderLabel(null);
     playbackTimeRef.current = 0;
+    activeSourcesRef.current = [];
     currentUserTextRef.current = '';
     currentAssistantTextRef.current = '';
 
@@ -431,6 +452,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     }
 
     playbackTimeRef.current = 0;
+    activeSourcesRef.current = [];
   }, []);
 
   // Cleanup on unmount
