@@ -129,9 +129,48 @@ async function streamViaResponsesAPI(
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
 
+  // Handle search modes by appending filters to the last user message
+  const inputMessages = formatInputForResponses(messages);
+  const lastMsg = inputMessages[inputMessages.length - 1];
+
+  if (lastMsg && lastMsg.role === 'user' && options?.searchMode && options.searchMode !== 'auto') {
+    let querySuffix = '';
+    let instruction = '';
+
+    switch (options.searchMode) {
+      case 'human':
+        querySuffix = ' (site:reddit.com OR site:news.ycombinator.com OR site:stackexchange.com OR site:quora.com OR site:medium.com)';
+        instruction = '\n\n[System: Prioritize search results from forums and human discussions.]';
+        break;
+      case 'pre_ai':
+        querySuffix = ' before:2023-01-01';
+        instruction = '\n\n[System: Prioritize information published before 2023.]';
+        break;
+      case 'custom':
+        if (options.customSites && options.customSites.length > 0) {
+          const sites = options.customSites.map(s => `site:${s.trim()}`).join(' OR ');
+          querySuffix = ` (${sites})`;
+          instruction = `\n\n[System: Only use information from these domains: ${options.customSites.join(', ')}]`;
+        }
+        break;
+    }
+
+    if (querySuffix) {
+      // Input content in Responses API can be string or array of parts
+      if (typeof lastMsg.content === 'string') {
+        lastMsg.content += `${querySuffix}${instruction}`;
+      } else if (Array.isArray(lastMsg.content)) {
+        const textPart = lastMsg.content.find((p: any) => p.type === 'input_text');
+        if (textPart) {
+          textPart.text += `${querySuffix}${instruction}`;
+        }
+      }
+    }
+  }
+
   const data: any = {
     model,
-    input: formatInputForResponses(messages),
+    input: inputMessages,
     tools: [{ type: 'web_search_preview' }],
     stream: true,
   };

@@ -45,7 +45,6 @@ export async function streamGoogle(
     generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
   };
 
-  // Enable Google Search grounding if deepSearch is requested
   if (options?.deepSearch) {
     body.tools = [
       {
@@ -57,6 +56,41 @@ export async function streamGoogle(
         }
       }
     ];
+
+    // Handle search modes
+    const contents = body.contents;
+    const lastMsg = contents[contents.length - 1];
+    
+    if (lastMsg && lastMsg.role === 'user' && lastMsg.parts && lastMsg.parts.length > 0) {
+      let querySuffix = '';
+      let instruction = '';
+
+      switch (options.searchMode) {
+        case 'human':
+          querySuffix = ' (site:reddit.com OR site:news.ycombinator.com OR site:stackexchange.com OR site:quora.com OR site:medium.com)';
+          instruction = ' [System: Prioritize forum discussions and human-authored content.]';
+          break;
+        case 'pre_ai':
+          querySuffix = ' before:2023-01-01';
+          instruction = ' [System: Prioritize information published before 2023.]';
+          break;
+        case 'custom':
+          if (options.customSites && options.customSites.length > 0) {
+            const sites = options.customSites.map((s: string) => `site:${s.trim()}`).join(' OR ');
+            querySuffix = ` (${sites})`;
+            instruction = ` [System: Only use information from these domains: ${options.customSites.join(', ')}]`;
+          }
+          break;
+      }
+
+      if (querySuffix) {
+        // Append to the last text part
+        const textPart = lastMsg.parts.find((p: any) => p.text);
+        if (textPart) {
+          textPart.text += `${querySuffix}${instruction}`;
+        }
+      }
+    }
   }
 
   if (systemInstruction) {

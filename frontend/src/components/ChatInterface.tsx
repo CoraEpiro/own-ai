@@ -167,6 +167,11 @@ const ChatInterface: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceModeActive, setVoiceModeActive] = useState(false);
   const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
+  // Search Modes
+  const [searchMode, setSearchMode] = useState<'auto' | 'human' | 'pre_ai' | 'custom'>('auto');
+  const [showSearchOptions, setShowSearchOptions] = useState(false);
+  const [customSearchSites, setCustomSearchSites] = useState<string[]>([]);
+  const [customSiteInput, setCustomSiteInput] = useState('');
   // Folders
   const [folders, setFolders] = useState<Folder[]>([]);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
@@ -461,7 +466,13 @@ const ChatInterface: React.FC = () => {
       if (systemPrompt.trim()) body.systemPrompt = systemPrompt.trim();
       if (uploadedAttachments.length) body.attachments = uploadedAttachments;
       if (currentModel?.capabilities?.includes('reasoning')) body.reasoningEffort = reasoningEffort;
-      if (deepSearch) body.deepSearch = true;
+      if (deepSearch) {
+        body.deepSearch = true;
+        body.searchMode = searchMode;
+        if (searchMode === 'custom' && customSearchSites.length > 0) {
+          body.customSites = customSearchSites;
+        }
+      }
       if (!currentConversationId && attachedBucketIds.size > 0) body.bucketIds = Array.from(attachedBucketIds);
 
       const response = await fetch(getApiUrl('/stream-chat'), {
@@ -1441,20 +1452,120 @@ const ChatInterface: React.FC = () => {
                   </div>
                 )}
 
-                {/* Deep search toggle */}
+                {/* Deep search toggle and modes */}
                 {(currentModel?.provider === 'OpenAI' || currentModel?.provider === 'Google' || currentModel?.provider === 'Anthropic') && (
-                  <button
-                    onClick={() => setDeepSearch(prev => !prev)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
-                    style={{
-                      background: deepSearch ? theme.accent : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                      color: deepSearch ? '#fff' : darkMode ? '#aaa' : '#888',
-                    }}
-                    title="Search the web"
-                  >
-                    <Globe className="h-3 w-3" />
-                    Search
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        if (!deepSearch) { setDeepSearch(true); setSearchMode('auto'); }
+                        else { setDeepSearch(false); setShowSearchOptions(false); }
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
+                      style={{
+                        background: deepSearch ? theme.accent : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                        color: deepSearch ? '#fff' : darkMode ? '#aaa' : '#888',
+                      }}
+                      title="Search the web"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Search
+                    </button>
+                    {deepSearch && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowSearchOptions(prev => !prev)}
+                          className="px-1.5 py-1 rounded-full text-[10px] font-medium transition-all duration-200 hover:bg-black/10 dark:hover:bg-white/10"
+                          style={{ color: darkMode ? '#aaa' : '#666' }}
+                          title="Search Options"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+                        {showSearchOptions && (
+                          <div
+                            className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-2 min-w-[220px] z-50 animate-fade-in"
+                            style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
+                          >
+                            <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: darkMode ? '#888' : '#999' }}>
+                              Search Mode
+                            </div>
+                            
+                            <button
+                              onClick={() => setSearchMode('auto')}
+                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'auto' ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                            >
+                              <div className="font-medium">✨ Auto (Normal)</div>
+                              <div className="text-[10px] opacity-70">Best results from all sources</div>
+                            </button>
+
+                            <button
+                              onClick={() => setSearchMode('human')}
+                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'human' ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                            >
+                              <div className="font-medium">👤 Human-First</div>
+                              <div className="text-[10px] opacity-70">Forums, Reddit, real discussions only</div>
+                            </button>
+
+                            <button
+                              onClick={() => setSearchMode('pre_ai')}
+                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'pre_ai' ? 'bg-green-500/10 text-green-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                            >
+                              <div className="font-medium">🕰️ Pre-AI Era</div>
+                              <div className="text-[10px] opacity-70">Content before 2023 (No AI slop)</div>
+                            </button>
+
+                            <button
+                              onClick={() => setSearchMode('custom')}
+                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'custom' ? 'bg-purple-500/10 text-purple-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                            >
+                              <div className="font-medium">🎯 Custom Collection</div>
+                              <div className="text-[10px] opacity-70">Search only specific websites</div>
+                            </button>
+
+                            {searchMode === 'custom' && (
+                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                <div className="text-[10px] mb-1 font-medium text-gray-500">Allowed Sites (e.g. arxiv.org):</div>
+                                <div className="flex gap-1 mb-2">
+                                  <input
+                                    value={customSiteInput}
+                                    onChange={e => setCustomSiteInput(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter' && customSiteInput.trim()) {
+                                        setCustomSearchSites(prev => [...prev, customSiteInput.trim()]);
+                                        setCustomSiteInput('');
+                                      }
+                                    }}
+                                    className="flex-1 text-xs bg-transparent border rounded px-1.5 py-1 focus:outline-none focus:border-blue-500"
+                                    style={{ borderColor: darkMode ? '#555' : '#ddd', color: darkMode ? '#ddd' : '#333' }}
+                                    placeholder="Add domain..."
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      if (customSiteInput.trim()) {
+                                        setCustomSearchSites(prev => [...prev, customSiteInput.trim()]);
+                                        setCustomSiteInput('');
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                                  {customSearchSites.map((site, idx) => (
+                                    <span key={idx} className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                      {site}
+                                      <button onClick={() => setCustomSearchSites(prev => prev.filter((_, i) => i !== idx))} className="hover:text-red-500">×</button>
+                                    </span>
+                                  ))}
+                                  {customSearchSites.length === 0 && <span className="text-[10px] text-gray-400 italic">No sites added yet</span>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Bucket selector */}

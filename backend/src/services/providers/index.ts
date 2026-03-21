@@ -22,6 +22,8 @@ export interface ChatMessage {
 export interface StreamOptions {
   reasoningEffort?: 'low' | 'medium' | 'high';
   deepSearch?: boolean;
+  searchMode?: 'auto' | 'human' | 'pre_ai' | 'custom';
+  customSites?: string[];
 }
 
 export async function streamToProvider(
@@ -35,9 +37,9 @@ export async function streamToProvider(
     case 'OpenAI':
       return streamOpenAI(messages, model, res, options);
     case 'Anthropic':
-      return streamAnthropic(messages, model, res);
+      return streamAnthropic(messages, model, res, options);
     case 'Google':
-      return streamGoogle(messages, model, res);
+      return streamGoogle(messages, model, res, options);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
