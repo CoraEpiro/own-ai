@@ -184,12 +184,12 @@ export function recommendModelHeuristic(
   }
 
   // Fallback: if recommended model is gemini-2.0-flash, switch to 2.5
-  if (recommendation.model === 'gemini-2.0-flash') {
+  if (recommendation.model === 'gemini-2.0-flash' || recommendation.model === 'gemini-2.5-pro') {
     recommendation.model = 'gemini-2.5-flash';
   }
   // Check alternatives too
   if (recommendation.alternatives) {
-    recommendation.alternatives = recommendation.alternatives.map(m => m === 'gemini-2.0-flash' ? 'gemini-2.5-flash' : m);
+    recommendation.alternatives = recommendation.alternatives.map(m => (m === 'gemini-2.0-flash' || m === 'gemini-2.5-pro') ? 'gemini-2.5-flash' : m);
   }
 
   // Calculate tokens

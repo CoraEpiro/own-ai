@@ -141,19 +141,19 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   // ═══════════════════════════════════════════════════════
   //  Google
   // ═══════════════════════════════════════════════════════
-  {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro (Disabled)',
-    provider: 'Google',
-    description: "Google's most capable model with deep reasoning. (Disabled)",
-    maxTokens: 65536,
-    contextWindow: 1048576,
-    costPer1kTokens: { input: 0.00125, output: 0.01 },
-    isAvailable: false,
-    apiKeyEnvVar: 'GEMINI_API_KEY',
-    capabilities: ['reasoning', 'vision'],
-    category: 'flagship',
-  },
+  // {
+  //   id: 'gemini-2.5-pro',
+  //   name: 'Gemini 2.5 Pro (Disabled)',
+  //   provider: 'Google',
+  //   description: "Google's most capable model with deep reasoning. (Disabled)",
+  //   maxTokens: 65536,
+  //   contextWindow: 1048576,
+  //   costPer1kTokens: { input: 0.00125, output: 0.01 },
+  //   isAvailable: false,
+  //   apiKeyEnvVar: 'GEMINI_API_KEY',
+  //   capabilities: ['reasoning', 'vision'],
+  //   category: 'flagship',
+  // },
   {
     id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
@@ -167,19 +167,19 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     capabilities: ['reasoning', 'vision'],
     category: 'fast',
   },
-  {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash (Exhausted)',
-    provider: 'Google',
-    description: "Google's fast multimodal model with broad capabilities. (Quota Limit Reached)",
-    maxTokens: 8192,
-    contextWindow: 1000000,
-    costPer1kTokens: { input: 0.0001, output: 0.0004 },
-    isAvailable: false,
-    apiKeyEnvVar: 'GEMINI_API_KEY',
-    capabilities: ['vision'],
-    category: 'fast',
-  },
+  // {
+  //   id: 'gemini-2.0-flash',
+  //   name: 'Gemini 2.0 Flash (Exhausted)',
+  //   provider: 'Google',
+  //   description: "Google's fast multimodal model with broad capabilities. (Quota Limit Reached)",
+  //   maxTokens: 8192,
+  //   contextWindow: 1000000,
+  //   costPer1kTokens: { input: 0.0001, output: 0.0004 },
+  //   isAvailable: false,
+  //   apiKeyEnvVar: 'GEMINI_API_KEY',
+  //   capabilities: ['vision'],
+  //   category: 'fast',
+  // },
 ];
 
 export function getModelDefinition(modelId: string): ModelDefinition | undefined {
