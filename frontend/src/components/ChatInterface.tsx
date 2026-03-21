@@ -288,6 +288,7 @@ const ChatInterface: React.FC = () => {
           prompt: input,
           attachments: pendingFiles.length > 0 ? pendingFiles.map(f => ({ type: f.type, name: f.name })) : undefined,
           conversationContext: messages.slice(-5), // Last 5 messages for context
+          currentModel: selectedModel,
         }, { headers: authHeaders });
         setModelRecommendation(data);
       } catch { /* silent */ }

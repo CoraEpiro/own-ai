@@ -152,10 +152,36 @@ function estimateCost(modelId: string, inputTokens: number, outputTokens: number
 export function recommendModelHeuristic(
   prompt: string,
   attachments?: any[],
-  conversationContext?: any[]
+  conversationContext?: any[],
+  currentModel?: string
 ): ModelRecommendation {
   const analysis = analyzePromptHeuristic(prompt, attachments);
   let recommendation = getRecommendationForCategory(analysis.category);
+
+  // Cross-provider search logic:
+  // If the user is requesting search (category=search), and they are ALREADY using a capable model
+  // (like Claude or GPT-5), don't recommend switching to Gemini. 
+  // Instead, recommend staying on current model but with Deep Search enabled.
+  if (analysis.category === 'search' && currentModel) {
+    const modelDef = getModelDefinition(currentModel);
+    
+    // List of models that we support "proxy search" for (via our webSearchService)
+    // Basically any Claude or OpenAI model can use our backend search tool
+    const canUseProxySearch = modelDef && (
+      modelDef.provider === 'Anthropic' || 
+      modelDef.provider === 'OpenAI' ||
+      modelDef.id.includes('claude') || 
+      modelDef.id.includes('gpt')
+    );
+
+    if (canUseProxySearch) {
+      recommendation.model = currentModel;
+      recommendation.reasoning = `Your query requires real-time information. Enabled Deep Search for ${modelDef?.name || currentModel} to find up-to-date answers using Google Search.`;
+      recommendation.enableDeepSearch = true;
+      // We keep confidence high because we are confident this is the right APPROACH (using search)
+      // even if we are changing the model recommendation to be "stick with current".
+    }
+  }
 
   // Fallback: if recommended model is gemini-2.0-flash, switch to 2.5
   if (recommendation.model === 'gemini-2.0-flash') {
@@ -189,10 +215,11 @@ export function recommendModel(
   prompt: string,
   attachments?: any[],
   conversationContext?: any[],
-  userPreference?: 'cost' | 'quality' | 'balanced'
+  userPreference?: 'cost' | 'quality' | 'balanced',
+  currentModel?: string
 ): ModelRecommendation {
   // Phase 1: Heuristic analysis
-  const recommendation = recommendModelHeuristic(prompt, attachments, conversationContext);
+  const recommendation = recommendModelHeuristic(prompt, attachments, conversationContext, currentModel);
 
   // If confidence is high enough, return immediately
   if (recommendation.confidence > 0.70) {

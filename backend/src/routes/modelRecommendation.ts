@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { prompt, attachments, conversationContext, userPreference } = req.body;
+    const { prompt, attachments, conversationContext, userPreference, currentModel } = req.body;
 
     if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({ error: 'Prompt is required and must be a string' });
@@ -17,7 +17,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       prompt,
       attachments,
       conversationContext,
-      userPreference
+      userPreference,
+      currentModel
     );
 
     res.json(recommendation);
