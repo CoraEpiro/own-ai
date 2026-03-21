@@ -16,6 +16,7 @@ import { audioRoutes } from './routes/audio';
 import { folderRoutes } from './routes/folders';
 import { bucketRoutes } from './routes/buckets';
 import { memoryRoutes } from './routes/memories';
+import { modelRecommendationRoutes } from './routes/modelRecommendation';
 import { setupRealtimeWebSocket } from './routes/realtimeVoice';
 
 const app = express();
@@ -96,6 +97,7 @@ app.use('/api/models', modelsRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/buckets', bucketRoutes);
 app.use('/api/memories', memoryRoutes);
+app.use('/api/recommend-model', modelRecommendationRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

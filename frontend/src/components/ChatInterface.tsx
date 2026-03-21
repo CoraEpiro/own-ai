@@ -182,6 +182,9 @@ const ChatInterface: React.FC = () => {
   // Cost tracking
   const [todayCost, setTodayCost] = useState(0);
   const [currentChatCost, setCurrentChatCost] = useState(0);
+  // Model recommendation
+  const [modelRecommendation, setModelRecommendation] = useState<any>(null);
+  const [showRecommendation, setShowRecommendation] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -267,7 +270,26 @@ const ChatInterface: React.FC = () => {
     })();
   }, [currentConversationId]);
 
-  // ── Auto-scroll: only when user sends a message, NOT during streaming ──
+  // ── Get model recommendation as user types ────────────────────────────────
+  useEffect(() => {
+    if (!input.trim() || input.length < 10) {
+      setModelRecommendation(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await axios.post(getApiUrl('/recommend-model'), {
+          prompt: input,
+          attachments: pendingFiles.length > 0 ? pendingFiles.map(f => ({ type: f.type, name: f.name })) : undefined,
+          conversationContext: messages.slice(-5), // Last 5 messages for context
+        }, { headers: authHeaders });
+        setModelRecommendation(data);
+      } catch { /* silent */ }
+    }, 800); // Debounce 800ms
+
+    return () => clearTimeout(timer);
+  }, [input, pendingFiles, messages]);
   const shouldScrollRef = useRef(false);
   useEffect(() => {
     if (shouldScrollRef.current) {
@@ -1272,6 +1294,44 @@ const ChatInterface: React.FC = () => {
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Model Recommendation Badge */}
+            {modelRecommendation && showRecommendation && selectedModel !== modelRecommendation.recommendedModel && (
+              <div className="mb-3 p-3 rounded-2xl animate-fade-in" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}40` }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span style={{ color: theme.accent }} className="text-lg">💡</span>
+                      <span className="text-sm font-semibold" style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}>
+                        Recommended: {models.find(m => m.id === modelRecommendation.recommendedModel)?.name || modelRecommendation.recommendedModel}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${theme.accent}25`, color: theme.accent }}>
+                        {Math.round(modelRecommendation.confidence * 100)}%
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
+                      {modelRecommendation.reasoning}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => { setSelectedModel(modelRecommendation.recommendedModel); setShowRecommendation(false); }}
+                      className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: theme.accent, color: '#fff' }}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => setShowRecommendation(false)}
+                      className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                      style={{ background: darkMode ? '#333' : '#e0e0e0', color: darkMode ? '#ccc' : '#666' }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
