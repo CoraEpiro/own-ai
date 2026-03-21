@@ -19,22 +19,22 @@ interface PromptAnalysis {
 const HEURISTIC_RULES = {
   reasoning: {
     keywords: ['prove', 'proof', 'derive', 'solve', 'step-by-step', 'reasoning', 'logic', 'theorem', 'hypothesis', 'algorithm', 'math', 'mathematical', 'equation', 'calculate', 'explain the process'],
-    model: 'o3-mini',
+    model: 'o1',
     confidence: 0.90,
   },
   coding: {
     keywords: ['write code', 'debug', 'refactor', 'function', 'class', 'implement', 'api', 'fix', 'code', 'programming', 'typescript', 'javascript', 'react', 'async', 'promise'],
-    model: 'gpt-5.4',
+    model: 'claude-3-5-sonnet-latest',
     confidence: 0.85,
   },
   search: {
     keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'find', 'lookup', 'look up', 'recent', 'live', 'population', 'stats', 'statistics', 'check'],
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash',
     confidence: 0.90,
   },
   simple: {
     keywords: ['explain', 'summarize', 'translate', 'list', 'format', 'what is', 'how to', 'define', 'tell me', 'describe'],
-    model: 'claude-3-5-haiku-latest',
+    model: 'gpt-4o-mini',
     confidence: 0.80,
   },
 };
@@ -93,43 +93,43 @@ function getRecommendationForCategory(category: string): { model: string; reason
   switch (category) {
     case 'reasoning':
       return {
-        model: 'o3-mini',
-        reasoning: 'This task requires step-by-step logical reasoning. o3-mini is specialized for complex mathematical and logical proofs.',
+        model: 'o1',
+        reasoning: 'This task requires step-by-step logical reasoning. o1 is specialized for complex mathematical and logical proofs.',
         confidence: 0.90,
-        alternatives: ['gpt-5.4', 'claude-opus-4-6'],
+        alternatives: ['o3-mini', 'gpt-4o'],
         enableDeepSearch: false,
       };
     case 'coding':
       return {
-        model: 'gpt-5.4',
-        reasoning: 'This is a coding task. GPT-5.4 excels at debugging, refactoring, and implementing complex TypeScript/JavaScript patterns.',
+        model: 'claude-3-5-sonnet-latest',
+        reasoning: 'This is a coding task. Claude 3.5 Sonnet excels at debugging, refactoring, and implementing complex patterns.',
         confidence: 0.85,
-        alternatives: ['claude-sonnet-4-6', 'gpt-5-mini'],
+        alternatives: ['gpt-4o', 'o3-mini'],
         enableDeepSearch: false,
       };
     case 'search':
       return {
-        model: 'gemini-2.5-flash',
-        reasoning: 'Your query requires real-time information. Gemini 2.5 Flash includes Google Search grounding for up-to-date answers.',
+        model: 'gemini-2.0-flash',
+        reasoning: 'Your query requires real-time information. Gemini 2.0 Flash includes Google Search grounding for up-to-date answers.',
         confidence: 0.90,
-        alternatives: ['gpt-5.4'],
+        alternatives: ['gpt-4o'],
         enableDeepSearch: true,
       };
     case 'vision':
       return {
-        model: 'gpt-5.4',
-        reasoning: 'You have image attachments. GPT-5.4 has excellent vision capabilities and can analyze images while providing code or analysis.',
+        model: 'gpt-4o',
+        reasoning: 'You have image attachments. GPT-4o has excellent vision capabilities and can analyze images while providing code or analysis.',
         confidence: 0.85,
-        alternatives: ['claude-opus-4-6'],
+        alternatives: ['claude-3-5-sonnet-latest'],
         enableDeepSearch: false,
       };
     case 'simple':
     default:
       return {
-        model: 'claude-haiku-4-5-20251001',
-        reasoning: 'This is a straightforward question or explanation task. Claude Haiku is fast, accurate, and very cost-effective for simple queries.',
+        model: 'gpt-4o-mini',
+        reasoning: 'This is a straightforward question or explanation task. GPT-4o Mini is fast, accurate, and very cost-effective for simple queries.',
         confidence: 0.80,
-        alternatives: ['gemini-2.5-flash', 'gpt-5-mini'],
+        alternatives: ['gemini-2.0-flash', 'claude-3-5-haiku-latest'],
         enableDeepSearch: false,
       };
   }
