@@ -52,6 +52,16 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function normalizeModelId(modelId: string): string {
+  const id = (modelId || '').trim();
+  const aliases: Record<string, string> = {
+    'claude-3.5-sonnet': 'claude-sonnet-4-6',
+    'claude-3-5-sonnet-latest': 'claude-sonnet-4-6',
+    'claude-3-5-haiku-latest': 'claude-haiku-4-5-20251001',
+  };
+  return aliases[id] || id;
+}
+
 // ── Thinking Indicator ──────────────────────────────────────────────────
 const ThinkingIndicator: React.FC<{
   modelName: string;
@@ -244,7 +254,7 @@ const ChatInterface: React.FC = () => {
   }, []);
 
   // ── Derived theme ──────────────────────────────────────────────────────
-  const currentModel = models.find(m => m.id === selectedModel);
+  const currentModel = models.find(m => m.id === normalizeModelId(selectedModel));
   const theme: ProviderTheme = useMemo(
     () => getProviderTheme(currentModel?.provider ?? 'OpenAI'),
     [currentModel?.provider],
@@ -639,7 +649,7 @@ const ChatInterface: React.FC = () => {
       setMessages(conv.messages);
       shouldScrollRef.current = true;
       setCurrentConversationId(id);
-      setSelectedModel(conv.model);
+      setSelectedModel(normalizeModelId(conv.model));
       setAttachedBucketIds(new Set(conv.buckets?.map(b => b.id) || []));
       setMobileSidebar(false);
     } catch { toast.error('Failed to load conversation'); }
@@ -1287,7 +1297,7 @@ const ChatInterface: React.FC = () => {
                           <div className="flex items-center gap-2 mt-1">
                             {message.model && (
                               <span className="text-[11px]" style={{ color: darkMode ? theme.metaTextDark : theme.metaText }}>
-                                {message.model}
+                                {models.find(m => m.id === normalizeModelId(message.model || ''))?.name || normalizeModelId(message.model)}
                               </span>
                             )}
                             {message.cost != null && (

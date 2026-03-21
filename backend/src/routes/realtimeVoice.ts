@@ -10,6 +10,7 @@ import {
   saveConversationMessage,
   updateConversationTitle,
 } from '../services/databaseService';
+import { performWebSearch } from '../services/webSearchService';
 
 const VALID_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
 const VALID_MODELS = [
@@ -18,6 +19,8 @@ const VALID_MODELS = [
   'gpt-realtime-mini',
   'gemini-2.5-flash',
   'claude-3.5-sonnet',
+  'claude-3-5-sonnet-latest',
+  'claude-3-5-haiku-latest',
   'claude-sonnet-4-6',
   'claude-opus-4-6',
   'claude-haiku-4-5-20251001',
@@ -119,7 +122,8 @@ export function setupRealtimeWebSocket(server: HttpServer, allowedOrigins: strin
 async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMessage) {
   const userId = (request as any).userId;
   const voice = (request as any).voice || 'ash';
-  const conversationModel = (request as any).model || 'claude-3.5-sonnet';
+  const requestedConversationModel = (request as any).model || 'claude-sonnet-4-6';
+  const conversationModel = normalizeConversationModelId(requestedConversationModel);
   const model = mapClaudeRealtimeModel(conversationModel);
   
   console.log(`[realtime-ws] User ${userId} connected to Claude Voice Mode (${model})`);
@@ -230,11 +234,21 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
         transcript: userText 
       }));
 
-      // 2. LLM (Claude)
+      // 2. LLM (Claude + optional web context)
+      let userPrompt = userText;
+      try {
+        const webContext = await performWebSearch(userText, { mode: 'auto' });
+        if (webContext) {
+          userPrompt = `${userText}\n\n${webContext}\n\nUse the web search results above when relevant.`;
+        }
+      } catch (searchErr: any) {
+        console.warn('[claude-voice] Web search skipped:', searchErr?.message || searchErr);
+      }
+
       const claudeResp = await axios.post('https://api.anthropic.com/v1/messages', {
         model: model,
         max_tokens: 1024,
-        messages: [{ role: 'user', content: userText }],
+        messages: [{ role: 'user', content: userPrompt }],
         system: "You are Claude, a helpful AI assistant created by Anthropic. Respond naturally and conversationally. Do not identify as OpenAI."
       }, {
         headers: {
@@ -828,10 +842,21 @@ function mapVoiceToOpenAITts(voice: string): string {
 }
 
 function mapClaudeRealtimeModel(requestedModel: string): string {
-  if (requestedModel.includes('opus')) return 'claude-opus-4-6';
-  if (requestedModel.includes('haiku')) return 'claude-haiku-4-5-20251001';
-  if (requestedModel.includes('sonnet')) return 'claude-sonnet-4-6';
+  const normalized = normalizeConversationModelId(requestedModel);
+  if (normalized.includes('opus')) return 'claude-opus-4-6';
+  if (normalized.includes('haiku')) return 'claude-haiku-4-5-20251001';
+  if (normalized.includes('sonnet')) return 'claude-sonnet-4-6';
   return 'claude-sonnet-4-6';
+}
+
+function normalizeConversationModelId(modelId: string): string {
+  const id = (modelId || '').trim();
+  const aliases: Record<string, string> = {
+    'claude-3.5-sonnet': 'claude-sonnet-4-6',
+    'claude-3-5-sonnet-latest': 'claude-sonnet-4-6',
+    'claude-3-5-haiku-latest': 'claude-haiku-4-5-20251001',
+  };
+  return aliases[id] || id;
 }
 
 function cleanVoiceText(text: string): string {
