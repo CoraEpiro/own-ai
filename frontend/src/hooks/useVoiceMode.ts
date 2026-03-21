@@ -307,6 +307,10 @@ export function useVoiceMode(): UseVoiceModeReturn {
 
         case 'response.audio.delta':
           if (msg.delta) {
+            // If user is already speaking, ignore incoming assistant audio chunks.
+            if (state === 'listening') {
+              break;
+            }
             assistantSpeakingRef.current = true;
             setState('speaking');
             playAudioChunk(msg.delta);

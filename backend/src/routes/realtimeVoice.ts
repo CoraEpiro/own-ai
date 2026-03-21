@@ -12,7 +12,16 @@ import {
 } from '../services/databaseService';
 
 const VALID_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
-const VALID_MODELS = ['gpt-realtime-1.5', 'gpt-realtime', 'gpt-realtime-mini', 'gemini-2.5-flash', 'claude-3.5-sonnet'];
+const VALID_MODELS = [
+  'gpt-realtime-1.5',
+  'gpt-realtime',
+  'gpt-realtime-mini',
+  'gemini-2.5-flash',
+  'claude-3.5-sonnet',
+  'claude-sonnet-4-6',
+  'claude-opus-4-6',
+  'claude-haiku-4-5-20251001',
+];
 
 // Pricing per 1M tokens (audio)
 // Audio input: 1 token = 100ms, so 1 min = 600 tokens, 1M tokens = ~27.8 hours
@@ -111,8 +120,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
   const userId = (request as any).userId;
   const voice = (request as any).voice || 'ash';
   const conversationModel = (request as any).model || 'claude-3.5-sonnet';
-  // Use a currently available Anthropic model ID
-  const model = 'claude-sonnet-4-6';
+  const model = mapClaudeRealtimeModel(conversationModel);
   
   console.log(`[realtime-ws] User ${userId} connected to Claude Voice Mode (${model})`);
 
@@ -253,7 +261,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
         voice: ttsVoice,
         input: assistantText,
         response_format: 'pcm', // Request RAW PCM
-        speed: 1.1
+        speed: 1.05
       }, {
         headers: { Authorization: `Bearer ${openaiKey}` },
         responseType: 'arraybuffer'
@@ -265,7 +273,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       // Send audio in chunks
       assistantSpeaking = true;
       interruptPlayback = false;
-      const CHUNK_SIZE = 6000; // ~0.25s chunks at 24kHz
+      const CHUNK_SIZE = 4800; // ~0.2s chunks at 24kHz
       for (let i = 0; i < ttsAudio.length; i += CHUNK_SIZE) {
         if (interruptPlayback) {
              console.log('[claude-voice] User interrupted, stopping playback');
@@ -276,7 +284,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
           type: 'response.audio.delta',
           delta: chunk.toString('base64')
         }));
-        await new Promise(r => setTimeout(r, 50)); // Tiny delay to prevent flooding
+        await new Promise(r => setTimeout(r, 20)); // Lower delay to reduce speech latency
       }
 
       clientWs.send(JSON.stringify({ type: 'response.done' }));
@@ -803,14 +811,21 @@ function mapVoiceToGemini(voice: string): string {
 function mapVoiceToOpenAITts(voice: string): string {
   // Claude mode can receive non-OpenAI voice IDs from UI; map them to valid OpenAI TTS voices.
   const map: Record<string, string> = {
-    verse: 'ash',
+    verse: 'coral',
     Puck: 'alloy',
     Charon: 'echo',
-    Kore: 'shimmer',
-    Fenrir: 'ash',
+    Kore: 'coral',
+    Fenrir: 'sage',
     Aoede: 'coral',
   };
   return map[voice] || voice;
+}
+
+function mapClaudeRealtimeModel(requestedModel: string): string {
+  if (requestedModel.includes('opus')) return 'claude-opus-4-6';
+  if (requestedModel.includes('haiku')) return 'claude-haiku-4-5-20251001';
+  if (requestedModel.includes('sonnet')) return 'claude-sonnet-4-6';
+  return 'claude-sonnet-4-6';
 }
 
 function calculateRMS(buffer: Buffer): number {
