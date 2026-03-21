@@ -30,7 +30,8 @@ function formatContents(messages: ChatMessage[]): any[] {
 export async function streamGoogle(
   messages: ChatMessage[],
   model: string,
-  res: Response
+  res: Response,
+  options?: any
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('Gemini API key not configured');
@@ -43,6 +44,21 @@ export async function streamGoogle(
     contents: formatContents(messages),
     generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
   };
+
+  // Enable Google Search grounding if deepSearch is requested
+  if (options?.deepSearch) {
+    body.tools = [
+      {
+        googleSearchRetrieval: {
+          dynamicRetrievalConfig: {
+            mode: "MODE_DYNAMIC",
+            dynamicThreshold: 0.3
+          }
+        }
+      }
+    ];
+  }
+
   if (systemInstruction) {
     body.systemInstruction = { parts: [{ text: systemInstruction }] };
   }

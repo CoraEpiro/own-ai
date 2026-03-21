@@ -31,14 +31,18 @@ function formatMessages(messages: ChatMessage[]): any[] {
 export async function streamAnthropic(
   messages: ChatMessage[],
   model: string,
-  res: Response
+  res: Response,
+  options?: any
 ): Promise<string> {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) throw new Error('Anthropic API key not configured');
 
   // Extract system messages and combine them
   const systemParts = messages.filter(m => m.role === 'system').map(m => m.content);
-  const systemPrompt = systemParts.length > 0 ? systemParts.join('\n\n') : undefined;
+  // Add today's date to system prompt to help with "current" queries
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateContext = `Current date: ${today}`;
+  const systemPrompt = systemParts.length > 0 ? `${systemParts.join('\n\n')}\n\n${dateContext}` : dateContext;
 
   const body: any = {
     model,
@@ -47,6 +51,11 @@ export async function streamAnthropic(
     stream: true,
   };
   if (systemPrompt) body.system = systemPrompt;
+
+  // Add computer use / search tools if supported by model
+  // Note: Currently Anthropic API doesn't have native web search tool like OpenAI/Google
+  // We rely on the system prompt date context + model's own knowledge for now
+  // until we implement a custom tool execution loop (which requires a major architecture change)
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

@@ -1117,14 +1117,15 @@ const ChatInterface: React.FC = () => {
         {/* ── Messages / Welcome ────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-2 pb-48 scrollbar-thin relative">
           {/* Model name — top center, like ChatGPT */}
-          <div className="pt-2 pb-1 text-center flex items-center justify-center gap-8">
-            <span className="text-sm font-medium" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
+          <div className="pt-2 pb-1 text-center relative">
+            <span className="text-sm font-medium inline-block" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
               {currentModel?.name || 'Own AI'}
             </span>
-            {/* Cost display — top right, subtle */}
-            <div className="text-xs opacity-60 hover:opacity-100 transition-opacity" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
+            
+            {/* Cost display — top right absolute */}
+            <div className="absolute right-0 top-2 text-[10px] opacity-40 hover:opacity-100 transition-opacity flex flex-col items-end gap-0.5" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
               {currentConversationId && currentChatCost > 0 && (
-                <span className="mr-3">Chat: ${formatCurrency(currentChatCost)}</span>
+                <span>Chat: ${formatCurrency(currentChatCost)}</span>
               )}
               {todayCost > 0 && (
                 <span>Today: ${formatCurrency(todayCost)}</span>
@@ -1317,7 +1318,11 @@ const ChatInterface: React.FC = () => {
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
-                      onClick={() => { setSelectedModel(modelRecommendation.recommendedModel); setShowRecommendation(false); }}
+                      onClick={() => {
+                        setSelectedModel(modelRecommendation.recommendedModel);
+                        if (modelRecommendation.enableDeepSearch) setDeepSearch(true);
+                        setShowRecommendation(false);
+                      }}
                       className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
                       style={{ background: theme.accent, color: '#fff' }}
                     >
@@ -1437,7 +1442,7 @@ const ChatInterface: React.FC = () => {
                 )}
 
                 {/* Deep search toggle */}
-                {currentModel?.provider === 'OpenAI' && (
+                {(currentModel?.provider === 'OpenAI' || currentModel?.provider === 'Google') && (
                   <button
                     onClick={() => setDeepSearch(prev => !prev)}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"

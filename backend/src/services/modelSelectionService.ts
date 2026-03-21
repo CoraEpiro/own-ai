@@ -6,6 +6,7 @@ export interface ModelRecommendation {
   reasoning: string;
   confidence: number; // 0-1
   estimatedCost: number;
+  enableDeepSearch?: boolean;
 }
 
 interface PromptAnalysis {
@@ -25,6 +26,11 @@ const HEURISTIC_RULES = {
     keywords: ['write code', 'debug', 'refactor', 'function', 'class', 'implement', 'api', 'fix', 'code', 'programming', 'typescript', 'javascript', 'react', 'async', 'promise'],
     model: 'gpt-5.4',
     confidence: 0.85,
+  },
+  search: {
+    keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'recent', 'live', 'population', 'stats', 'statistics'],
+    model: 'gemini-2.0-flash',
+    confidence: 0.90,
   },
   simple: {
     keywords: ['explain', 'summarize', 'translate', 'list', 'format', 'what is', 'how to', 'define', 'tell me', 'describe'],
@@ -83,7 +89,7 @@ function analyzePromptHeuristic(prompt: string, attachments?: any[]): PromptAnal
   };
 }
 
-function getRecommendationForCategory(category: string): { model: string; reasoning: string; confidence: number; alternatives: string[] } {
+function getRecommendationForCategory(category: string): { model: string; reasoning: string; confidence: number; alternatives: string[]; enableDeepSearch?: boolean } {
   switch (category) {
     case 'reasoning':
       return {
@@ -91,6 +97,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         reasoning: 'This task requires step-by-step logical reasoning. o3-mini is specialized for complex mathematical and logical proofs.',
         confidence: 0.90,
         alternatives: ['gpt-5.4', 'claude-opus-4-20250514'],
+        enableDeepSearch: false,
       };
     case 'coding':
       return {
@@ -98,6 +105,15 @@ function getRecommendationForCategory(category: string): { model: string; reason
         reasoning: 'This is a coding task. GPT-5.4 excels at debugging, refactoring, and implementing complex TypeScript/JavaScript patterns.',
         confidence: 0.85,
         alternatives: ['claude-sonnet-4-20250514', 'gpt-5-mini'],
+        enableDeepSearch: false,
+      };
+    case 'search':
+      return {
+        model: 'gemini-2.0-flash',
+        reasoning: 'Your query requires real-time information. Gemini 2.0 Flash includes Google Search grounding for up-to-date answers.',
+        confidence: 0.90,
+        alternatives: ['gpt-5.4'],
+        enableDeepSearch: true,
       };
     case 'vision':
       return {
@@ -105,6 +121,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         reasoning: 'You have image attachments. GPT-5.4 has excellent vision capabilities and can analyze images while providing code or analysis.',
         confidence: 0.85,
         alternatives: ['claude-opus-4-20250514'],
+        enableDeepSearch: false,
       };
     case 'simple':
     default:
@@ -113,6 +130,7 @@ function getRecommendationForCategory(category: string): { model: string; reason
         reasoning: 'This is a straightforward question or explanation task. Claude Haiku is fast, accurate, and very cost-effective for simple queries.',
         confidence: 0.80,
         alternatives: ['gemini-2.0-flash', 'gpt-5-mini'],
+        enableDeepSearch: false,
       };
   }
 }
@@ -149,6 +167,7 @@ export function recommendModelHeuristic(
     reasoning: recommendation.reasoning,
     confidence: Math.min(analysis.confidence, recommendation.confidence),
     estimatedCost: recommendedCost,
+    enableDeepSearch: recommendation.enableDeepSearch,
   };
 }
 
