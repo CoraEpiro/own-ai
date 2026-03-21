@@ -1,7 +1,7 @@
 export interface ModelDefinition {
   id: string;
   name: string;
-  provider: 'OpenAI' | 'Anthropic' | 'Google';
+  provider: 'OpenAI' | 'Anthropic' | 'Google' | 'Auto';
   description: string;
   maxTokens: number;
   contextWindow: number;
@@ -13,6 +13,23 @@ export interface ModelDefinition {
 }
 
 export const MODEL_DEFINITIONS: ModelDefinition[] = [
+  // ═══════════════════════════════════════════════════════
+  //  Auto
+  // ═══════════════════════════════════════════════════════
+  {
+    id: 'auto',
+    name: 'Auto (Best Match)',
+    provider: 'Auto',
+    description: 'Automatically selects the best model for your query to optimize cost and quality.',
+    maxTokens: 128000,
+    contextWindow: 128000,
+    costPer1kTokens: { input: 0, output: 0 },
+    isAvailable: true,
+    apiKeyEnvVar: 'OPENAI_API_KEY', // Placeholder
+    capabilities: ['reasoning', 'vision'],
+    category: 'flagship',
+  },
+
   // ═══════════════════════════════════════════════════════
   //  OpenAI
   // ═══════════════════════════════════════════════════════

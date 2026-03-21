@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { getModelDefinition } from '../config/models';
+import { recommendModel } from '../services/modelSelectionService';
 import {
   createConversation,
   getConversationById,
@@ -199,6 +200,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Missing prompt' });
   }
   prompt = prompt.trim();
+
+  // Handle "Auto" model selection
+  if (model === 'auto') {
+    const rec = recommendModel(prompt, attachments);
+    model = rec.recommendedModel;
+    if (rec.enableDeepSearch) deepSearch = true;
+    console.log(`[stream-chat] Auto model resolved to: ${model} (DeepSearch: ${deepSearch})`);
+  }
 
   const modelDef = getModelDefinition(model);
   if (!modelDef) return res.status(400).json({ error: `Unknown model: ${model}` });

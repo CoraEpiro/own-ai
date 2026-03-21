@@ -251,10 +251,66 @@ const google: ProviderTheme = {
   placeholder: 'Ask Gemini',
 };
 
+// ── Auto — magical purple ───────────────────────────────────────────────
+const auto: ProviderTheme = {
+  name: 'Auto',
+  accent: '#8B5CF6', // Purple-500
+  accentHover: '#7C3AED',
+  accentSoft: '#F3E8FF',
+  accentSoftDark: 'rgba(139,92,246,0.08)',
+  accentRing: 'rgba(139,92,246,0.45)',
+  sidebar: '#2E1065', // Very dark purple
+  sidebarHover: '#4C1D95',
+  sidebarActive: '#5B21B6',
+  sidebarBorder: '#6D28D9',
+  mainBg: '#ffffff',
+  mainBgDark: '#1E1B24',
+  headerBg: '#ffffff',
+  headerBgDark: '#1E1B24',
+  headerBorder: '#E9D5FF',
+  headerBorderDark: '#3B2F4E',
+  userBubble: '#F3E8FF',
+  userBubbleDark: '#3B2F4E',
+  userBubbleHover: '#E9D5FF',
+  userBubbleText: '#1E1B24',
+  userBubbleTextDark: '#E9D5FF',
+  userBubbleRadius: '24px',
+  assistantBg: 'transparent',
+  assistantBgDark: 'transparent',
+  assistantBorder: 'transparent',
+  assistantBorderDark: 'transparent',
+  inputBg: '#F3E8FF',
+  inputBgDark: '#3B2F4E',
+  inputBorder: '#D8B4FE',
+  inputBorderDark: '#5B21B6',
+  inputAreaBg: '#ffffff',
+  inputAreaBgDark: '#1E1B24',
+  welcomeGradient: 'linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 50%, #fff 100%)',
+  welcomeGradientDark: 'linear-gradient(135deg, #2E1065 0%, #1E1B24 100%)',
+  aiIcon: '✨',
+  aiIconColor: '#8B5CF6',
+  aiIconColorDark: '#A78BFA',
+  aiIconBg: '#F3E8FF',
+  aiIconBgDark: 'rgba(139,92,246,0.12)',
+  textPrimary: '#1E1B24',
+  textPrimaryDark: '#E9D5FF',
+  textSecondary: '#6B7280',
+  textSecondaryDark: '#9CA3AF',
+  metaText: '#9CA3AF',
+  metaTextDark: '#6B7280',
+  actionIcon: '#9CA3AF',
+  actionIconDark: '#6B7280',
+  actionIconHover: '#1E1B24',
+  actionIconHoverDark: '#E9D5FF',
+  disclaimer: 'Auto mode selects the best model for your query.',
+  placeholder: 'Ask anything...',
+};
+
 export const PROVIDER_THEMES: Record<string, ProviderTheme> = {
   OpenAI: openai,
   Anthropic: anthropic,
   Google: google,
+  Auto: auto,
 };
 
 export function getProviderTheme(provider: string): ProviderTheme {
