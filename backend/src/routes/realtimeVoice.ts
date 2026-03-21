@@ -595,7 +595,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
           }
         },
         systemInstruction: {
-          parts: [{ text: 'You are Gemini, a helpful AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI.' }]
+          parts: [{ text: 'You are Gemini, a helpful AI assistant created by Google. Give direct answers only. Do not reveal internal reasoning or planning. Do not identify as OpenAI.' }]
         },
         inputAudioTranscription: {},
         outputAudioTranscription: {},
@@ -627,13 +627,6 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
               type: 'response.audio.delta',
               delta: part.inlineData.data
             }));
-          } else if (part.text) {
-             clearPendingTurnTimeout();
-             // Translate text transcript
-             clientWs.send(JSON.stringify({
-               type: 'response.audio_transcript.delta',
-               delta: part.text
-             }));
           }
         }
       }
