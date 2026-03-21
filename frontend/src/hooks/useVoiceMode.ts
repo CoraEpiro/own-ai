@@ -46,13 +46,31 @@ export const REALTIME_MODELS = [
     textOutputPer1M: 2.40,
   },
   {
-    id: 'claude-3.5-sonnet',
-    label: 'Claude 3.5 Sonnet',
+    id: 'claude-sonnet-4-6',
+    label: 'Claude 4.6 Sonnet',
     description: 'Anthropic voice via STT/TTS',
     audioInputPer1M: 0.00, // Using separate STT pricing
     audioOutputPer1M: 0.00, // Using separate TTS pricing
     textInputPer1M: 3.00,
     textOutputPer1M: 15.00,
+  },
+  {
+    id: 'claude-opus-4-6',
+    label: 'Claude 4.6 Opus',
+    description: 'Anthropic voice via STT/TTS (best quality)',
+    audioInputPer1M: 0.00,
+    audioOutputPer1M: 0.00,
+    textInputPer1M: 15.00,
+    textOutputPer1M: 75.00,
+  },
+  {
+    id: 'claude-haiku-4-5-20251001',
+    label: 'Claude 4.5 Haiku',
+    description: 'Anthropic voice via STT/TTS (fastest)',
+    audioInputPer1M: 0.00,
+    audioOutputPer1M: 0.00,
+    textInputPer1M: 0.80,
+    textOutputPer1M: 4.00,
   },
   {
     id: 'gemini-2.5-flash',
@@ -106,6 +124,17 @@ export function useVoiceMode(): UseVoiceModeReturn {
   // Turn tracking for conversation saving
   const currentUserTextRef = useRef('');
   const currentAssistantTextRef = useRef('');
+
+  const cleanVoiceText = useCallback((text: string): string => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^\s*[-*]\s+/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }, []);
 
   // ── Audio Playback ──────────────────────────────────────
 
@@ -319,15 +348,18 @@ export function useVoiceMode(): UseVoiceModeReturn {
 
         case 'response.audio_transcript.delta':
           if (msg.delta) {
-            setTranscript(prev => prev + msg.delta);
-            currentAssistantTextRef.current += msg.delta;
+            const cleanedDelta = cleanVoiceText(msg.delta);
+            setTranscript(prev => prev + cleanedDelta);
+            currentAssistantTextRef.current += cleanedDelta;
           }
           break;
 
         case 'response.audio_transcript.done':
           // Full AI transcript received — keep displayed
           if (msg.transcript) {
-            currentAssistantTextRef.current = msg.transcript;
+            const cleaned = cleanVoiceText(msg.transcript);
+            currentAssistantTextRef.current = cleaned;
+            setTranscript(cleaned);
           }
           break;
 
@@ -385,7 +417,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     } catch {
       // Non-JSON message, ignore
     }
-  }, [playAudioChunk, saveTurn, interruptPlayback]);
+  }, [playAudioChunk, saveTurn, interruptPlayback, cleanVoiceText]);
 
   // ── Connect ─────────────────────────────────────────────
 

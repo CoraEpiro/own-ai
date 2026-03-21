@@ -1715,7 +1715,11 @@ const ChatInterface: React.FC = () => {
           // Intelligently select voice model based on current chat model
           model={(() => {
             if (currentModel?.provider === 'Google') return 'gemini-2.5-flash';
-            if (currentModel?.provider === 'Anthropic') return 'claude-3.5-sonnet';
+            if (currentModel?.provider === 'Anthropic') {
+              if (currentModel?.id.includes('opus')) return 'claude-opus-4-6';
+              if (currentModel?.id.includes('haiku')) return 'claude-haiku-4-5-20251001';
+              return 'claude-sonnet-4-6';
+            }
             if (currentModel?.id === 'gpt-5-mini') return 'gpt-realtime-mini';
             return 'gpt-realtime-1.5';
           })()}

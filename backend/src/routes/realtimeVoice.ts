@@ -244,7 +244,13 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
         }
       });
       
-      const assistantText = claudeResp.data.content[0].text;
+      const rawAssistantText = Array.isArray(claudeResp.data?.content)
+        ? claudeResp.data.content
+            .filter((part: any) => part?.type === 'text' && typeof part?.text === 'string')
+            .map((part: any) => part.text)
+            .join('\n')
+        : '';
+      const assistantText = cleanVoiceText(rawAssistantText);
       clientWs.send(JSON.stringify({ 
         type: 'response.audio_transcript.delta', 
         delta: assistantText 
@@ -257,11 +263,11 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       // 3. TTS (OpenAI)
       const ttsVoice = mapVoiceToOpenAITts(voice);
       const ttsResp = await axios.post('https://api.openai.com/v1/audio/speech', {
-        model: 'tts-1',
+        model: 'tts-1-hd',
         voice: ttsVoice,
         input: assistantText,
         response_format: 'pcm', // Request RAW PCM
-        speed: 1.05
+        speed: 0.97
       }, {
         headers: { Authorization: `Bearer ${openaiKey}` },
         responseType: 'arraybuffer'
@@ -273,7 +279,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       // Send audio in chunks
       assistantSpeaking = true;
       interruptPlayback = false;
-      const CHUNK_SIZE = 4800; // ~0.2s chunks at 24kHz
+      const CHUNK_SIZE = 7200; // ~0.3s chunks at 24kHz for smoother playback
       for (let i = 0; i < ttsAudio.length; i += CHUNK_SIZE) {
         if (interruptPlayback) {
              console.log('[claude-voice] User interrupted, stopping playback');
@@ -284,7 +290,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
           type: 'response.audio.delta',
           delta: chunk.toString('base64')
         }));
-        await new Promise(r => setTimeout(r, 20)); // Lower delay to reduce speech latency
+        await new Promise(r => setTimeout(r, 12)); // keep stream responsive while reducing choppiness
       }
 
       clientWs.send(JSON.stringify({ type: 'response.done' }));
@@ -826,6 +832,17 @@ function mapClaudeRealtimeModel(requestedModel: string): string {
   if (requestedModel.includes('haiku')) return 'claude-haiku-4-5-20251001';
   if (requestedModel.includes('sonnet')) return 'claude-sonnet-4-6';
   return 'claude-sonnet-4-6';
+}
+
+function cleanVoiceText(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function calculateRMS(buffer: Buffer): number {
