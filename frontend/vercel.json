@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://own-ai-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/((?!api/.*|assets/.*|favicon.ico|manifest.json|logo.png|favicon.svg).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
