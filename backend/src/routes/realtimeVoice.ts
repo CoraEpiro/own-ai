@@ -135,6 +135,8 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
 
   clientWs.send(JSON.stringify({ type: 'session.created' }));
   clientWs.send(JSON.stringify({ type: 'session.updated' }));
+  clientWs.send(JSON.stringify({ type: 'session.ready' }));
+  clientWs.send(JSON.stringify({ type: 'voice.provider', provider: 'Anthropic', model }));
 
   // Helper: Calculate RMS of PCM16 chunk
   function calculateRMS(buffer: Buffer): number {
@@ -182,7 +184,10 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       });
       const userText = sttResp.data.text;
       
-      if (!userText || userText.trim().length < 2) return; // Ignore noise
+      if (!userText || userText.trim().length < 2) {
+        clientWs.send(JSON.stringify({ type: 'response.done' }));
+        return; // Ignore noise but unblock frontend state
+      }
 
       clientWs.send(JSON.stringify({ 
         type: 'conversation.item.input_audio_transcription.completed', 
@@ -248,6 +253,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
     } catch (err: any) {
       console.error('[claude-voice] Error processing turn:', err.message);
       clientWs.send(JSON.stringify({ type: 'error', message: 'Processing error' }));
+      clientWs.send(JSON.stringify({ type: 'response.done' }));
     }
   }
 
@@ -354,6 +360,7 @@ function handleOpenAIConnection(clientWs: WebSocket, request: IncomingMessage) {
 
       // Notify client that session is ready
       clientWs.send(JSON.stringify({ type: 'session.ready' }));
+      clientWs.send(JSON.stringify({ type: 'voice.provider', provider: 'OpenAI', model }));
     });
 
     // Relay: OpenAI → Client (with cost tracking)
@@ -497,13 +504,13 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   const voice = (request as any).voice || 'Puck'; // Default Gemini voice
   const requestedModel = (request as any).model;
   
-  // Use the requested model (e.g., gemini-2.5-flash)
-  // Fallback to 2.0-flash-exp only if not specified
-  const model = requestedModel || 'gemini-2.0-flash-exp'; 
+  // Gemini Live WS supports a narrower set of realtime models than chat models.
+  // Map UI model IDs to a Live-compatible model to avoid immediate WS close.
+  const liveModel = mapGeminiRealtimeModel(requestedModel);
   
   const apiKey = process.env.GEMINI_API_KEY;
 
-  console.log(`[realtime-ws] User ${userId} connecting to Gemini (requested=${requestedModel}, using=${model})`);
+  console.log(`[realtime-ws] User ${userId} connecting to Gemini (requested=${requestedModel}, using=${liveModel})`);
 
   if (!apiKey) {
     clientWs.send(JSON.stringify({ type: 'error', message: 'Gemini API key not configured' }));
@@ -525,7 +532,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
     // 1. Send Setup Message
     const setupMsg = {
       setup: {
-        model: `models/${model}`,
+        model: `models/${liveModel}`,
         generation_config: {
           response_modalities: ["AUDIO"],
           speech_config: {
@@ -546,6 +553,8 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
     // Notify client
     clientWs.send(JSON.stringify({ type: 'session.created' })); // OpenAI uses session.created
     clientWs.send(JSON.stringify({ type: 'session.updated' }));
+    clientWs.send(JSON.stringify({ type: 'session.ready' }));
+    clientWs.send(JSON.stringify({ type: 'voice.provider', provider: 'Google', model: liveModel }));
   });
 
   geminiWs.on('message', (data) => {
@@ -643,6 +652,14 @@ function mapVoiceToGemini(voice: string): string {
     'verse': 'Aoede'
   };
   return map[voice] || 'Puck';
+}
+
+function mapGeminiRealtimeModel(model: string | undefined): string {
+  // Keep this mapping explicit to prevent silent provider switching.
+  const normalized = (model || '').trim();
+  if (!normalized) return 'gemini-2.0-flash-exp';
+  if (normalized === 'gemini-2.5-flash') return 'gemini-2.0-flash-exp';
+  return normalized;
 }
 
 console.log('[realtime-ws] WebSocket relay ready on /ws/realtime');

@@ -40,7 +40,7 @@ function getOrbClass(state: VoiceState): string {
 }
 
 export default function VoiceMode({ onClose, theme, darkMode, voice, model }: VoiceModeProps) {
-  const { state, transcript, userTranscript, error, conversationId, connect, disconnect } = useVoiceMode();
+  const { state, transcript, userTranscript, error, conversationId, providerLabel, connect, disconnect } = useVoiceMode();
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Connect on mount with selected voice and model
@@ -135,6 +135,12 @@ export default function VoiceMode({ onClose, theme, darkMode, voice, model }: Vo
             </p>
           ) : null}
         </div>
+
+        {providerLabel && (
+          <div className="mt-1 text-[11px] opacity-70" style={{ color: darkMode ? '#888' : '#777' }}>
+            {providerLabel}
+          </div>
+        )}
 
         {/* AI transcript — what AI is saying */}
         {transcript && (

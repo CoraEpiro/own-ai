@@ -73,6 +73,7 @@ interface UseVoiceModeReturn {
   userTranscript: string;
   error: string | null;
   conversationId: string | null;
+  providerLabel: string | null;
   connect: (voice?: VoiceId, model?: RealtimeModelId) => void;
   disconnect: () => void;
 }
@@ -89,6 +90,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
   const [userTranscript, setUserTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [providerLabel, setProviderLabel] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -309,6 +311,14 @@ export function useVoiceMode(): UseVoiceModeReturn {
           }
           break;
 
+        case 'voice.provider':
+          if (msg.provider && msg.model) {
+            setProviderLabel(`${msg.provider} · ${msg.model}`);
+          } else if (msg.provider) {
+            setProviderLabel(msg.provider);
+          }
+          break;
+
         case 'error': {
           const errorMsg = msg.error?.message || msg.message || '';
           console.warn('[voice] OpenAI event:', errorMsg);
@@ -341,6 +351,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     setTranscript('');
     setUserTranscript('');
     setConversationId(null);
+    setProviderLabel(null);
     playbackTimeRef.current = 0;
     currentUserTextRef.current = '';
     currentAssistantTextRef.current = '';
@@ -429,5 +440,5 @@ export function useVoiceMode(): UseVoiceModeReturn {
     };
   }, [disconnect]);
 
-  return { state, transcript, userTranscript, error, conversationId, connect, disconnect };
+  return { state, transcript, userTranscript, error, conversationId, providerLabel, connect, disconnect };
 }
