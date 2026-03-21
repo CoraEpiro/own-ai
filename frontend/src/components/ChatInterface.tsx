@@ -1485,7 +1485,7 @@ const ChatInterface: React.FC = () => {
                         </button>
                         {showSearchOptions && (
                           <div
-                            className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-2 min-w-[220px] z-50 animate-fade-in"
+                            className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-2 min-w-[240px] z-50 animate-fade-in"
                             style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
                           >
                             <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: darkMode ? '#888' : '#999' }}>
@@ -1494,34 +1494,34 @@ const ChatInterface: React.FC = () => {
                             
                             <button
                               onClick={() => setSearchMode('auto')}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'auto' ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                              className={`w-full text-left px-2 py-2 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'auto' ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
                             >
                               <div className="font-medium">✨ Auto (Normal)</div>
-                              <div className="text-[10px] opacity-70">Best results from all sources</div>
+                              <div className="text-[10px] opacity-70 mt-0.5">Best results from all sources</div>
                             </button>
 
                             <button
                               onClick={() => setSearchMode('human')}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'human' ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                              className={`w-full text-left px-2 py-2 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'human' ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
                             >
                               <div className="font-medium">👤 Human-First</div>
-                              <div className="text-[10px] opacity-70">Forums, Reddit, real discussions only</div>
+                              <div className="text-[10px] opacity-70 mt-0.5">Forums, Reddit, real discussions only</div>
                             </button>
 
                             <button
                               onClick={() => setSearchMode('pre_ai')}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'pre_ai' ? 'bg-green-500/10 text-green-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                              className={`w-full text-left px-2 py-2 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'pre_ai' ? 'bg-green-500/10 text-green-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
                             >
                               <div className="font-medium">🕰️ Pre-AI Era</div>
-                              <div className="text-[10px] opacity-70">Content before 2023 (No AI slop)</div>
+                              <div className="text-[10px] opacity-70 mt-0.5">Content before 2023 (No AI slop)</div>
                             </button>
 
                             <button
                               onClick={() => setSearchMode('custom')}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'custom' ? 'bg-purple-500/10 text-purple-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
+                              className={`w-full text-left px-2 py-2 rounded-lg text-xs mb-1 transition-colors ${searchMode === 'custom' ? 'bg-purple-500/10 text-purple-500' : 'hover:bg-black/5 dark:hover:bg-white/5 text-gray-500'}`}
                             >
                               <div className="font-medium">🎯 Custom Collection</div>
-                              <div className="text-[10px] opacity-70">Search only specific websites</div>
+                              <div className="text-[10px] opacity-70 mt-0.5 whitespace-normal">Search only specific websites</div>
                             </button>
 
                             {searchMode === 'custom' && (
