@@ -53,36 +53,58 @@ export async function performWebSearch(query: string, options: SearchOptions = {
 
   console.log(`[WebSearch] Mode: ${options.mode}, Query: "${finalQuery}"`);
 
-  try {
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        contents: [{
-          role: 'user',
-          parts: [{ text: `Search the web and provide a comprehensive, factual summary for this query. ${systemContext}\n\nQuery: ${finalQuery}` }]
-        }],
-        tools: [{
-          google_search: {}
-        }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2048,
-        }
-      },
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+  // List of models to try in order of preference (newest/cheapest first)
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
+  ];
 
-    const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const groundingMetadata = response.data?.candidates?.[0]?.groundingMetadata;
-    
-    // You could also extract source links from groundingMetadata.groundingChunks if needed
-    // For now, we just return the summarized text which incorporates the search results
+  for (const model of candidateModels) {
+    try {
+      console.log(`[WebSearch] Attempting search with model: ${model}`);
+      
+      // Different tool definitions for different model versions if needed
+      // gemini-2.x uses google_search, gemini-1.5 uses google_search (modern) or googleSearchRetrieval (legacy)
+      // We'll try the modern google_search first for all.
+      
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          contents: [{
+            role: 'user',
+            parts: [{ text: `Search the web and provide a comprehensive, factual summary for this query. ${systemContext}\n\nQuery: ${finalQuery}` }]
+          }],
+          tools: [{
+            google_search: {}
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 2048,
+          }
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
-    if (!text) return '';
-    
-    return `[Web Search Results]\n${text}\n[End Search Results]\n\n`;
-  } catch (error) {
-    console.error('[WebSearch] Failed to perform search:', error);
-    return ''; // Fail gracefully (continue without search context)
+      const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (text) {
+        console.log(`[WebSearch] Success with ${model}`);
+        return `[Web Search Results (via ${model})]\n${text}\n[End Search Results]\n\n`;
+      } else {
+        console.warn(`[WebSearch] No text returned from ${model}, trying next...`);
+      }
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message = error.response?.data?.error?.message || error.message;
+      console.warn(`[WebSearch] Failed with ${model} (${status}): ${message}`);
+      
+      // If it's a 429 (Resource Exhausted) or 5xx, we continue to the next model
+      // If it's a 400 (Bad Request), it might be a tool definition issue, but we'll try next anyway just in case
+      continue;
+    }
   }
+
+  console.error('[WebSearch] All models failed to perform search.');
+  return ''; // Fail gracefully
 }

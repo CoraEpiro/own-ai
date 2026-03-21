@@ -143,13 +143,13 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   // ═══════════════════════════════════════════════════════
   {
     id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
+    name: 'Gemini 2.5 Pro (Disabled)',
     provider: 'Google',
-    description: "Google's most capable model with deep reasoning.",
+    description: "Google's most capable model with deep reasoning. (Disabled)",
     maxTokens: 65536,
     contextWindow: 1048576,
     costPer1kTokens: { input: 0.00125, output: 0.01 },
-    isAvailable: true,
+    isAvailable: false,
     apiKeyEnvVar: 'GEMINI_API_KEY',
     capabilities: ['reasoning', 'vision'],
     category: 'flagship',

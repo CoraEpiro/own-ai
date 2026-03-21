@@ -28,7 +28,7 @@ const HEURISTIC_RULES = {
     confidence: 0.85,
   },
   search: {
-    keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'recent', 'live', 'population', 'stats', 'statistics'],
+    keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'find', 'lookup', 'look up', 'recent', 'live', 'population', 'stats', 'statistics', 'check'],
     model: 'gemini-2.5-flash',
     confidence: 0.90,
   },

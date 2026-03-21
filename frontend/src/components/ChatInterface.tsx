@@ -295,7 +295,7 @@ const ChatInterface: React.FC = () => {
     }, 800); // Debounce 800ms
 
     return () => clearTimeout(timer);
-  }, [input, pendingFiles, messages]);
+  }, [input, pendingFiles, messages, selectedModel]);
   const shouldScrollRef = useRef(false);
   useEffect(() => {
     if (shouldScrollRef.current) {
@@ -1311,14 +1311,16 @@ const ChatInterface: React.FC = () => {
             )}
 
             {/* Model Recommendation Badge */}
-            {modelRecommendation && showRecommendation && selectedModel !== modelRecommendation.recommendedModel && (
+            {modelRecommendation && showRecommendation && (selectedModel !== modelRecommendation.recommendedModel || (modelRecommendation.enableDeepSearch && !deepSearch)) && (
               <div className="mb-3 p-3 rounded-2xl animate-fade-in" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}40` }}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span style={{ color: theme.accent }} className="text-lg">💡</span>
                       <span className="text-sm font-semibold" style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}>
-                        Recommended: {models.find(m => m.id === modelRecommendation.recommendedModel)?.name || modelRecommendation.recommendedModel}
+                        {selectedModel === modelRecommendation.recommendedModel && modelRecommendation.enableDeepSearch
+                          ? 'Enable Deep Search?'
+                          : `Recommended: ${models.find(m => m.id === modelRecommendation.recommendedModel)?.name || modelRecommendation.recommendedModel}`}
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${theme.accent}25`, color: theme.accent }}>
                         {Math.round(modelRecommendation.confidence * 100)}%
