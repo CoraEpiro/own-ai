@@ -110,8 +110,8 @@ export function setupRealtimeWebSocket(server: HttpServer, allowedOrigins: strin
 async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMessage) {
   const userId = (request as any).userId;
   const voice = (request as any).voice || 'ash';
-  // Use latest Claude model if generic claude ID is passed
-  const model = 'claude-3-5-sonnet-latest'; 
+  // Use a currently available Anthropic model ID
+  const model = 'claude-sonnet-4-6';
   
   console.log(`[realtime-ws] User ${userId} connected to Claude Voice Mode (${model})`);
 
@@ -544,23 +544,53 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   let geminiReady = false;
   let userSpeaking = false;
   let silenceStart = 0;
+  let speechStartAt = 0;
   let bufferedTurnHasAudio = false;
-  const VAD_THRESHOLD = 700;
+  let pendingTurnTimeout: NodeJS.Timeout | null = null;
+  const VAD_THRESHOLD = 900;
   const SILENCE_DURATION_MS = 700;
+  const MAX_TURN_MS = 8000;
+
+  const clearPendingTurnTimeout = () => {
+    if (pendingTurnTimeout) {
+      clearTimeout(pendingTurnTimeout);
+      pendingTurnTimeout = null;
+    }
+  };
+
+  const markSpeechStopped = () => {
+    if (!userSpeaking) return;
+    userSpeaking = false;
+    silenceStart = 0;
+    speechStartAt = 0;
+    clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_stopped' }));
+    if (geminiReady && bufferedTurnHasAudio) {
+      bufferedTurnHasAudio = false;
+      // If Gemini doesn't emit turnComplete for this turn, recover UI state.
+      clearPendingTurnTimeout();
+      pendingTurnTimeout = setTimeout(() => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(JSON.stringify({ type: 'response.done' }));
+        }
+      }, 6000);
+    }
+  };
 
   geminiWs.on('open', () => {
     console.log(`[realtime-ws] Gemini connected for user ${userId}`);
     geminiReady = true;
 
-    // 1. Send config message (v1beta protocol)
+    // 1. Send setup message (v1beta protocol)
     const setupMsg = {
-      config: {
+      setup: {
         model: `models/${liveModel}`,
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: mapVoiceToGemini(voice)
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: mapVoiceToGemini(voice)
+              }
             }
           }
         },
@@ -591,12 +621,14 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
         const parts = msg.serverContent.modelTurn.parts;
         for (const part of parts) {
           if (part.inlineData && part.inlineData.mimeType.startsWith('audio')) {
+            clearPendingTurnTimeout();
             // Translate to OpenAI format for frontend
             clientWs.send(JSON.stringify({
               type: 'response.audio.delta',
               delta: part.inlineData.data
             }));
           } else if (part.text) {
+             clearPendingTurnTimeout();
              // Translate text transcript
              clientWs.send(JSON.stringify({
                type: 'response.audio_transcript.delta',
@@ -618,6 +650,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
       // Output transcription (assistant speech)
       const outputText = msg.serverContent?.outputTranscription?.text;
       if (outputText) {
+        clearPendingTurnTimeout();
         clientWs.send(JSON.stringify({
           type: 'response.audio_transcript.delta',
           delta: outputText,
@@ -626,6 +659,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
 
       // Handle Turn Complete
       if (msg.serverContent?.turnComplete) {
+        clearPendingTurnTimeout();
         clientWs.send(JSON.stringify({ type: 'response.done' }));
       }
 
@@ -651,6 +685,12 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
     const str = data.toString();
     try {
       const msg = JSON.parse(str);
+
+      // Pass-through for native Gemini protocol messages (useful for diagnostics/tests)
+      if (msg.realtimeInput || msg.clientContent || msg.toolResponse) {
+        if (geminiReady) geminiWs.send(str);
+        return;
+      }
       
       // OpenAI format -> Gemini format
       if (msg.type === 'input_audio_buffer.append' && msg.audio) {
@@ -661,24 +701,18 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
           if (!userSpeaking) {
             userSpeaking = true;
             silenceStart = 0;
+            speechStartAt = Date.now();
             clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_started' }));
           }
         } else if (userSpeaking) {
           if (silenceStart === 0) silenceStart = Date.now();
           if (Date.now() - silenceStart > SILENCE_DURATION_MS) {
-            userSpeaking = false;
-            silenceStart = 0;
-            clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_stopped' }));
-
-            if (geminiReady && bufferedTurnHasAudio) {
-              geminiWs.send(JSON.stringify({
-                realtimeInput: {
-                  activityEnd: true,
-                }
-              }));
-              bufferedTurnHasAudio = false;
-            }
+            markSpeechStopped();
           }
+        }
+
+        if (userSpeaking && speechStartAt > 0 && (Date.now() - speechStartAt) > MAX_TURN_MS) {
+          markSpeechStopped();
         }
 
         // Gemini expects 16kHz PCM input
@@ -752,8 +786,8 @@ function downsamplePcm16_24kTo16k(input: Buffer): Buffer {
 function mapGeminiRealtimeModel(model: string | undefined): string {
   // Keep this mapping explicit to prevent silent provider switching.
   const normalized = (model || '').trim();
-  if (!normalized) return 'gemini-2.0-flash-exp';
-  if (normalized === 'gemini-2.5-flash') return 'gemini-2.0-flash-exp';
+  if (!normalized) return 'gemini-2.5-flash-native-audio-latest';
+  if (normalized === 'gemini-2.5-flash') return 'gemini-2.5-flash-native-audio-latest';
   return normalized;
 }
 
