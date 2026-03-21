@@ -251,18 +251,20 @@ const google: ProviderTheme = {
   placeholder: 'Ask Gemini',
 };
 
-// ── Auto — magical purple ───────────────────────────────────────────────
-const auto: ProviderTheme = {
-  name: 'Auto',
-  accent: '#8B5CF6', // Purple-500
-  accentHover: '#7C3AED',
-  accentSoft: '#F3E8FF',
-  accentSoftDark: 'rgba(139,92,246,0.08)',
-  accentRing: 'rgba(139,92,246,0.45)',
-  sidebar: '#09090b', // Zinc-950 (Almost black)
-  sidebarHover: '#18181b', // Zinc-900
-  sidebarActive: '#27272a', // Zinc-800
-  sidebarBorder: '#27272a', // Neutral border
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  Auto — magical purple
+  // ═══════════════════════════════════════════════════════════════════════════
+  const auto: ProviderTheme = {
+    name: 'Auto',
+    accent: '#8B5CF6', // Purple-500
+    accentHover: '#7C3AED',
+    accentSoft: '#F3E8FF',
+    accentSoftDark: 'rgba(139,92,246,0.08)',
+    accentRing: 'rgba(139,92,246,0.45)',
+    sidebar: '#1A1625', // Deep Purple Black (instead of Zinc-950)
+    sidebarHover: '#2E2B36',
+    sidebarActive: '#3B3745',
+    sidebarBorder: '#2E2B36',
   mainBg: '#ffffff',
   mainBgDark: '#1E1B24', // Keep purple tint for main window
   headerBg: '#ffffff',

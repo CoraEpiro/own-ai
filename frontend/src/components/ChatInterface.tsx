@@ -15,7 +15,6 @@ import { LLMModel, Message, Conversation, ConversationWithMessages, Attachment, 
 import { estimateTokens, formatTokens, formatCurrency } from '../utils/pricing';
 import AIMessage from './AIMessage';
 import VoiceMode from './VoiceMode';
-import { VoiceId, RealtimeModelId } from '../hooks/useVoiceMode';
 import { getApiUrl } from '../config/api';
 import { getProviderTheme, ProviderTheme } from '../config/themes';
 
@@ -1485,11 +1484,12 @@ const ChatInterface: React.FC = () => {
                         </button>
                         {showSearchOptions && (
                           <div
-                            className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-2 min-w-[240px] z-50 animate-fade-in"
+                            className="fixed bottom-20 left-1/2 -translate-x-1/2 rounded-xl shadow-2xl p-2 min-w-[320px] max-h-[60vh] overflow-y-auto z-[100] animate-fade-in"
                             style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
                           >
-                            <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: darkMode ? '#888' : '#999' }}>
-                              Search Mode
+                            <div className="flex items-center justify-between px-2 py-1 mb-1">
+                              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: darkMode ? '#888' : '#999' }}>Search Mode</span>
+                              <button onClick={() => setShowSearchOptions(false)} className="text-gray-400 hover:text-gray-200"><X className="h-3 w-3" /></button>
                             </div>
                             
                             <button

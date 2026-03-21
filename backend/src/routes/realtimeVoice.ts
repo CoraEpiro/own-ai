@@ -66,10 +66,20 @@ export function setupRealtimeWebSocket(server: HttpServer, allowedOrigins: strin
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
       (request as any).userId = decoded.id;
       // Parse voice and model preferences
-      const voice = query.voice as string;
       const model = query.model as string;
+      const voice = (query.voice as string) || 'ash';
+      
+      // Validate model
+      if (!VALID_MODELS.includes(model)) {
+        console.warn(`[realtime-ws] Invalid model requested: ${model}`);
+        // Send close frame with policy violation code (1008) or protocol error (1002)
+        socket.write('HTTP/1.1 400 Bad Request\r\n\r\nInvalid model ID');
+        socket.destroy();
+        return;
+      }
+
       (request as any).voice = VALID_VOICES.includes(voice) ? voice : 'ash';
-      (request as any).model = VALID_MODELS.includes(model) ? model : 'gpt-realtime-1.5';
+      (request as any).model = model;
     } catch {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
@@ -487,9 +497,9 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   const voice = (request as any).voice || 'Puck'; // Default Gemini voice
   const requestedModel = (request as any).model;
   
-  // Map internal model ID to Gemini Live API model ID
-  // gemini-2.0-flash-exp is the current stable Live API model
-  const model = 'gemini-2.0-flash-exp'; 
+  // Use the requested model (e.g., gemini-2.5-flash)
+  // Fallback to 2.0-flash-exp only if not specified
+  const model = requestedModel || 'gemini-2.0-flash-exp'; 
   
   const apiKey = process.env.GEMINI_API_KEY;
 
