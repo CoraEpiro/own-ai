@@ -488,9 +488,8 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   const requestedModel = (request as any).model;
   
   // Map internal model ID to Gemini Live API model ID
-  // gemini-2.0-flash-exp was the previous Live API model
-  // Now using gemini-2.5-flash-native-audio-latest as it likely supports the WebSocket Live API best
-  const model = 'gemini-2.5-flash-native-audio-latest'; 
+  // gemini-2.0-flash-exp is the current stable Live API model
+  const model = 'gemini-2.0-flash-exp'; 
   
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -517,18 +516,18 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
     const setupMsg = {
       setup: {
         model: `models/${model}`,
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: mapVoiceToGemini(voice)
+        generation_config: {
+          response_modalities: ["AUDIO"],
+          speech_config: {
+            voice_config: {
+              prebuilt_voice_config: {
+                voice_name: mapVoiceToGemini(voice)
               }
             }
           }
         },
-        systemInstruction: {
-            parts: [{ text: "You are Gemini, a helpful, friendly AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI." }]
+        system_instruction: {
+            parts: [{ text: "You are Gemini, a helpful AI assistant created by Google. Respond naturally and conversationally. Do not identify as OpenAI." }]
         }
       }
     };
@@ -555,8 +554,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
               type: 'response.audio.delta',
               delta: part.inlineData.data
             }));
-          }
-          if (part.text) {
+          } else if (part.text) {
              // Translate text transcript
              clientWs.send(JSON.stringify({
                type: 'response.audio_transcript.delta',
@@ -598,10 +596,10 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
       if (msg.type === 'input_audio_buffer.append') {
         // Send audio chunk
         const geminiAudioMsg = {
-          realtimeInput: {
-            mediaChunks: [{
-              mimeType: "audio/pcm",
-              data: msg.audio
+          realtime_input: {
+            media_chunks: [{
+              mime_type: "audio/pcm",
+              data: msg.audio // Base64
             }]
           }
         };
