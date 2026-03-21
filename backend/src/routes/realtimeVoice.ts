@@ -127,11 +127,15 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
   }
 
   // Session state
-  let isSpeaking = false;
+  let userSpeaking = false;
+  let assistantSpeaking = false;
+  let interruptPlayback = false;
+  let processingTurn = false;
   let silenceStart = 0;
   let audioBuffer: Buffer[] = [];
   const VAD_THRESHOLD = 800; // RMS threshold for speech detection (approx)
   const SILENCE_DURATION = 800; // ms of silence to trigger end of turn
+  const MIN_TURN_AUDIO_BYTES = 24_000 * 2 * 0.35; // ~350ms @ 24kHz PCM16
 
   clientWs.send(JSON.stringify({ type: 'session.created' }));
   clientWs.send(JSON.stringify({ type: 'session.updated' }));
@@ -150,6 +154,8 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
 
   // Helper: Process Turn
   async function processTurn(audioData: Buffer) {
+    if (processingTurn) return;
+    processingTurn = true;
     try {
       clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_stopped' }));
       clientWs.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
@@ -234,12 +240,14 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       const ttsAudio = Buffer.from(ttsResp.data);
       
       // Send audio in chunks
+      assistantSpeaking = true;
+      interruptPlayback = false;
       const CHUNK_SIZE = 6000; // ~0.25s chunks at 24kHz
       for (let i = 0; i < ttsAudio.length; i += CHUNK_SIZE) {
-        if (isSpeaking) {
+        if (interruptPlayback) {
              console.log('[claude-voice] User interrupted, stopping playback');
              break;
-        }
+         }
         const chunk = ttsAudio.subarray(i, i + CHUNK_SIZE);
         clientWs.send(JSON.stringify({
           type: 'response.audio.delta',
@@ -254,6 +262,9 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       console.error('[claude-voice] Error processing turn:', err.message);
       clientWs.send(JSON.stringify({ type: 'error', message: 'Processing error' }));
       clientWs.send(JSON.stringify({ type: 'response.done' }));
+    } finally {
+      assistantSpeaking = false;
+      processingTurn = false;
     }
   }
 
@@ -267,24 +278,31 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
         
         // Naive VAD
         if (rms > VAD_THRESHOLD) {
-          if (!isSpeaking) {
-            isSpeaking = true;
+          if (!userSpeaking) {
+            userSpeaking = true;
             audioBuffer = []; // Start new turn
             clientWs.send(JSON.stringify({ type: 'input_audio_buffer.speech_started' }));
+            if (assistantSpeaking) {
+              interruptPlayback = true; // barge-in
+            }
           }
           silenceStart = 0;
-        } else if (isSpeaking) {
+        } else if (userSpeaking) {
           if (silenceStart === 0) silenceStart = Date.now();
           if (Date.now() - silenceStart > SILENCE_DURATION) {
-            isSpeaking = false;
+            userSpeaking = false;
             // End of turn detected -> Process
             const fullAudio = Buffer.concat(audioBuffer);
             audioBuffer = [];
-            processTurn(fullAudio);
+            if (fullAudio.length >= MIN_TURN_AUDIO_BYTES) {
+              processTurn(fullAudio);
+            } else {
+              clientWs.send(JSON.stringify({ type: 'response.done' }));
+            }
           }
         }
 
-        if (isSpeaking || silenceStart > 0) {
+        if (userSpeaking || silenceStart > 0) {
           audioBuffer.push(chunk);
         }
       }
