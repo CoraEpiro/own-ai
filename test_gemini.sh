@@ -8,10 +8,16 @@ if [ -z "$GEMINI_API_KEY" ]; then
   exit 1
 fi
 
+RESPONSE_FILE="$(mktemp)"
+cleanup() {
+  rm -f "$RESPONSE_FILE"
+}
+trap cleanup EXIT
+
 test_model() {
   local model=$1
   echo "Testing model: $model"
-  local status_code=$(curl -s -o response_body.txt -w "%{http_code}" -X POST \
+  local status_code=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST \
     "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}" \
     -H "Content-Type: application/json" \
     -d '{
@@ -23,7 +29,7 @@ test_model() {
   echo "Status code: $status_code"
   if [ "$status_code" -ne 200 ]; then
     echo "Error response:"
-    cat response_body.txt | head -n 20
+    cat "$RESPONSE_FILE" | head -n 20
   else
     echo "Success!"
   fi
@@ -40,7 +46,7 @@ list_models
 test_model_with_tool() {
   local model=$1
   echo "Testing model with grounding: $model"
-  local status_code=$(curl -s -o response_body.txt -w "%{http_code}" -X POST \
+  local status_code=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST \
     "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}" \
     -H "Content-Type: application/json" \
     -d '{
@@ -60,7 +66,7 @@ test_model_with_tool() {
   echo "Status code: $status_code"
   if [ "$status_code" -ne 200 ]; then
     echo "Error response:"
-    cat response_body.txt | head -n 20
+    cat "$RESPONSE_FILE" | head -n 20
   else
     echo "Success!"
   fi
@@ -70,7 +76,7 @@ test_model_with_tool() {
 test_model_with_new_tool() {
   local model=$1
   echo "Testing model with google_search tool: $model"
-  local status_code=$(curl -s -o response_body.txt -w "%{http_code}" -X POST \
+  local status_code=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST \
     "https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}" \
     -H "Content-Type: application/json" \
     -d '{
@@ -85,7 +91,7 @@ test_model_with_new_tool() {
   echo "Status code: $status_code"
   if [ "$status_code" -ne 200 ]; then
     echo "Error response:"
-    cat response_body.txt | head -n 20
+    cat "$RESPONSE_FILE" | head -n 20
   else
     echo "Success!"
   fi
@@ -93,4 +99,3 @@ test_model_with_new_tool() {
 }
 
 test_model_with_new_tool "gemini-2.5-flash"
-rm response_body.txt
