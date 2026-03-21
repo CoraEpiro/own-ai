@@ -99,11 +99,11 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
   //  Anthropic
   // ═══════════════════════════════════════════════════════
   {
-    id: 'claude-opus-4-5-20251114',
-    name: 'Claude Opus 4.5',
+    id: 'claude-3-opus-20240229',
+    name: 'Claude 3 Opus',
     provider: 'Anthropic',
     description: 'Most capable Claude model. Exceptional at complex reasoning and code.',
-    maxTokens: 32768,
+    maxTokens: 4096,
     contextWindow: 200000,
     costPer1kTokens: { input: 0.015, output: 0.075 },
     isAvailable: true,
@@ -112,8 +112,8 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     category: 'flagship',
   },
   {
-    id: 'claude-sonnet-4-5-20251114',
-    name: 'Claude Sonnet 4.5',
+    id: 'claude-3-5-sonnet-20241022',
+    name: 'Claude 3.5 Sonnet',
     provider: 'Anthropic',
     description: 'Balanced model. Great at reasoning and code.',
     maxTokens: 8192,
@@ -125,8 +125,8 @@ export const MODEL_DEFINITIONS: ModelDefinition[] = [
     category: 'flagship',
   },
   {
-    id: 'claude-haiku-4-5-20251001',
-    name: 'Claude Haiku 4.5',
+    id: 'claude-3-5-haiku-20241022',
+    name: 'Claude 3.5 Haiku',
     provider: 'Anthropic',
     description: 'Fast and affordable. Great for quick tasks.',
     maxTokens: 8192,
