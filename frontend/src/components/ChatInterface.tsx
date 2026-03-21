@@ -186,6 +186,7 @@ const ChatInterface: React.FC = () => {
   // Cost tracking
   const [todayCost, setTodayCost] = useState(0);
   const [currentChatCost, setCurrentChatCost] = useState(0);
+  const [streamingAssistantId, setStreamingAssistantId] = useState<string | null>(null);
   // Model recommendation
   const [modelRecommendation, setModelRecommendation] = useState<any>(null);
   const [showRecommendation, setShowRecommendation] = useState(true);
@@ -197,7 +198,7 @@ const ChatInterface: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const typingTargetRef = useRef<Record<string, string>>({});
-  const typingTimersRef = useRef<Record<string, number>>({});
+  const typingRafRef = useRef<Record<string, number>>({});
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -206,25 +207,39 @@ const ChatInterface: React.FC = () => {
     if (!chunk) return;
     typingTargetRef.current[assistantId] = (typingTargetRef.current[assistantId] || '') + chunk;
 
-    if (!typingTimersRef.current[assistantId]) {
-      typingTimersRef.current[assistantId] = window.setInterval(() => {
-        let shouldStop = false;
+    if (!typingRafRef.current[assistantId]) {
+      const tick = () => {
+        let shouldContinue = false;
+        let changed = false;
+
         setMessages(prevMsgs => prevMsgs.map(m => {
           if (m.id !== assistantId) return m;
           const target = typingTargetRef.current[assistantId] || '';
           const current = m.content || '';
-          if (!target || current.length >= target.length) {
-            shouldStop = true;
-            return m;
-          }
-          const step = Math.min(3, target.length - current.length);
-          return { ...m, content: target.slice(0, current.length + step) };
+          if (!target || current.length >= target.length) return m;
+
+          const backlog = target.length - current.length;
+          const burst = backlog > 240 ? 18 : backlog > 120 ? 10 : backlog > 40 ? 6 : 3;
+          const nextLen = Math.min(target.length, current.length + burst);
+
+          shouldContinue = nextLen < target.length;
+          changed = true;
+          return { ...m, content: target.slice(0, nextLen) };
         }));
-        if (shouldStop) {
-          clearInterval(typingTimersRef.current[assistantId]);
-          delete typingTimersRef.current[assistantId];
+
+        if (!changed) {
+          delete typingRafRef.current[assistantId];
+          return;
         }
-      }, 18);
+
+        if (shouldContinue) {
+          typingRafRef.current[assistantId] = window.requestAnimationFrame(tick);
+        } else {
+          delete typingRafRef.current[assistantId];
+        }
+      };
+
+      typingRafRef.current[assistantId] = window.requestAnimationFrame(tick);
     }
   }, []);
 
@@ -460,6 +475,7 @@ const ChatInterface: React.FC = () => {
     shouldScrollRef.current = true; // scroll to show user's message, then stop
 
     const assistantId = Date.now().toString() + Math.random().toString(36).slice(2);
+    setStreamingAssistantId(assistantId);
     setMessages(prev => [
       ...prev,
       { id: assistantId, role: 'assistant', content: '', timestamp: new Date().toISOString(), model: selectedModel },
@@ -525,12 +541,16 @@ const ChatInterface: React.FC = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
+      let sseBuffer = '';
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         if (!value) continue;
-        const lines = decoder.decode(value).split('\n').filter(l => l.trim());
+        sseBuffer += decoder.decode(value, { stream: !doneReading });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() || '';
+
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const payload = line.slice(6);
@@ -555,11 +575,12 @@ const ChatInterface: React.FC = () => {
       }
 
       setLoading(false);
+      setStreamingAssistantId(null);
 
       if (metaReceived) {
-        if (typingTimersRef.current[assistantId]) {
-          clearInterval(typingTimersRef.current[assistantId]);
-          delete typingTimersRef.current[assistantId];
+        if (typingRafRef.current[assistantId]) {
+          cancelAnimationFrame(typingRafRef.current[assistantId]);
+          delete typingRafRef.current[assistantId];
         }
         delete typingTargetRef.current[assistantId];
         setMessages(prev =>
@@ -587,12 +608,13 @@ const ChatInterface: React.FC = () => {
         }
       } catch {}
     } catch (error: any) {
-      if (typingTimersRef.current[assistantId]) {
-        clearInterval(typingTimersRef.current[assistantId]);
-        delete typingTimersRef.current[assistantId];
+      if (typingRafRef.current[assistantId]) {
+        cancelAnimationFrame(typingRafRef.current[assistantId]);
+        delete typingRafRef.current[assistantId];
       }
       delete typingTargetRef.current[assistantId];
       setLoading(false);
+      setStreamingAssistantId(null);
       const errorContent = error.message || 'Failed to stream response.';
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: `**Error:** ${errorContent}` } : m));
       toast.error(errorContent);
@@ -601,8 +623,8 @@ const ChatInterface: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      Object.values(typingTimersRef.current).forEach(timer => clearInterval(timer));
-      typingTimersRef.current = {};
+      Object.values(typingRafRef.current).forEach(id => cancelAnimationFrame(id));
+      typingRafRef.current = {};
       typingTargetRef.current = {};
     };
   }, []);
@@ -1253,6 +1275,7 @@ const ChatInterface: React.FC = () => {
                             content={message.content}
                             darkMode={darkMode}
                             reasoningContent={message.reasoningContent}
+                            isStreaming={streamingAssistantId === message.id}
                             actionTheme={{
                               actionIcon: theme.actionIcon,
                               actionIconDark: theme.actionIconDark,

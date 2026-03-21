@@ -24,6 +24,7 @@ interface AIMessageProps {
   content: string;
   darkMode?: boolean;
   reasoningContent?: string;
+  isStreaming?: boolean;
   actionTheme?: ActionTheme;
   onRetry?: () => void;
 }
@@ -74,7 +75,7 @@ function MermaidBlock({ code, darkMode }: { code: string; darkMode: boolean }) {
         mermaid.initialize({
           startOnLoad: false,
           theme: darkMode ? 'dark' : 'default',
-          securityLevel: 'loose',
+          securityLevel: 'strict',
         });
         const { svg } = await mermaid.render(id, code);
         if (!cancelled) {
@@ -236,7 +237,7 @@ function ReasoningBlock({ content, darkMode }: { content: string; darkMode: bool
 }
 
 // ── Main component ──────────────────────────────────────────────────────
-export default function AIMessage({ content, darkMode = false, reasoningContent, actionTheme, onRetry }: AIMessageProps) {
+export default function AIMessage({ content, darkMode = false, reasoningContent, isStreaming = false, actionTheme, onRetry }: AIMessageProps) {
   if (!content) {
     return (
       <span className="inline-block w-2 h-5 bg-gray-400 dark:bg-gray-500 animate-pulse rounded-sm" />
@@ -335,6 +336,13 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
         >
           {content}
         </ReactMarkdown>
+        {isStreaming && (
+          <span
+            className="inline-block w-[2px] h-[1em] align-[-0.15em] ml-0.5 animate-blink rounded-sm"
+            style={{ background: darkMode ? '#9ca3af' : '#6b7280' }}
+            aria-hidden="true"
+          />
+        )}
       </div>
 
       {/* Action buttons — always visible, like ChatGPT/Claude/Gemini */}
