@@ -175,6 +175,11 @@ const ChatInterface: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceModeActive, setVoiceModeActive] = useState(false);
+  const [showPdfAudioPanel, setShowPdfAudioPanel] = useState(false);
+  const [pdfAudioMode, setPdfAudioMode] = useState<'summary' | 'narration' | 'podcast'>('summary');
+  const [pdfAudioVoice, setPdfAudioVoice] = useState('nova');
+  const [pdfAudioSecondaryVoice, setPdfAudioSecondaryVoice] = useState('ash');
+  const [pdfAudioLoading, setPdfAudioLoading] = useState(false);
   const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
   // Search Modes
   const [searchMode, setSearchMode] = useState<'auto' | 'human' | 'pre_ai' | 'custom'>('auto');
@@ -204,6 +209,7 @@ const ChatInterface: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfAudioInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -451,6 +457,58 @@ const ChatInterface: React.FC = () => {
       toast.error('Microphone access denied');
     }
   }, [isRecording]);
+
+  const handlePdfAudioFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast.error('Please select a PDF file');
+      return;
+    }
+
+    setPdfAudioLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('mode', pdfAudioMode);
+      formData.append('voice', pdfAudioVoice);
+      formData.append('secondaryVoice', pdfAudioSecondaryVoice);
+
+      const { data } = await axios.post(getApiUrl('/audio/pdf-podcast'), formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      let audioUrl = data.audioUrl as string | undefined;
+      if (!audioUrl && data.audioBase64) {
+        const bytes = Uint8Array.from(atob(data.audioBase64), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: data.mimeType || 'audio/wav' });
+        audioUrl = URL.createObjectURL(blob);
+      }
+
+      if (!audioUrl) throw new Error('Audio generation completed but no output URL returned');
+
+      const info = `Generated ${data.mode} audio from **${file.name}** (${data.chunks} chunks).`;
+      const msg: Message = {
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
+        role: 'assistant',
+        content: `${info}\n\n[Open / Download audio](${audioUrl})`,
+        timestamp: new Date().toISOString(),
+        model: 'pdf-audio-generator',
+      };
+      setMessages(prev => [...prev, msg]);
+      shouldScrollRef.current = true;
+      toast.success('PDF audio generated');
+      setShowPdfAudioPanel(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to generate PDF audio');
+    } finally {
+      setPdfAudioLoading(false);
+    }
+  }, [pdfAudioMode, pdfAudioSecondaryVoice, pdfAudioVoice]);
 
   // ═════════════════════════════════════════════════════════════════════════
   //  SEND MESSAGE
@@ -1453,6 +1511,7 @@ const ChatInterface: React.FC = () => {
                   <Paperclip className="h-[18px] w-[18px]" />
                 </button>
                 <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.txt,.csv,.md,.json" className="hidden" onChange={handleFileSelect} />
+                <input ref={pdfAudioInputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handlePdfAudioFileSelect} />
 
                 <textarea
                   ref={inputRef}
@@ -1508,8 +1567,80 @@ const ChatInterface: React.FC = () => {
                 </button>
               </div>
 
-              {/* Bottom toolbar — inside the input box */}
-              <div className="flex items-center gap-1.5 px-4 pb-2.5 pt-0.5">
+                {/* Bottom toolbar — inside the input box */}
+                <div className="flex items-center gap-1.5 px-4 pb-2.5 pt-0.5">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowPdfAudioPanel(prev => !prev)}
+                    disabled={pdfAudioLoading}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
+                    style={{
+                      background: showPdfAudioPanel ? theme.accent : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      color: showPdfAudioPanel ? '#fff' : darkMode ? '#aaa' : '#888',
+                    }}
+                    title="PDF to audio/podcast generator"
+                  >
+                    <FileText className="h-3 w-3" />
+                    PDF Audio
+                  </button>
+                  {showPdfAudioPanel && (
+                    <div
+                      className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-3 min-w-[280px] z-50 animate-fade-in"
+                      style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
+                    >
+                      <div className="text-[11px] font-semibold mb-2" style={{ color: darkMode ? '#bbb' : '#666' }}>
+                        PDF → Audio / Podcast
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 mb-2">
+                        {(['summary', 'narration', 'podcast'] as const).map(mode => (
+                          <button
+                            key={mode}
+                            onClick={() => setPdfAudioMode(mode)}
+                            className="px-2 py-1 rounded text-[10px] font-medium"
+                            style={{
+                              background: pdfAudioMode === mode ? theme.accent : darkMode ? '#3a3a3a' : '#f3f4f6',
+                              color: pdfAudioMode === mode ? '#fff' : darkMode ? '#bbb' : '#555',
+                            }}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        <select
+                          value={pdfAudioVoice}
+                          onChange={e => setPdfAudioVoice(e.target.value)}
+                          className="flex-1 text-xs rounded px-2 py-1 bg-transparent"
+                          style={{ border: `1px solid ${darkMode ? '#555' : '#ddd'}`, color: darkMode ? '#ddd' : '#333' }}
+                        >
+                          {['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'].map(v => (
+                            <option key={v} value={v} className="bg-gray-800">{v}</option>
+                          ))}
+                        </select>
+                        {pdfAudioMode === 'podcast' && (
+                          <select
+                            value={pdfAudioSecondaryVoice}
+                            onChange={e => setPdfAudioSecondaryVoice(e.target.value)}
+                            className="flex-1 text-xs rounded px-2 py-1 bg-transparent"
+                            style={{ border: `1px solid ${darkMode ? '#555' : '#ddd'}`, color: darkMode ? '#ddd' : '#333' }}
+                          >
+                            {['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'].map(v => (
+                              <option key={v} value={v} className="bg-gray-800">{v}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => pdfAudioInputRef.current?.click()}
+                        disabled={pdfAudioLoading}
+                        className="w-full px-2 py-1.5 rounded text-xs font-medium"
+                        style={{ background: theme.accent, color: '#fff', opacity: pdfAudioLoading ? 0.6 : 1 }}
+                      >
+                        {pdfAudioLoading ? 'Generating…' : 'Choose PDF & Generate'}
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {/* Reasoning effort toggle */}
                 {currentModel?.capabilities?.includes('reasoning') && (
                   <div className="flex items-center gap-1">
