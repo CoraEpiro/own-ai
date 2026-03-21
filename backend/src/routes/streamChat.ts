@@ -82,7 +82,7 @@ async function generateSummary(
   messages: Array<{ role: string; content: string }>
 ) {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return;
 
     const transcript = messages
@@ -91,22 +91,26 @@ async function generateSummary(
       .join('\n');
 
     const resp = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey,
       {
-        model: 'gpt-5-mini',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content: 'Summarize this conversation in 2-3 sentences. Capture key facts, user preferences, names, and context needed for continuity. Be concise.',
+            role: 'user',
+            parts: [
+              {
+                text: 'Summarize this conversation in 2-3 sentences. Capture key facts, user preferences, names, and context needed for continuity. Be concise.\n\n' + transcript,
+              },
+            ],
           },
-          { role: 'user', content: transcript },
         ],
-        max_tokens: 200,
-        temperature: 0.3,
+        generationConfig: {
+          maxOutputTokens: 200,
+          temperature: 0.3,
+        },
       },
-      { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
+      { headers: { 'Content-Type': 'application/json' } }
     );
-    const summary = (resp.data as any).choices?.[0]?.message?.content?.trim();
+    const summary = (resp.data as any).candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (summary) {
       await updateConversationSummary(conversationId, summary);
     }

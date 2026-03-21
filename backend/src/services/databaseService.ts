@@ -322,6 +322,33 @@ export const getUserUsage = async (userId: string) => {
   };
 };
 
+export const getTodayCost = async (userId: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('cost')
+    .eq('user_id', userId)
+    .gte('timestamp', todayIso);
+
+  if (error) return 0;
+
+  return data?.reduce((s, m) => s + (m.cost || 0), 0) || 0;
+};
+
+export const getConversationCost = async (conversationId: string) => {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('cost')
+    .eq('conversation_id', conversationId);
+
+  if (error) return 0;
+
+  return data?.reduce((s, m) => s + (m.cost || 0), 0) || 0;
+};
+
 // ── Folder Operations ─────────────────────────────────
 
 export const createFolder = async (userId: string, name: string): Promise<FolderRow> => {

@@ -179,6 +179,9 @@ const ChatInterface: React.FC = () => {
   const [availableBuckets, setAvailableBuckets] = useState<Bucket[]>([]);
   const [attachedBucketIds, setAttachedBucketIds] = useState<Set<string>>(new Set());
   const [showBucketSelector, setShowBucketSelector] = useState(false);
+  // Cost tracking
+  const [todayCost, setTodayCost] = useState(0);
+  const [currentChatCost, setCurrentChatCost] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -231,6 +234,38 @@ const ChatInterface: React.FC = () => {
       } catch { /* silent */ }
     })();
   }, []);
+
+  // ── Load today's cost ──────────────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get(getApiUrl('/dashboard/today-cost'), { headers: authHeaders });
+        setTodayCost(data.todayCost || 0);
+      } catch { /* silent */ }
+    })();
+    // Refresh every 30 seconds
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await axios.get(getApiUrl('/dashboard/today-cost'), { headers: authHeaders });
+        setTodayCost(data.todayCost || 0);
+      } catch { /* silent */ }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ── Load conversation cost ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentConversationId) {
+      setCurrentChatCost(0);
+      return;
+    }
+    (async () => {
+      try {
+        const { data } = await axios.get(getApiUrl(`/dashboard/conversation-cost/${currentConversationId}`), { headers: authHeaders });
+        setCurrentChatCost(data.cost || 0);
+      } catch { /* silent */ }
+    })();
+  }, [currentConversationId]);
 
   // ── Auto-scroll: only when user sends a message, NOT during streaming ──
   const shouldScrollRef = useRef(false);
@@ -471,11 +506,19 @@ const ChatInterface: React.FC = () => {
         if (!currentConversationId) setCurrentConversationId(metaReceived.conversationId);
       }
 
-      // Refresh sidebar
+      // Refresh sidebar and update costs
       try {
         const { data: convos } = await axios.get(getApiUrl('/chat'));
         setConversations(convos);
         if (!currentConversationId && convos.length > 0) setCurrentConversationId(convos[0].id);
+        // Update costs
+        const { data: todayData } = await axios.get(getApiUrl('/dashboard/today-cost'), { headers: authHeaders });
+        setTodayCost(todayData.todayCost || 0);
+        if (currentConversationId || (metaReceived && metaReceived.conversationId)) {
+          const convId = currentConversationId || metaReceived.conversationId;
+          const { data: convCostData } = await axios.get(getApiUrl(`/dashboard/conversation-cost/${convId}`), { headers: authHeaders });
+          setCurrentChatCost(convCostData.cost || 0);
+        }
       } catch {}
     } catch (error: any) {
       setLoading(false);
@@ -1050,12 +1093,21 @@ const ChatInterface: React.FC = () => {
         </div>
 
         {/* ── Messages / Welcome ────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-2 pb-48 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-2 pb-48 scrollbar-thin relative">
           {/* Model name — top center, like ChatGPT */}
-          <div className="pt-2 pb-1 text-center">
+          <div className="pt-2 pb-1 text-center flex items-center justify-center gap-8">
             <span className="text-sm font-medium" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
               {currentModel?.name || 'Own AI'}
             </span>
+            {/* Cost display — top right, subtle */}
+            <div className="text-xs opacity-60 hover:opacity-100 transition-opacity" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
+              {currentConversationId && currentChatCost > 0 && (
+                <span className="mr-3">Chat: ${formatCurrency(currentChatCost)}</span>
+              )}
+              {todayCost > 0 && (
+                <span>Today: ${formatCurrency(todayCost)}</span>
+              )}
+            </div>
           </div>
 
           {messages.length === 0 ? (

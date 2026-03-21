@@ -2,7 +2,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "../config";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
-import { getUserUsage } from "../services/databaseService";
+import { getUserUsage, getTodayCost, getConversationCost } from "../services/databaseService";
 import { getModelDefinition } from "../config/models";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -19,6 +19,22 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: express.Response) 
   if (!userId) return res.status(401).json({ error: "Not authenticated" });
   const stats = await getUserUsage(userId);
   res.json(stats);
+});
+
+// ── GET /dashboard/today-cost ────────────────────────────────
+router.get("/today-cost", authMiddleware, async (req: AuthRequest, res: express.Response) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Not authenticated" });
+  const todayCost = await getTodayCost(userId);
+  res.json({ todayCost });
+});
+
+// ── GET /dashboard/conversation-cost/:conversationId ─────────
+router.get("/conversation-cost/:conversationId", authMiddleware, async (req: AuthRequest, res: express.Response) => {
+  const { conversationId } = req.params;
+  if (!conversationId) return res.status(400).json({ error: "Conversation ID required" });
+  const cost = await getConversationCost(conversationId);
+  res.json({ cost });
 });
 
 // ── GET /dashboard/filters ───────────────────────────────────
