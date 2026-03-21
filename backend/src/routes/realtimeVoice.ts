@@ -136,7 +136,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
   let audioBuffer: Buffer[] = [];
   let conversationId: string | null = null;
   const VAD_THRESHOLD = 800; // RMS threshold for speech detection (approx)
-  const SILENCE_DURATION = 800; // ms of silence to trigger end of turn
+  const SILENCE_DURATION = 1400; // ms of silence to trigger end of turn (capture longer sentences)
   const MIN_TURN_AUDIO_BYTES = 24_000 * 2 * 0.35; // ~350ms @ 24kHz PCM16
 
   clientWs.send(JSON.stringify({ type: 'session.created' }));
@@ -574,8 +574,8 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   let conversationId: string | null = null;
   let pendingTurnTimeout: NodeJS.Timeout | null = null;
   const VAD_THRESHOLD = 900;
-  const SILENCE_DURATION_MS = 700;
-  const MAX_TURN_MS = 8000;
+  const SILENCE_DURATION_MS = 1400; // tolerate natural pauses in longer speech
+  const MAX_TURN_MS = 15000; // allow longer utterances before forced cutoff
 
   const clearPendingTurnTimeout = () => {
     if (pendingTurnTimeout) {
