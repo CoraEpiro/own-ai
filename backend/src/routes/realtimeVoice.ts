@@ -110,6 +110,7 @@ export function setupRealtimeWebSocket(server: HttpServer, allowedOrigins: strin
 async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMessage) {
   const userId = (request as any).userId;
   const voice = (request as any).voice || 'ash';
+  const conversationModel = (request as any).model || 'claude-3.5-sonnet';
   // Use a currently available Anthropic model ID
   const model = 'claude-sonnet-4-6';
   
@@ -133,6 +134,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
   let processingTurn = false;
   let silenceStart = 0;
   let audioBuffer: Buffer[] = [];
+  let conversationId: string | null = null;
   const VAD_THRESHOLD = 800; // RMS threshold for speech detection (approx)
   const SILENCE_DURATION = 800; // ms of silence to trigger end of turn
   const MIN_TURN_AUDIO_BYTES = 24_000 * 2 * 0.35; // ~350ms @ 24kHz PCM16
@@ -150,6 +152,26 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       sum += int16[i] * int16[i];
     }
     return Math.sqrt(sum / int16.length);
+  }
+
+  async function saveClaudeTurn(userText: string, assistantText: string) {
+    try {
+      if (!conversationId) {
+        const title = userText.length > 40
+          ? userText.substring(0, 37).trimEnd() + '...'
+          : userText;
+        const conv = await createConversation(userId, `🎙️ ${title}`, conversationModel);
+        conversationId = conv.id;
+        clientWs.send(JSON.stringify({ type: 'voice.conversation_created', conversationId }));
+      }
+
+      const userTokens = Math.ceil(userText.length / 4);
+      const assistantTokens = Math.ceil(assistantText.length / 4);
+      await saveConversationMessage(userId, conversationId, 'user', userText, conversationModel, userTokens, 0);
+      await saveConversationMessage(userId, conversationId, 'assistant', assistantText, conversationModel, assistantTokens, 0);
+    } catch (err) {
+      console.error('[claude-voice] Failed to save turn:', err);
+    }
   }
 
   // Helper: Process Turn
@@ -258,6 +280,7 @@ async function handleClaudeConnection(clientWs: WebSocket, request: IncomingMess
       }
 
       clientWs.send(JSON.stringify({ type: 'response.done' }));
+      await saveClaudeTurn(userText, assistantText);
       
     } catch (err: any) {
       console.error('[claude-voice] Error processing turn:', err.message);
@@ -522,6 +545,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   const userId = (request as any).userId;
   const voice = (request as any).voice || 'Puck'; // Default Gemini voice
   const requestedModel = (request as any).model;
+  const conversationModel = requestedModel || 'gemini-2.5-flash';
   
   // Gemini Live WS supports a narrower set of realtime models than chat models.
   // Map UI model IDs to a Live-compatible model to avoid immediate WS close.
@@ -547,6 +571,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
   let silenceStart = 0;
   let speechStartAt = 0;
   let bufferedTurnHasAudio = false;
+  let conversationId: string | null = null;
   let pendingTurnTimeout: NodeJS.Timeout | null = null;
   const VAD_THRESHOLD = 900;
   const SILENCE_DURATION_MS = 700;
@@ -558,6 +583,27 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
       pendingTurnTimeout = null;
     }
   };
+
+  async function saveGeminiTurn(userText: string, assistantText: string) {
+    try {
+      if (!userText?.trim() || !assistantText?.trim()) return;
+      if (!conversationId) {
+        const title = userText.length > 40
+          ? userText.substring(0, 37).trimEnd() + '...'
+          : userText;
+        const conv = await createConversation(userId, `🎙️ ${title}`, conversationModel);
+        conversationId = conv.id;
+        clientWs.send(JSON.stringify({ type: 'voice.conversation_created', conversationId }));
+      }
+
+      const userTokens = Math.ceil(userText.length / 4);
+      const assistantTokens = Math.ceil(assistantText.length / 4);
+      await saveConversationMessage(userId, conversationId, 'user', userText, conversationModel, userTokens, 0);
+      await saveConversationMessage(userId, conversationId, 'assistant', assistantText, conversationModel, assistantTokens, 0);
+    } catch (err) {
+      console.error('[realtime-ws] Failed to save Gemini turn:', err);
+    }
+  }
 
   const markSpeechStopped = () => {
     if (!userSpeaking) return;
@@ -727,7 +773,7 @@ function handleGeminiConnection(clientWs: WebSocket, request: IncomingMessage) {
       
       // Handle custom events if needed
       if (msg.type === 'voice.save_turn') {
-         // (Optional) Implement saving logic for Gemini too
+         saveGeminiTurn(msg.userText || '', msg.assistantText || '').catch(() => {});
       }
 
     } catch {}
