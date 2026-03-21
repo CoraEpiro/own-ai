@@ -1,5 +1,6 @@
 import { Response } from 'express';
-import { ChatMessage } from './index';
+import { ChatMessage, StreamOptions } from './index';
+import { performWebSearch } from '../webSearchService';
 
 function formatMessages(messages: ChatMessage[]): any[] {
   return messages
@@ -32,7 +33,7 @@ export async function streamAnthropic(
   messages: ChatMessage[],
   model: string,
   res: Response,
-  options?: any
+  options?: StreamOptions
 ): Promise<string> {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) throw new Error('Anthropic API key not configured');
@@ -42,7 +43,20 @@ export async function streamAnthropic(
   // Add today's date to system prompt to help with "current" queries
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const dateContext = `Current date: ${today}`;
-  const systemPrompt = systemParts.length > 0 ? `${systemParts.join('\n\n')}\n\n${dateContext}` : dateContext;
+  let systemPrompt = systemParts.length > 0 ? `${systemParts.join('\n\n')}\n\n${dateContext}` : dateContext;
+
+  // Perform web search if requested
+  if (options?.deepSearch) {
+    const userQuery = messages.slice(-1)[0]?.content || '';
+    if (userQuery) {
+      // Use "sophisticatedly cheap" cross-provider search (Gemini Flash)
+      console.log(`[anthropic] Performing web search for: "${userQuery.substring(0, 50)}..."`);
+      const searchContext = await performWebSearch(userQuery);
+      if (searchContext) {
+        systemPrompt += `\n\n${searchContext}\n\nInstructions: Use the [Web Search Results] above to answer the user's question with current information. Cite sources if mentioned.`;
+      }
+    }
+  }
 
   const body: any = {
     model,

@@ -1442,7 +1442,7 @@ const ChatInterface: React.FC = () => {
                 )}
 
                 {/* Deep search toggle */}
-                {(currentModel?.provider === 'OpenAI' || currentModel?.provider === 'Google') && (
+                {(currentModel?.provider === 'OpenAI' || currentModel?.provider === 'Google' || currentModel?.provider === 'Anthropic') && (
                   <button
                     onClick={() => setDeepSearch(prev => !prev)}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
