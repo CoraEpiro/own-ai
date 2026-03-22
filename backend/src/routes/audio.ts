@@ -129,22 +129,49 @@ async function generateScriptChunk(
     chunk,
   ].filter(Boolean).join('\n\n');
 
-  const resp = await axios.post(
-    'https://api.openai.com/v1/chat/completions',
+  const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+  const attempts = [
     {
       model: 'gpt-5-mini',
-      messages: [
-        { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
-        { role: 'user', content: prompt },
-      ],
-      max_completion_tokens: 900,
+      payload: {
+        model: 'gpt-5-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
+          { role: 'user', content: prompt },
+        ],
+        max_completion_tokens: 900,
+      },
     },
     {
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      model: 'gpt-4o-mini',
+      payload: {
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 900,
+        temperature: 0.5,
+      },
     },
-  );
+  ];
 
-  return sanitizeSpeechText(resp.data?.choices?.[0]?.message?.content || '');
+  let lastErr: any = null;
+  for (const attempt of attempts) {
+    try {
+      const resp = await axios.post('https://api.openai.com/v1/chat/completions', attempt.payload, { headers });
+      const text = sanitizeSpeechText(resp.data?.choices?.[0]?.message?.content || '');
+      if (text) return text;
+      throw new Error(`Empty script response from ${attempt.model}`);
+    } catch (err: any) {
+      lastErr = err;
+      const detail = err?.response?.data?.error?.message || err?.message || 'Unknown error';
+      console.warn(`[pdf-podcast] Script generation attempt failed (${attempt.model}): ${detail}`);
+    }
+  }
+
+  const finalDetail = lastErr?.response?.data?.error?.message || lastErr?.message || 'Failed to generate script';
+  throw new Error(finalDetail);
 }
 
 async function synthesizePcm(
@@ -331,8 +358,15 @@ router.post('/pdf-podcast', authMiddleware, upload.single('pdf'), async (req: Re
         .from('chat-attachments')
         .upload(fileName, wav, { contentType: 'audio/wav', upsert: false });
       if (!error) {
-        const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
-        audioUrl = data.publicUrl;
+        const { data: signedData, error: signedErr } = await supabase.storage
+          .from('chat-attachments')
+          .createSignedUrl(fileName, 60 * 60 * 24); // 24h
+        if (!signedErr && signedData?.signedUrl) {
+          audioUrl = signedData.signedUrl;
+        } else {
+          const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
+          audioUrl = data.publicUrl;
+        }
       }
     } catch (storageErr) {
       console.warn('[pdf-podcast] Storage upload failed, falling back to base64 payload:', storageErr);
