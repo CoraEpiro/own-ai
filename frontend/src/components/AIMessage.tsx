@@ -322,6 +322,29 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
             },
 
             a(props: any) {
+              const href: string = props?.href || '';
+              const isAudio = /\.(mp3|wav|m4a|ogg|webm)(\?.*)?$/i.test(href);
+              if (isAudio) {
+                return (
+                  <div className="my-3">
+                    <audio controls preload="none" className="w-full max-w-md">
+                      <source src={href} />
+                      Your browser does not support the audio element.
+                    </audio>
+                    <div className="mt-1">
+                      <a
+                        {...props}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 underline hover:no-underline text-sm"
+                      >
+                        {props?.children || 'Open / Download audio'}
+                      </a>
+                    </div>
+                  </div>
+                );
+              }
               return <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline hover:no-underline" />;
             },
 
