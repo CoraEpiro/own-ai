@@ -138,7 +138,7 @@ async function generateScriptChunk(
         { role: 'user', content: prompt },
       ],
       temperature: mode === 'podcast' ? 0.8 : 0.5,
-      max_tokens: 900,
+      max_completion_tokens: 900,
     },
     {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
