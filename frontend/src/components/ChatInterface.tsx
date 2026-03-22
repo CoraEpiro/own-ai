@@ -493,12 +493,21 @@ const ChatInterface: React.FC = () => {
       if (!audioUrl) throw new Error('Audio generation completed but no output URL returned');
 
       const info = `Generated ${data.mode} audio from **${file.name}** (${data.chunks} chunks).`;
+      const audioAttachment: Attachment = {
+        id: `pdf-audio-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+        type: 'audio',
+        mimeType: data.mimeType || 'audio/wav',
+        fileName: `${file.name.replace(/\.pdf$/i, '') || 'generated'}-${data.mode}.wav`,
+        url: audioUrl,
+        size: 0,
+      };
       const msg: Message = {
         id: Date.now().toString() + Math.random().toString(36).slice(2),
         role: 'assistant',
         content: `${info}\n\n[Open / Download audio](${audioUrl})`,
         timestamp: new Date().toISOString(),
         model: 'pdf-audio-generator',
+        attachments: [audioAttachment],
       };
       setMessages(prev => [...prev, msg]);
       shouldScrollRef.current = true;
@@ -1350,7 +1359,7 @@ const ChatInterface: React.FC = () => {
                             {theme.aiIcon}
                           </span>
                         </div>
-                        <div className="flex-1 min-w-0">
+                         <div className="flex-1 min-w-0">
                           <AIMessage
                             content={message.content}
                             darkMode={darkMode}
@@ -1363,6 +1372,28 @@ const ChatInterface: React.FC = () => {
                               actionIconHoverDark: theme.actionIconHoverDark,
                             }}
                           />
+                          {message.attachments && message.attachments.some(a => a.type === 'audio' && !!a.url) && (
+                            <div className="mt-3 space-y-2">
+                              {message.attachments
+                                .filter(att => att.type === 'audio' && !!att.url)
+                                .map((att, i) => (
+                                  <div key={att.id || `${message.id}-audio-${i}`} className="max-w-md">
+                                    <audio controls preload="none" className="w-full">
+                                      <source src={att.url} type={att.mimeType || 'audio/wav'} />
+                                      Your browser does not support the audio element.
+                                    </audio>
+                                    <a
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-1 inline-block text-sm text-blue-600 dark:text-blue-400 underline hover:no-underline"
+                                    >
+                                      Open / Download audio
+                                    </a>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                           {/* Metadata — subtle, below action buttons */}
                           <div className="flex items-center gap-2 mt-1">
                             {message.model && (

@@ -16,7 +16,7 @@ export interface LLMModel {
 
 export interface Attachment {
   id: string;
-  type: 'image' | 'document';
+  type: 'image' | 'document' | 'audio';
   mimeType: string;
   fileName: string;
   url: string;
