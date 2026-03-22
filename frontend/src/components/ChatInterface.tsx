@@ -210,6 +210,7 @@ const ChatInterface: React.FC = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfAudioInputRef = useRef<HTMLInputElement>(null);
+  const pdfAudioPanelRef = useRef<HTMLDivElement>(null);
   const dragCounterRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -696,6 +697,17 @@ const ChatInterface: React.FC = () => {
       typingTargetRef.current = {};
     };
   }, []);
+
+  useEffect(() => {
+    if (!showPdfAudioPanel) return;
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (pdfAudioPanelRef.current?.contains(target)) return;
+      setShowPdfAudioPanel(false);
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [showPdfAudioPanel]);
 
   // ── Other handlers ─────────────────────────────────────────────────────
   const loadConversation = async (id: string) => {
@@ -1583,7 +1595,10 @@ const ChatInterface: React.FC = () => {
                 <div className="flex items-center gap-1.5 px-4 pb-2.5 pt-0.5">
                 <div className="relative">
                   <button
-                    onClick={() => setShowPdfAudioPanel(prev => !prev)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPdfAudioPanel(prev => !prev);
+                    }}
                     disabled={pdfAudioLoading}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200"
                     style={{
@@ -1597,6 +1612,9 @@ const ChatInterface: React.FC = () => {
                   </button>
                   {showPdfAudioPanel && (
                     <div
+                      ref={pdfAudioPanelRef}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       className="absolute bottom-full mb-2 left-0 rounded-xl shadow-2xl p-3 min-w-[280px] z-50 animate-fade-in"
                       style={{ background: darkMode ? '#2a2a2a' : '#fff', border: `1px solid ${darkMode ? '#444' : '#ddd'}` }}
                     >
@@ -1622,6 +1640,7 @@ const ChatInterface: React.FC = () => {
                         <select
                           value={pdfAudioVoice}
                           onChange={e => setPdfAudioVoice(e.target.value)}
+                          onMouseDown={(e) => e.stopPropagation()}
                           className="flex-1 text-xs rounded px-2 py-1 bg-transparent"
                           style={{ border: `1px solid ${darkMode ? '#555' : '#ddd'}`, color: darkMode ? '#ddd' : '#333' }}
                         >
@@ -1633,6 +1652,7 @@ const ChatInterface: React.FC = () => {
                           <select
                             value={pdfAudioSecondaryVoice}
                             onChange={e => setPdfAudioSecondaryVoice(e.target.value)}
+                            onMouseDown={(e) => e.stopPropagation()}
                             className="flex-1 text-xs rounded px-2 py-1 bg-transparent"
                             style={{ border: `1px solid ${darkMode ? '#555' : '#ddd'}`, color: darkMode ? '#ddd' : '#333' }}
                           >
