@@ -323,7 +323,17 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
 
             a(props: any) {
               const href: string = props?.href || '';
-              const isAudio = /\.(mp3|wav|m4a|ogg|webm)(\?.*)?$/i.test(href);
+              const labelText = Array.isArray(props?.children)
+                ? props.children.map((c: any) => (typeof c === 'string' ? c : '')).join(' ')
+                : typeof props?.children === 'string'
+                  ? props.children
+                  : '';
+              const isAudioHref =
+                /\.(mp3|wav|m4a|ogg|webm)(\?.*)?$/i.test(href) ||
+                href.startsWith('blob:') ||
+                href.startsWith('data:audio/');
+              const isAudioActionLabel = /open\s*\/?\s*download\s*audio/i.test(labelText);
+              const isAudio = isAudioHref || (isAudioActionLabel && !!href);
               if (isAudio) {
                 return (
                   <div className="my-3">
