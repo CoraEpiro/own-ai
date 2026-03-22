@@ -20,6 +20,7 @@ const upload = multer({
 const TTS_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'];
 
 type PdfAudioMode = 'summary' | 'narration' | 'podcast';
+type PodcastSpeaker = 'host' | 'guest';
 
 function chunkTextByParagraph(text: string, targetChars = 2600, overlapChars = 220): string[] {
   const normalized = text
@@ -106,6 +107,73 @@ function sanitizeSpeechText(text: string): string {
     .trim();
 }
 
+function parsePodcastTurns(script: string): Array<{ speaker: PodcastSpeaker; text: string }> {
+  const turns: Array<{ speaker: PodcastSpeaker; text: string }> = [];
+  const lines = script
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const m = line.match(/^(host|guest)\s*:\s*(.+)$/i);
+    if (m) {
+      const speaker = m[1].toLowerCase() as PodcastSpeaker;
+      const text = m[2].trim();
+      if (!text) continue;
+      const prev = turns[turns.length - 1];
+      if (prev && prev.speaker === speaker) {
+        prev.text = `${prev.text} ${text}`.replace(/\s+/g, ' ').trim();
+      } else {
+        turns.push({ speaker, text });
+      }
+      continue;
+    }
+
+    const prev = turns[turns.length - 1];
+    if (prev) {
+      prev.text = `${prev.text} ${line}`.replace(/\s+/g, ' ').trim();
+    }
+  }
+
+  return turns.filter(t => t.text.length > 0);
+}
+
+function chunkLongSpeech(text: string, maxChars = 1300): string[] {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (!clean) return [];
+  if (clean.length <= maxChars) return [clean];
+
+  const sentences = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const parts: string[] = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    if (!current) {
+      current = sentence;
+      continue;
+    }
+    if ((current.length + 1 + sentence.length) <= maxChars) {
+      current += ` ${sentence}`;
+      continue;
+    }
+    parts.push(current);
+    current = sentence;
+  }
+  if (current) parts.push(current);
+
+  const finalParts: string[] = [];
+  for (const part of parts) {
+    if (part.length <= maxChars) {
+      finalParts.push(part);
+      continue;
+    }
+    for (let i = 0; i < part.length; i += maxChars) {
+      finalParts.push(part.slice(i, i + maxChars));
+    }
+  }
+  return finalParts.filter(Boolean);
+}
+
 async function generateScriptChunk(
   apiKey: string,
   mode: PdfAudioMode,
@@ -117,7 +185,7 @@ async function generateScriptChunk(
   const modeInstruction: Record<PdfAudioMode, string> = {
     summary: 'Create a concise spoken summary section. Focus on key points only.',
     narration: 'Create natural narration suitable for listening. Keep flow and clarity.',
-    podcast: 'Create a podcast-style dialogue with "Host:" and "Guest:" lines only.',
+    podcast: 'Create a concise podcast dialogue with only "Host:" and "Guest:" lines. Target 8-14 total lines for this chunk.',
   };
 
   const prompt = [
@@ -132,17 +200,6 @@ async function generateScriptChunk(
   const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
   const attempts = [
     {
-      model: 'gpt-5-mini',
-      payload: {
-        model: 'gpt-5-mini',
-        messages: [
-          { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
-          { role: 'user', content: prompt },
-        ],
-        max_completion_tokens: 900,
-      },
-    },
-    {
       model: 'gpt-4o-mini',
       payload: {
         model: 'gpt-4o-mini',
@@ -154,12 +211,26 @@ async function generateScriptChunk(
         temperature: 0.5,
       },
     },
+    {
+      model: 'gpt-5-mini',
+      payload: {
+        model: 'gpt-5-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
+          { role: 'user', content: prompt },
+        ],
+        max_completion_tokens: 900,
+      },
+    },
   ];
 
   let lastErr: any = null;
   for (const attempt of attempts) {
     try {
-      const resp = await axios.post('https://api.openai.com/v1/chat/completions', attempt.payload, { headers });
+      const resp = await axios.post('https://api.openai.com/v1/chat/completions', attempt.payload, {
+        headers,
+        timeout: 60_000,
+      });
       const text = sanitizeSpeechText(resp.data?.choices?.[0]?.message?.content || '');
       if (text) return text;
       throw new Error(`Empty script response from ${attempt.model}`);
@@ -190,6 +261,7 @@ async function synthesizePcm(
     {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       responseType: 'arraybuffer',
+      timeout: 90_000,
     },
   );
   return Buffer.from(resp.data);
@@ -312,11 +384,12 @@ router.post('/pdf-podcast', authMiddleware, upload.single('pdf'), async (req: Re
     const pdfText = await extractPdfText(file.buffer);
     const chunks = chunkTextByParagraph(pdfText);
     if (!chunks.length) return res.status(400).json({ error: 'PDF text extraction returned no content' });
+    const activeChunks = mode === 'podcast' ? chunks.slice(0, 10) : chunks;
 
     const scriptChunks: string[] = [];
     let prevTail = '';
-    for (let i = 0; i < chunks.length; i++) {
-      const script = await generateScriptChunk(apiKey, mode, chunks[i], i, chunks.length, prevTail);
+    for (let i = 0; i < activeChunks.length; i++) {
+      const script = await generateScriptChunk(apiKey, mode, activeChunks[i], i, activeChunks.length, prevTail);
       scriptChunks.push(script);
       prevTail = script.slice(Math.max(0, script.length - 260));
     }
@@ -329,17 +402,15 @@ router.post('/pdf-podcast', authMiddleware, upload.single('pdf'), async (req: Re
     const silence = Buffer.alloc(gapSamples * 2, 0);
 
     if (mode === 'podcast') {
-      const lines = script
-        .split('\n')
-        .map(l => l.trim())
-        .filter(Boolean);
+      const turns = parsePodcastTurns(script);
 
-      for (const line of lines) {
-        const isGuest = /^guest\s*:/i.test(line);
-        const text = line.replace(/^(host|guest)\s*:\s*/i, '').trim();
-        if (!text) continue;
-        const pcm = await synthesizePcm(apiKey, text, isGuest ? secondaryVoice : primaryVoice);
-        pcmParts.push(pcm, silence);
+      for (const turn of turns) {
+        const voice = turn.speaker === 'guest' ? secondaryVoice : primaryVoice;
+        const subParts = chunkLongSpeech(turn.text, 1300);
+        for (const subPart of subParts) {
+          const pcm = await synthesizePcm(apiKey, subPart, voice);
+          pcmParts.push(pcm, silence);
+        }
       }
     } else {
       for (const part of scriptChunks) {
@@ -374,7 +445,7 @@ router.post('/pdf-podcast', authMiddleware, upload.single('pdf'), async (req: Re
 
     return res.json({
       mode,
-      chunks: chunks.length,
+      chunks: activeChunks.length,
       scriptPreview: script.slice(0, 2000),
       audioUrl,
       ...(audioUrl ? {} : { audioBase64: wav.toString('base64') }),
