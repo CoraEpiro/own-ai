@@ -1498,7 +1498,19 @@ const ChatInterface: React.FC = () => {
                 border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
                 boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.3)' : '0 1px 8px rgba(0,0,0,0.06)',
               }}
-              onClick={() => inputRef.current?.focus()}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (
+                  target.closest('button') ||
+                  target.closest('select') ||
+                  target.closest('input') ||
+                  target.closest('textarea') ||
+                  target.closest('a')
+                ) {
+                  return;
+                }
+                inputRef.current?.focus();
+              }}
             >
               {/* Textarea row */}
               <div className="flex items-end gap-1 px-4 pt-3 pb-2">
