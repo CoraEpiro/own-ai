@@ -3,6 +3,44 @@ import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '../config';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+function sanitizeStringForDb(input: string): string {
+  let out = '';
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
+
+    // Strip NULL and disallowed control chars that commonly break JSONB parsing
+    if (code === 0) continue;
+    if (code < 32 && code !== 9 && code !== 10 && code !== 13) continue;
+
+    // Keep valid surrogate pairs, drop unpaired surrogates
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        out += input[i] + input[i + 1];
+        i++;
+      }
+      continue;
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) continue;
+
+    out += input[i];
+  }
+  return out;
+}
+
+function sanitizeJsonValueForDb(value: any): any {
+  if (typeof value === 'string') return sanitizeStringForDb(value);
+  if (Array.isArray(value)) return value.map(v => sanitizeJsonValueForDb(v));
+  if (value && typeof value === 'object') {
+    const result: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[k] = sanitizeJsonValueForDb(v);
+    }
+    return result;
+  }
+  return value;
+}
+
 // ── Types ──────────────────────────────────────────────
 
 export interface User {
@@ -250,17 +288,22 @@ export const saveConversationMessage = async (
   cost?: number,
   attachments?: any[]
 ): Promise<ChatMessageRow> => {
+  const safeContent = sanitizeStringForDb(content || '');
+  const safeAttachments = attachments?.length
+    ? (sanitizeJsonValueForDb(attachments) as any[])
+    : undefined;
+
   const { data, error } = await supabase
     .from('chat_messages')
     .insert([{
       user_id: userId,
       conversation_id: conversationId,
       role,
-      message: content,
+      message: safeContent,
       model,
       tokens_used: tokensUsed,
       cost,
-      ...(attachments?.length ? { attachments } : {}),
+      ...(safeAttachments?.length ? { attachments: safeAttachments } : {}),
     }])
     .select()
     .single();
