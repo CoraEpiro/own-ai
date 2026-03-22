@@ -6,6 +6,7 @@ import { authMiddleware } from '../middleware/auth';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '../config';
+import { saveConversationMessage } from '../services/databaseService';
 
 const router = express.Router();
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -21,6 +22,65 @@ const TTS_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 
 
 type PdfAudioMode = 'summary' | 'narration' | 'podcast';
 type PodcastSpeaker = 'host' | 'guest';
+type PdfAudioJobStatus = 'queued' | 'processing' | 'completed' | 'failed';
+
+interface PdfAudioResult {
+  mode: PdfAudioMode;
+  chunks: number;
+  scriptPreview: string;
+  audioUrl: string;
+  audioBase64?: string;
+  mimeType: string;
+  durationSeconds: number;
+  estimatedCostUsd: number;
+  estimatedCostBreakdown: {
+    scriptUsd: number;
+    ttsUsd: number;
+    scriptInputTokensApprox: number;
+    scriptOutputTokensApprox: number;
+    ttsChars: number;
+  };
+  targetMinutes: number;
+}
+
+interface PdfAudioJob {
+  id: string;
+  userId: string;
+  status: PdfAudioJobStatus;
+  mode: PdfAudioMode;
+  voice: string;
+  secondaryVoice: string;
+  targetMinutes: number;
+  fileName: string;
+  conversationId?: string;
+  progress: number;
+  stage: string;
+  createdAt: string;
+  updatedAt: string;
+  result?: PdfAudioResult;
+  error?: string;
+}
+
+const pdfAudioJobs = new Map<string, PdfAudioJob>();
+const PDF_SCRIPT_INPUT_COST_PER_1K = 0.00015; // gpt-4o-mini approx
+const PDF_SCRIPT_OUTPUT_COST_PER_1K = 0.0006; // gpt-4o-mini approx
+const PDF_TTS_COST_PER_1M_CHARS = 10; // gpt-4o-mini-tts approx
+const DEFAULT_TARGET_MINUTES: Record<PdfAudioMode, number> = {
+  summary: 4,
+  narration: 8,
+  podcast: 15,
+};
+
+function prunePdfAudioJobs(maxJobs = 200) {
+  if (pdfAudioJobs.size <= maxJobs) return;
+  const ordered = [...pdfAudioJobs.values()].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  const keep = new Set(ordered.slice(0, maxJobs).map(j => j.id));
+  for (const id of pdfAudioJobs.keys()) {
+    if (!keep.has(id)) pdfAudioJobs.delete(id);
+  }
+}
 
 function chunkTextByParagraph(text: string, targetChars = 2600, overlapChars = 220): string[] {
   const normalized = text
@@ -181,6 +241,7 @@ async function generateScriptChunk(
   index: number,
   total: number,
   previousTail: string,
+  targetCharsPerChunk: number,
 ): Promise<string> {
   const modeInstruction: Record<PdfAudioMode, string> = {
     summary: 'Create a concise spoken summary section. Focus on key points only.',
@@ -191,6 +252,7 @@ async function generateScriptChunk(
   const prompt = [
     `${modeInstruction[mode]}`,
     `This is chunk ${index + 1} of ${total}.`,
+    `Aim for approximately ${targetCharsPerChunk} characters of spoken script for this chunk.`,
     previousTail ? `Previous chunk tail for continuity:\n${previousTail}` : '',
     'Use plain spoken language. No markdown. No bullet lists unless naturally spoken.',
     'Source chunk:',
@@ -265,6 +327,179 @@ async function synthesizePcm(
     },
   );
   return Buffer.from(resp.data);
+}
+
+function parseTargetMinutes(raw: any, mode: PdfAudioMode): number {
+  const fallback = DEFAULT_TARGET_MINUTES[mode];
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(2, Math.min(60, Math.round(n)));
+}
+
+function estimateDurationSecondsFromPcmBytes(byteLen: number): number {
+  return byteLen / (2 * 24000); // pcm16 mono @24kHz
+}
+
+function estimatePdfAudioCost(params: {
+  scriptInputChars: number;
+  scriptOutputChars: number;
+  ttsChars: number;
+}) {
+  const scriptInputTokensApprox = Math.ceil(params.scriptInputChars / 4);
+  const scriptOutputTokensApprox = Math.ceil(params.scriptOutputChars / 4);
+  const scriptUsd =
+    (scriptInputTokensApprox / 1000) * PDF_SCRIPT_INPUT_COST_PER_1K +
+    (scriptOutputTokensApprox / 1000) * PDF_SCRIPT_OUTPUT_COST_PER_1K;
+  const ttsUsd = (params.ttsChars / 1_000_000) * PDF_TTS_COST_PER_1M_CHARS;
+  return {
+    estimatedCostUsd: scriptUsd + ttsUsd,
+    estimatedCostBreakdown: {
+      scriptUsd,
+      ttsUsd,
+      scriptInputTokensApprox,
+      scriptOutputTokensApprox,
+      ttsChars: params.ttsChars,
+    },
+  };
+}
+
+async function generatePdfAudio(params: {
+  userId: string;
+  apiKey: string;
+  fileBuffer: Buffer;
+  mode: PdfAudioMode;
+  voice: string;
+  secondaryVoice: string;
+  targetMinutes: number;
+  includeBase64Fallback: boolean;
+  onProgress?: (stage: string, progress: number) => void;
+}): Promise<PdfAudioResult> {
+  const {
+    userId,
+    apiKey,
+    fileBuffer,
+    mode,
+    voice,
+    secondaryVoice,
+    targetMinutes,
+    includeBase64Fallback,
+    onProgress,
+  } = params;
+
+  onProgress?.('Extracting text', 8);
+  const pdfText = await extractPdfText(fileBuffer);
+  const chunks = chunkTextByParagraph(pdfText);
+  if (!chunks.length) throw new Error('PDF text extraction returned no content');
+
+  const targetCharsTotal = targetMinutes * 750;
+  const hardCap = mode === 'podcast' ? 18 : 24;
+  const suggestedChunkCount = Math.max(1, Math.ceil(targetCharsTotal / (mode === 'summary' ? 950 : 1400)));
+  const activeChunks = chunks.slice(0, Math.min(chunks.length, Math.min(hardCap, suggestedChunkCount)));
+  const targetCharsPerChunk = Math.max(
+    mode === 'summary' ? 420 : 700,
+    Math.ceil(targetCharsTotal / Math.max(1, activeChunks.length))
+  );
+
+  onProgress?.('Generating script', 15);
+  const scriptChunks: string[] = [];
+  let prevTail = '';
+  let scriptInputChars = 0;
+  for (let i = 0; i < activeChunks.length; i++) {
+    scriptInputChars += activeChunks[i].length;
+    const script = await generateScriptChunk(
+      apiKey,
+      mode,
+      activeChunks[i],
+      i,
+      activeChunks.length,
+      prevTail,
+      targetCharsPerChunk,
+    );
+    scriptChunks.push(script);
+    prevTail = script.slice(Math.max(0, script.length - 260));
+    onProgress?.('Generating script', 15 + Math.floor(((i + 1) / activeChunks.length) * 35));
+  }
+
+  const script = scriptChunks.join('\n\n');
+  const pcmParts: Buffer[] = [];
+  const gapMs = mode === 'podcast' ? 220 : 160;
+  const gapSamples = Math.floor((24000 * gapMs) / 1000);
+  const silence = Buffer.alloc(gapSamples * 2, 0);
+  let ttsChars = 0;
+  onProgress?.('Synthesizing audio', 52);
+
+  if (mode === 'podcast') {
+    const turns = parsePodcastTurns(script);
+    let processed = 0;
+    const total = Math.max(1, turns.length);
+    for (const turn of turns) {
+      const ttsVoice = turn.speaker === 'guest' ? secondaryVoice : voice;
+      const subParts = chunkLongSpeech(turn.text, 1300);
+      for (const subPart of subParts) {
+        ttsChars += subPart.length;
+        const pcm = await synthesizePcm(apiKey, subPart, ttsVoice);
+        pcmParts.push(pcm, silence);
+      }
+      processed++;
+      onProgress?.('Synthesizing audio', 52 + Math.floor((processed / total) * 33));
+    }
+  } else {
+    for (let i = 0; i < scriptChunks.length; i++) {
+      ttsChars += scriptChunks[i].length;
+      const pcm = await synthesizePcm(apiKey, scriptChunks[i], voice);
+      pcmParts.push(pcm, silence);
+      onProgress?.('Synthesizing audio', 52 + Math.floor(((i + 1) / scriptChunks.length) * 33));
+    }
+  }
+
+  const pcmData = Buffer.concat(pcmParts);
+  const wav = Buffer.concat([makeWavHeader(pcmData.length), pcmData]);
+  const durationSeconds = estimateDurationSecondsFromPcmBytes(pcmData.length);
+  const cost = estimatePdfAudioCost({
+    scriptInputChars,
+    scriptOutputChars: script.length,
+    ttsChars,
+  });
+
+  onProgress?.('Uploading audio', 90);
+  let audioUrl = '';
+  try {
+    const fileName = `${userId}/${crypto.randomUUID()}-${mode}.wav`;
+    const { error } = await supabase.storage
+      .from('chat-attachments')
+      .upload(fileName, wav, { contentType: 'audio/wav', upsert: false });
+    if (!error) {
+      const { data: signedData, error: signedErr } = await supabase.storage
+        .from('chat-attachments')
+        .createSignedUrl(fileName, 60 * 60 * 24); // 24h
+      if (!signedErr && signedData?.signedUrl) {
+        audioUrl = signedData.signedUrl;
+      } else {
+        const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
+        audioUrl = data.publicUrl;
+      }
+    }
+  } catch (storageErr) {
+    console.warn('[pdf-podcast] Storage upload failed:', storageErr);
+  }
+
+  if (!audioUrl && !includeBase64Fallback) {
+    throw new Error('Audio upload failed. Please try again in a moment.');
+  }
+
+  onProgress?.('Done', 100);
+  return {
+    mode,
+    chunks: activeChunks.length,
+    scriptPreview: script.slice(0, 2000),
+    audioUrl,
+    ...(audioUrl || !includeBase64Fallback ? {} : { audioBase64: wav.toString('base64') }),
+    mimeType: 'audio/wav',
+    durationSeconds,
+    estimatedCostUsd: cost.estimatedCostUsd,
+    estimatedCostBreakdown: cost.estimatedCostBreakdown,
+    targetMinutes,
+  };
 }
 
 // ── POST /api/audio/transcribe — Speech-to-Text ────────────────────
@@ -379,80 +614,166 @@ router.post('/pdf-podcast', authMiddleware, upload.single('pdf'), async (req: Re
 
   const primaryVoice = TTS_VOICES.includes(req.body?.voice) ? req.body.voice : 'nova';
   const secondaryVoice = TTS_VOICES.includes(req.body?.secondaryVoice) ? req.body.secondaryVoice : 'ash';
+  const targetMinutes = parseTargetMinutes(req.body?.targetMinutes, mode);
 
   try {
-    const pdfText = await extractPdfText(file.buffer);
-    const chunks = chunkTextByParagraph(pdfText);
-    if (!chunks.length) return res.status(400).json({ error: 'PDF text extraction returned no content' });
-    const activeChunks = mode === 'podcast' ? chunks.slice(0, 10) : chunks;
-
-    const scriptChunks: string[] = [];
-    let prevTail = '';
-    for (let i = 0; i < activeChunks.length; i++) {
-      const script = await generateScriptChunk(apiKey, mode, activeChunks[i], i, activeChunks.length, prevTail);
-      scriptChunks.push(script);
-      prevTail = script.slice(Math.max(0, script.length - 260));
-    }
-
-    const script = scriptChunks.join('\n\n');
-
-    const pcmParts: Buffer[] = [];
-    const gapMs = mode === 'podcast' ? 220 : 160;
-    const gapSamples = Math.floor((24000 * gapMs) / 1000);
-    const silence = Buffer.alloc(gapSamples * 2, 0);
-
-    if (mode === 'podcast') {
-      const turns = parsePodcastTurns(script);
-
-      for (const turn of turns) {
-        const voice = turn.speaker === 'guest' ? secondaryVoice : primaryVoice;
-        const subParts = chunkLongSpeech(turn.text, 1300);
-        for (const subPart of subParts) {
-          const pcm = await synthesizePcm(apiKey, subPart, voice);
-          pcmParts.push(pcm, silence);
-        }
-      }
-    } else {
-      for (const part of scriptChunks) {
-        const pcm = await synthesizePcm(apiKey, part, primaryVoice);
-        pcmParts.push(pcm, silence);
-      }
-    }
-
-    const pcmData = Buffer.concat(pcmParts);
-    const wav = Buffer.concat([makeWavHeader(pcmData.length), pcmData]);
-
-    let audioUrl = '';
-    try {
-      const fileName = `${userId}/${crypto.randomUUID()}-${mode}.wav`;
-      const { error } = await supabase.storage
-        .from('chat-attachments')
-        .upload(fileName, wav, { contentType: 'audio/wav', upsert: false });
-      if (!error) {
-        const { data: signedData, error: signedErr } = await supabase.storage
-          .from('chat-attachments')
-          .createSignedUrl(fileName, 60 * 60 * 24); // 24h
-        if (!signedErr && signedData?.signedUrl) {
-          audioUrl = signedData.signedUrl;
-        } else {
-          const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
-          audioUrl = data.publicUrl;
-        }
-      }
-    } catch (storageErr) {
-      console.warn('[pdf-podcast] Storage upload failed, falling back to base64 payload:', storageErr);
-    }
-
-    return res.json({
+    const result = await generatePdfAudio({
+      userId,
+      apiKey,
+      fileBuffer: file.buffer,
       mode,
-      chunks: activeChunks.length,
-      scriptPreview: script.slice(0, 2000),
-      audioUrl,
-      ...(audioUrl ? {} : { audioBase64: wav.toString('base64') }),
-      mimeType: 'audio/wav',
+      voice: primaryVoice,
+      secondaryVoice,
+      targetMinutes,
+      includeBase64Fallback: true,
     });
+    return res.json(result);
   } catch (error: any) {
     console.error('[pdf-podcast] generation error:', error?.response?.data || error?.message || error);
     return res.status(500).json({ error: error?.message || 'PDF audio generation failed' });
   }
+});
+
+router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'OpenAI API key not configured' });
+
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'No PDF provided' });
+  if (file.mimetype !== 'application/pdf') return res.status(400).json({ error: 'Only PDF is supported' });
+
+  const mode = (req.body?.mode || 'summary') as PdfAudioMode;
+  if (!['summary', 'narration', 'podcast'].includes(mode)) {
+    return res.status(400).json({ error: 'Invalid mode' });
+  }
+
+  const voice = TTS_VOICES.includes(req.body?.voice) ? req.body.voice : 'nova';
+  const secondaryVoice = TTS_VOICES.includes(req.body?.secondaryVoice) ? req.body.secondaryVoice : 'ash';
+  const targetMinutes = parseTargetMinutes(req.body?.targetMinutes, mode);
+  const conversationId = typeof req.body?.conversationId === 'string' ? req.body.conversationId : undefined;
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const job: PdfAudioJob = {
+    id,
+    userId,
+    status: 'queued',
+    mode,
+    voice,
+    secondaryVoice,
+    targetMinutes,
+    fileName: file.originalname || 'document.pdf',
+    conversationId,
+    progress: 0,
+    stage: 'Queued',
+    createdAt: now,
+    updatedAt: now,
+  };
+  pdfAudioJobs.set(id, job);
+  prunePdfAudioJobs();
+
+  void (async () => {
+    try {
+      const existing = pdfAudioJobs.get(id);
+      if (!existing) return;
+      existing.status = 'processing';
+      existing.stage = 'Starting';
+      existing.progress = 3;
+      existing.updatedAt = new Date().toISOString();
+      pdfAudioJobs.set(id, existing);
+
+      const result = await generatePdfAudio({
+        userId,
+        apiKey,
+        fileBuffer: file.buffer,
+        mode,
+        voice,
+        secondaryVoice,
+        targetMinutes,
+        includeBase64Fallback: false,
+        onProgress: (stage, progress) => {
+          const running = pdfAudioJobs.get(id);
+          if (!running) return;
+          running.status = 'processing';
+          running.stage = stage;
+          running.progress = Math.max(0, Math.min(100, progress));
+          running.updatedAt = new Date().toISOString();
+          pdfAudioJobs.set(id, running);
+        },
+      });
+
+      const done = pdfAudioJobs.get(id);
+      if (!done) return;
+      done.status = 'completed';
+      done.stage = 'Completed';
+      done.progress = 100;
+      done.result = result;
+      done.updatedAt = new Date().toISOString();
+      pdfAudioJobs.set(id, done);
+
+      if (done.conversationId) {
+        const info = `Generated ${result.mode} audio from **${done.fileName}** (${result.chunks} chunks, ~${Math.round(result.durationSeconds / 60)} min target ${result.targetMinutes}m).\n\nEstimated generation cost: **$${result.estimatedCostUsd.toFixed(4)}**.\n\n[Open / Download audio](${result.audioUrl})`;
+        const dbAttachments = [
+          {
+            id: `pdf-audio-${id}`,
+            type: 'audio',
+            mimeType: result.mimeType,
+            fileName: `${done.fileName.replace(/\.pdf$/i, '') || 'generated'}-${result.mode}.wav`,
+            url: result.audioUrl,
+            size: 0,
+          },
+        ];
+        try {
+          await saveConversationMessage(
+            done.userId,
+            done.conversationId,
+            'assistant',
+            info,
+            'pdf-audio-generator',
+            0,
+            result.estimatedCostUsd,
+            dbAttachments,
+          );
+        } catch (saveErr) {
+          console.warn('[pdf-podcast-job] Failed to persist completion message:', saveErr);
+        }
+      }
+    } catch (err: any) {
+      const failed = pdfAudioJobs.get(id);
+      if (!failed) return;
+      failed.status = 'failed';
+      failed.stage = 'Failed';
+      failed.progress = 100;
+      failed.error = err?.message || 'PDF audio generation failed';
+      failed.updatedAt = new Date().toISOString();
+      pdfAudioJobs.set(id, failed);
+      console.error('[pdf-podcast-job] generation error:', err?.response?.data || err?.message || err);
+    }
+  })();
+
+  return res.json({ job });
+});
+
+router.get('/pdf-podcast/jobs', authMiddleware, async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const jobs = [...pdfAudioJobs.values()]
+    .filter(j => j.userId === userId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 30);
+
+  return res.json({ jobs });
+});
+
+router.get('/pdf-podcast/jobs/:jobId', authMiddleware, async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const job = pdfAudioJobs.get(req.params.jobId);
+  if (!job || job.userId !== userId) return res.status(404).json({ error: 'Job not found' });
+  return res.json({ job });
 });

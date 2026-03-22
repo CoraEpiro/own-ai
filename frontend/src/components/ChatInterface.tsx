@@ -62,6 +62,35 @@ function normalizeModelId(modelId: string): string {
   return aliases[id] || id;
 }
 
+type PdfAudioMode = 'summary' | 'narration' | 'podcast';
+
+interface PdfAudioJobResult {
+  mode: PdfAudioMode;
+  chunks: number;
+  audioUrl: string;
+  mimeType: string;
+  durationSeconds: number;
+  estimatedCostUsd: number;
+  targetMinutes: number;
+}
+
+interface PdfAudioJob {
+  id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  mode: PdfAudioMode;
+  voice: string;
+  secondaryVoice: string;
+  targetMinutes: number;
+  fileName: string;
+  conversationId?: string;
+  progress: number;
+  stage: string;
+  createdAt: string;
+  updatedAt: string;
+  result?: PdfAudioJobResult;
+  error?: string;
+}
+
 // ── Thinking Indicator ──────────────────────────────────────────────────
 const ThinkingIndicator: React.FC<{
   modelName: string;
@@ -176,10 +205,12 @@ const ChatInterface: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [voiceModeActive, setVoiceModeActive] = useState(false);
   const [showPdfAudioPanel, setShowPdfAudioPanel] = useState(false);
-  const [pdfAudioMode, setPdfAudioMode] = useState<'summary' | 'narration' | 'podcast'>('summary');
+  const [pdfAudioMode, setPdfAudioMode] = useState<PdfAudioMode>('summary');
   const [pdfAudioVoice, setPdfAudioVoice] = useState('nova');
   const [pdfAudioSecondaryVoice, setPdfAudioSecondaryVoice] = useState('ash');
   const [pdfAudioLoading, setPdfAudioLoading] = useState(false);
+  const [pdfAudioTargetMinutes, setPdfAudioTargetMinutes] = useState(8);
+  const [pdfAudioJobs, setPdfAudioJobs] = useState<PdfAudioJob[]>([]);
   const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
   // Search Modes
   const [searchMode, setSearchMode] = useState<'auto' | 'human' | 'pre_ai' | 'custom'>('auto');
@@ -216,9 +247,11 @@ const ChatInterface: React.FC = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const typingTargetRef = useRef<Record<string, string>>({});
   const typingRafRef = useRef<Record<string, number>>({});
+  const seenPdfJobStatusesRef = useRef<Record<string, 'completed' | 'failed'>>({});
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const authHeaders = useMemo(() => ({ Authorization: `Bearer ${localStorage.getItem('token')}` }), []);
 
   const scheduleTypewriter = useCallback((assistantId: string, chunk: string) => {
     if (!chunk) return;
@@ -475,50 +508,30 @@ const ChatInterface: React.FC = () => {
       formData.append('mode', pdfAudioMode);
       formData.append('voice', pdfAudioVoice);
       formData.append('secondaryVoice', pdfAudioSecondaryVoice);
+      formData.append('targetMinutes', String(pdfAudioTargetMinutes));
+      if (currentConversationId) formData.append('conversationId', currentConversationId);
 
-      const { data } = await axios.post(getApiUrl('/audio/pdf-podcast'), formData, {
+      const { data } = await axios.post(getApiUrl('/audio/pdf-podcast/jobs'), formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      let audioUrl = data.audioUrl as string | undefined;
-      if (!audioUrl && data.audioBase64) {
-        const bytes = Uint8Array.from(atob(data.audioBase64), c => c.charCodeAt(0));
-        const blob = new Blob([bytes], { type: data.mimeType || 'audio/wav' });
-        audioUrl = URL.createObjectURL(blob);
+      if (data?.job) {
+        setPdfAudioJobs(prev => [data.job, ...prev.filter(j => j.id !== data.job.id)].slice(0, 30));
       }
-
-      if (!audioUrl) throw new Error('Audio generation completed but no output URL returned');
-
-      const info = `Generated ${data.mode} audio from **${file.name}** (${data.chunks} chunks).`;
-      const audioAttachment: Attachment = {
-        id: `pdf-audio-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-        type: 'audio',
-        mimeType: data.mimeType || 'audio/wav',
-        fileName: `${file.name.replace(/\.pdf$/i, '') || 'generated'}-${data.mode}.wav`,
-        url: audioUrl,
-        size: 0,
-      };
-      const msg: Message = {
-        id: Date.now().toString() + Math.random().toString(36).slice(2),
-        role: 'assistant',
-        content: `${info}\n\n[Open / Download audio](${audioUrl})`,
-        timestamp: new Date().toISOString(),
-        model: 'pdf-audio-generator',
-        attachments: [audioAttachment],
-      };
-      setMessages(prev => [...prev, msg]);
-      shouldScrollRef.current = true;
-      toast.success('PDF audio generated');
+      toast.success(`PDF audio job started (~${pdfAudioTargetMinutes} min target)`);
+      if (!currentConversationId) {
+        toast('Tip: results attach to the current chat when opened from a chat thread.');
+      }
       setShowPdfAudioPanel(false);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || err?.message || 'Failed to generate PDF audio');
     } finally {
       setPdfAudioLoading(false);
     }
-  }, [pdfAudioMode, pdfAudioSecondaryVoice, pdfAudioVoice]);
+  }, [currentConversationId, pdfAudioMode, pdfAudioSecondaryVoice, pdfAudioTargetMinutes, pdfAudioVoice]);
 
   // ═════════════════════════════════════════════════════════════════════════
   //  SEND MESSAGE
@@ -718,6 +731,49 @@ const ChatInterface: React.FC = () => {
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [showPdfAudioPanel]);
 
+  useEffect(() => {
+    const pollJobs = async () => {
+      try {
+        const { data } = await axios.get(getApiUrl('/audio/pdf-podcast/jobs'), { headers: authHeaders });
+        const jobs: PdfAudioJob[] = data?.jobs || [];
+        setPdfAudioJobs(jobs);
+
+        let shouldRefreshConversations = false;
+        for (const job of jobs) {
+          if ((job.status === 'completed' || job.status === 'failed') && !seenPdfJobStatusesRef.current[job.id]) {
+            seenPdfJobStatusesRef.current[job.id] = job.status;
+            if (job.status === 'completed') {
+              const mins = job.result ? Math.max(1, Math.round(job.result.durationSeconds / 60)) : job.targetMinutes;
+              const cost = job.result?.estimatedCostUsd != null ? job.result.estimatedCostUsd.toFixed(4) : '—';
+              toast.success(`PDF audio ready (${mins}m, ~$${cost})`);
+              shouldRefreshConversations = true;
+
+              if (currentConversationId && job.conversationId === currentConversationId) {
+                const convRes = await axios.get(getApiUrl(`/chat/${currentConversationId}`), { headers: authHeaders });
+                const conv: ConversationWithMessages = convRes.data.conversation;
+                setMessages(conv.messages);
+                shouldScrollRef.current = true;
+              }
+            } else {
+              toast.error(job.error || 'PDF audio job failed');
+            }
+          }
+        }
+
+        if (shouldRefreshConversations) {
+          const { data: convos } = await axios.get(getApiUrl('/chat'), { headers: authHeaders });
+          setConversations(convos);
+        }
+      } catch {
+        // non-blocking
+      }
+    };
+
+    pollJobs();
+    const timer = setInterval(pollJobs, 6000);
+    return () => clearInterval(timer);
+  }, [authHeaders, currentConversationId]);
+
   // ── Other handlers ─────────────────────────────────────────────────────
   const loadConversation = async (id: string) => {
     try {
@@ -748,9 +804,6 @@ const ChatInterface: React.FC = () => {
   };
 
   const handleLogout = () => { logout(); navigate('/auth'); };
-
-  // ── Auth headers helper ─────────────────────────────────────────────
-  const authHeaders = useMemo(() => ({ Authorization: `Bearer ${localStorage.getItem('token')}` }), []);
 
   const createFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -1693,14 +1746,73 @@ const ChatInterface: React.FC = () => {
                           </select>
                         )}
                       </div>
+                      <div className="mb-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-medium" style={{ color: darkMode ? '#aaa' : '#666' }}>
+                            Target length (approx)
+                          </span>
+                          <span className="text-[10px]" style={{ color: darkMode ? '#888' : '#777' }}>
+                            ±1-2 min
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setPdfAudioTargetMinutes(m => Math.max(2, m - 1))}
+                            className="w-6 h-6 rounded text-xs font-semibold"
+                            style={{ background: darkMode ? '#3a3a3a' : '#f3f4f6', color: darkMode ? '#ddd' : '#444' }}
+                          >
+                            −
+                          </button>
+                          <div className="flex-1 text-center text-xs rounded py-1"
+                            style={{ border: `1px solid ${darkMode ? '#555' : '#ddd'}`, color: darkMode ? '#ddd' : '#333' }}
+                          >
+                            {pdfAudioTargetMinutes} min
+                          </div>
+                          <button
+                            onClick={() => setPdfAudioTargetMinutes(m => Math.min(60, m + 1))}
+                            className="w-6 h-6 rounded text-xs font-semibold"
+                            style={{ background: darkMode ? '#3a3a3a' : '#f3f4f6', color: darkMode ? '#ddd' : '#444' }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
                       <button
                         onClick={() => pdfAudioInputRef.current?.click()}
                         disabled={pdfAudioLoading}
                         className="w-full px-2 py-1.5 rounded text-xs font-medium"
                         style={{ background: theme.accent, color: '#fff', opacity: pdfAudioLoading ? 0.6 : 1 }}
                       >
-                        {pdfAudioLoading ? 'Generating…' : 'Choose PDF & Generate'}
+                        {pdfAudioLoading ? 'Submitting…' : 'Choose PDF & Generate in Background'}
                       </button>
+                      <div className="mt-2 text-[10px]" style={{ color: darkMode ? '#888' : '#777' }}>
+                        You can switch chats while this runs.
+                      </div>
+                      {pdfAudioJobs.length > 0 && (
+                        <div className="mt-3 border-t pt-2" style={{ borderColor: darkMode ? '#444' : '#e5e7eb' }}>
+                          <div className="text-[10px] font-semibold mb-1" style={{ color: darkMode ? '#aaa' : '#666' }}>
+                            Recent PDF audio jobs
+                          </div>
+                          <div className="space-y-1 max-h-28 overflow-auto pr-1">
+                            {pdfAudioJobs.slice(0, 6).map(job => (
+                              <div key={job.id} className="text-[10px] rounded px-2 py-1" style={{ background: darkMode ? '#333' : '#f8fafc' }}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="truncate" style={{ color: darkMode ? '#ddd' : '#333' }}>
+                                    {job.fileName}
+                                  </span>
+                                  <span style={{ color: job.status === 'failed' ? '#ef4444' : darkMode ? '#aaa' : '#666' }}>
+                                    {job.status}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span style={{ color: darkMode ? '#999' : '#666' }}>{job.stage}</span>
+                                  <span style={{ color: darkMode ? '#999' : '#666' }}>{job.progress}%</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
