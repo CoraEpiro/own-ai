@@ -998,7 +998,7 @@ const ChatInterface: React.FC = () => {
               key={att.id || i}
               className={`flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg ${
                 variant === 'user'
-                  ? 'bg-white/15 text-white/90'
+                  ? 'bg-black/20 dark:bg-white/12 border border-white/35 dark:border-white/25 text-white'
                   : 'bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-gray-300'
               }`}
             >
