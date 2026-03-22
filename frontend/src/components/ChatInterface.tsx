@@ -1413,8 +1413,18 @@ const ChatInterface: React.FC = () => {
                           </span>
                         </div>
                          <div className="flex-1 min-w-0">
+                          {(() => {
+                            const audioAttachments = (message.attachments || []).filter(a => a.type === 'audio' && !!a.url);
+                            const hasAudioAttachment = audioAttachments.length > 0;
+                            const contentWithoutAudioLink = hasAudioAttachment
+                              ? (message.content || '')
+                                .replace(/\n*\[Open \/ Download audio\]\(([^)]+)\)\s*$/i, '')
+                                .trim()
+                              : message.content;
+                            return (
+                              <>
                           <AIMessage
-                            content={message.content}
+                            content={contentWithoutAudioLink}
                             darkMode={darkMode}
                             reasoningContent={message.reasoningContent}
                             isStreaming={streamingAssistantId === message.id}
@@ -1425,10 +1435,9 @@ const ChatInterface: React.FC = () => {
                               actionIconHoverDark: theme.actionIconHoverDark,
                             }}
                           />
-                          {message.attachments && message.attachments.some(a => a.type === 'audio' && !!a.url) && (
+                          {hasAudioAttachment && (
                             <div className="mt-3 space-y-2">
-                              {message.attachments
-                                .filter(att => att.type === 'audio' && !!att.url)
+                              {audioAttachments
                                 .map((att, i) => (
                                   <div key={att.id || `${message.id}-audio-${i}`} className="max-w-md">
                                     <audio controls preload="none" className="w-full">
@@ -1447,6 +1456,9 @@ const ChatInterface: React.FC = () => {
                                 ))}
                             </div>
                           )}
+                              </>
+                            );
+                          })()}
                           {/* Metadata — subtle, below action buttons */}
                           <div className="flex items-center gap-2 mt-1">
                             {message.model && (
