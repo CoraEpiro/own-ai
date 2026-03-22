@@ -137,7 +137,6 @@ async function generateScriptChunk(
         { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
         { role: 'user', content: prompt },
       ],
-      temperature: mode === 'podcast' ? 0.8 : 0.5,
       max_completion_tokens: 900,
     },
     {
