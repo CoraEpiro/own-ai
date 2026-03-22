@@ -76,7 +76,7 @@ interface PdfAudioJobResult {
 
 interface PdfAudioJob {
   id: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
   mode: PdfAudioMode;
   voice: string;
   secondaryVoice: string;
@@ -89,6 +89,22 @@ interface PdfAudioJob {
   updatedAt: string;
   result?: PdfAudioJobResult;
   error?: string;
+}
+
+function estimatePdfAudioMinutesAndCost(mode: PdfAudioMode, targetMinutes: number) {
+  const bounded = Math.max(2, Math.min(60, Math.round(targetMinutes)));
+  const multiplier = mode === 'summary' ? 0.75 : mode === 'narration' ? 1.0 : 1.35;
+  const roughMinutes = Math.max(2, Math.round(bounded * multiplier));
+  const estChars = roughMinutes * 750;
+  const scriptChars = estChars * 1.25;
+  const scriptInputTokens = Math.ceil(scriptChars / 4);
+  const scriptOutputTokens = Math.ceil(estChars / 4);
+  const scriptCost = (scriptInputTokens / 1000) * 0.00015 + (scriptOutputTokens / 1000) * 0.0006;
+  const ttsCost = (estChars / 1_000_000) * 10;
+  return {
+    roughMinutes,
+    roughCostUsd: scriptCost + ttsCost,
+  };
 }
 
 // ── Thinking Indicator ──────────────────────────────────────────────────
@@ -211,6 +227,8 @@ const ChatInterface: React.FC = () => {
   const [pdfAudioLoading, setPdfAudioLoading] = useState(false);
   const [pdfAudioTargetMinutes, setPdfAudioTargetMinutes] = useState(8);
   const [pdfAudioJobs, setPdfAudioJobs] = useState<PdfAudioJob[]>([]);
+  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
+  const [showPdfConfirm, setShowPdfConfirm] = useState(false);
   const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
   // Search Modes
   const [searchMode, setSearchMode] = useState<'auto' | 'human' | 'pre_ai' | 'custom'>('auto');
@@ -247,7 +265,7 @@ const ChatInterface: React.FC = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const typingTargetRef = useRef<Record<string, string>>({});
   const typingRafRef = useRef<Record<string, number>>({});
-  const seenPdfJobStatusesRef = useRef<Record<string, 'completed' | 'failed'>>({});
+  const seenPdfJobStatusesRef = useRef<Record<string, 'completed' | 'failed' | 'cancelled'>>({});
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -303,6 +321,14 @@ const ChatInterface: React.FC = () => {
   // ── Token estimation (for message metadata) ────────────────────────────
   const inputTokens = estimateTokens(input);
   const inputCost = currentModel?.costPer1kTokens ? (inputTokens / 1000) * currentModel.costPer1kTokens.input : 0;
+  const activePdfJobs = useMemo(
+    () => pdfAudioJobs.filter(j => j.status === 'queued' || j.status === 'processing'),
+    [pdfAudioJobs],
+  );
+  const pendingPdfEstimate = useMemo(
+    () => estimatePdfAudioMinutesAndCost(pdfAudioMode, pdfAudioTargetMinutes),
+    [pdfAudioMode, pdfAudioTargetMinutes],
+  );
 
   // ── Load models ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -500,11 +526,16 @@ const ChatInterface: React.FC = () => {
       toast.error('Please select a PDF file');
       return;
     }
+    setPendingPdfFile(file);
+    setShowPdfConfirm(true);
+  }, []);
 
+  const submitPdfAudioJob = useCallback(async () => {
+    if (!pendingPdfFile) return;
     setPdfAudioLoading(true);
     try {
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append('pdf', pendingPdfFile);
       formData.append('mode', pdfAudioMode);
       formData.append('voice', pdfAudioVoice);
       formData.append('secondaryVoice', pdfAudioSecondaryVoice);
@@ -522,16 +553,25 @@ const ChatInterface: React.FC = () => {
         setPdfAudioJobs(prev => [data.job, ...prev.filter(j => j.id !== data.job.id)].slice(0, 30));
       }
       toast.success(`PDF audio job started (~${pdfAudioTargetMinutes} min target)`);
-      if (!currentConversationId) {
-        toast('Tip: results attach to the current chat when opened from a chat thread.');
-      }
+      setShowPdfConfirm(false);
+      setPendingPdfFile(null);
       setShowPdfAudioPanel(false);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || err?.message || 'Failed to generate PDF audio');
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to start PDF audio job');
     } finally {
       setPdfAudioLoading(false);
     }
-  }, [currentConversationId, pdfAudioMode, pdfAudioSecondaryVoice, pdfAudioTargetMinutes, pdfAudioVoice]);
+  }, [currentConversationId, pdfAudioMode, pdfAudioSecondaryVoice, pdfAudioTargetMinutes, pdfAudioVoice, pendingPdfFile]);
+
+  const cancelPdfAudioJob = useCallback(async (jobId: string) => {
+    try {
+      await axios.post(getApiUrl(`/audio/pdf-podcast/jobs/${jobId}/cancel`), {}, { headers: authHeaders });
+      setPdfAudioJobs(prev => prev.map(j => (j.id === jobId ? { ...j, status: 'cancelled', stage: 'Cancelled by user', progress: 100 } : j)));
+      toast.success('PDF audio job cancelled');
+    } catch {
+      toast.error('Failed to cancel job');
+    }
+  }, [authHeaders]);
 
   // ═════════════════════════════════════════════════════════════════════════
   //  SEND MESSAGE
@@ -757,6 +797,9 @@ const ChatInterface: React.FC = () => {
             } else {
               toast.error(job.error || 'PDF audio job failed');
             }
+          } else if (job.status === 'cancelled' && !seenPdfJobStatusesRef.current[job.id]) {
+            seenPdfJobStatusesRef.current[job.id] = 'cancelled';
+            toast('PDF audio job cancelled');
           }
         }
 
@@ -1554,6 +1597,45 @@ const ChatInterface: React.FC = () => {
               </div>
             )}
 
+            {activePdfJobs.length > 0 && (
+              <div className="mb-3 p-3 rounded-2xl animate-fade-in" style={{ background: darkMode ? 'rgba(168,85,247,0.12)' : 'rgba(168,85,247,0.08)', border: `1px solid ${theme.accent}40` }}>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-xs font-semibold" style={{ color: darkMode ? '#ddd' : '#444' }}>
+                    PDF audio jobs running in background ({activePdfJobs.length})
+                  </div>
+                  <button
+                    onClick={() => setShowPdfAudioPanel(true)}
+                    className="text-[11px] px-2 py-1 rounded"
+                    style={{ background: darkMode ? '#333' : '#eceff3', color: darkMode ? '#bbb' : '#555' }}
+                  >
+                    View jobs
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {activePdfJobs.slice(0, 2).map(job => (
+                    <div key={job.id} className="text-[11px]">
+                      <div className="flex items-center justify-between">
+                        <span className="truncate mr-2" style={{ color: darkMode ? '#ccc' : '#555' }}>{job.fileName}</span>
+                        <div className="flex items-center gap-1">
+                          <span style={{ color: darkMode ? '#aaa' : '#666' }}>{job.progress}%</span>
+                          <button
+                            onClick={() => cancelPdfAudioJob(job.id)}
+                            className="text-[10px] px-1.5 py-0.5 rounded"
+                            style={{ background: darkMode ? '#4b1d1d' : '#fee2e2', color: darkMode ? '#fca5a5' : '#b91c1c' }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden mt-1" style={{ background: darkMode ? '#333' : '#e5e7eb' }}>
+                        <div className="h-full" style={{ width: `${Math.max(5, job.progress)}%`, background: theme.accent }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Model Recommendation Badge */}
             {modelRecommendation && showRecommendation && (selectedModel !== modelRecommendation.recommendedModel || (modelRecommendation.enableDeepSearch && !deepSearch)) && (
               <div className="mb-3 p-3 rounded-2xl animate-fade-in" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}40` }}>
@@ -1800,6 +1882,9 @@ const ChatInterface: React.FC = () => {
                       <div className="mt-2 text-[10px]" style={{ color: darkMode ? '#888' : '#777' }}>
                         You can switch chats while this runs.
                       </div>
+                      <div className="mt-1 text-[10px]" style={{ color: darkMode ? '#9aa0a6' : '#6b7280' }}>
+                        Rough output: ~{pendingPdfEstimate.roughMinutes} min • est. cost: ~${pendingPdfEstimate.roughCostUsd.toFixed(4)}
+                      </div>
                       {pdfAudioJobs.length > 0 && (
                         <div className="mt-3 border-t pt-2" style={{ borderColor: darkMode ? '#444' : '#e5e7eb' }}>
                           <div className="text-[10px] font-semibold mb-1" style={{ color: darkMode ? '#aaa' : '#666' }}>
@@ -1820,6 +1905,17 @@ const ChatInterface: React.FC = () => {
                                   <span style={{ color: darkMode ? '#999' : '#666' }}>{job.stage}</span>
                                   <span style={{ color: darkMode ? '#999' : '#666' }}>{job.progress}%</span>
                                 </div>
+                                {(job.status === 'queued' || job.status === 'processing') && (
+                                  <div className="mt-1 flex justify-end">
+                                    <button
+                                      onClick={() => cancelPdfAudioJob(job.id)}
+                                      className="text-[10px] px-1.5 py-0.5 rounded"
+                                      style={{ background: darkMode ? '#4b1d1d' : '#fee2e2', color: darkMode ? '#fca5a5' : '#b91c1c' }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -2058,6 +2154,44 @@ const ChatInterface: React.FC = () => {
             return 'ash'; // Default OpenAI
           })()}
         />
+      )}
+      {showPdfConfirm && pendingPdfFile && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 backdrop-blur-sm">
+          <div
+            className="w-[min(520px,92vw)] rounded-2xl p-4"
+            style={{ background: darkMode ? '#1f1f22' : '#fff', border: `1px solid ${darkMode ? '#3b3b3f' : '#e5e7eb'}` }}
+          >
+            <div className="text-sm font-semibold mb-1" style={{ color: darkMode ? '#eee' : '#222' }}>
+              Start PDF audio generation?
+            </div>
+            <div className="text-xs mb-3" style={{ color: darkMode ? '#aaa' : '#666' }}>
+              File: <span className="font-medium">{pendingPdfFile.name}</span>
+            </div>
+            <div className="text-xs mb-3" style={{ color: darkMode ? '#bbb' : '#555' }}>
+              Mode: <span className="font-medium">{pdfAudioMode}</span> • Target: <span className="font-medium">{pdfAudioTargetMinutes} min</span> • Rough output: <span className="font-medium">~{pendingPdfEstimate.roughMinutes} min</span>
+            </div>
+            <div className="text-xs mb-4" style={{ color: darkMode ? '#9ca3af' : '#6b7280' }}>
+              Estimated generation cost: <span className="font-semibold">~${pendingPdfEstimate.roughCostUsd.toFixed(4)}</span>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowPdfConfirm(false); setPendingPdfFile(null); }}
+                className="px-3 py-1.5 rounded text-xs"
+                style={{ background: darkMode ? '#2f2f34' : '#f3f4f6', color: darkMode ? '#ccc' : '#444' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitPdfAudioJob}
+                disabled={pdfAudioLoading}
+                className="px-3 py-1.5 rounded text-xs font-medium"
+                style={{ background: theme.accent, color: '#fff', opacity: pdfAudioLoading ? 0.6 : 1 }}
+              >
+                {pdfAudioLoading ? 'Starting…' : 'Approve & Start'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -22,7 +22,7 @@ const TTS_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 
 
 type PdfAudioMode = 'summary' | 'narration' | 'podcast';
 type PodcastSpeaker = 'host' | 'guest';
-type PdfAudioJobStatus = 'queued' | 'processing' | 'completed' | 'failed';
+type PdfAudioJobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
 
 interface PdfAudioResult {
   mode: PdfAudioMode;
@@ -57,6 +57,7 @@ interface PdfAudioJob {
   stage: string;
   createdAt: string;
   updatedAt: string;
+  cancelRequested?: boolean;
   result?: PdfAudioResult;
   error?: string;
 }
@@ -372,6 +373,7 @@ async function generatePdfAudio(params: {
   secondaryVoice: string;
   targetMinutes: number;
   includeBase64Fallback: boolean;
+  shouldCancel?: () => boolean;
   onProgress?: (stage: string, progress: number) => void;
 }): Promise<PdfAudioResult> {
   const {
@@ -383,9 +385,15 @@ async function generatePdfAudio(params: {
     secondaryVoice,
     targetMinutes,
     includeBase64Fallback,
+    shouldCancel,
     onProgress,
   } = params;
 
+  const ensureNotCancelled = () => {
+    if (shouldCancel?.()) throw new Error('PDF_AUDIO_JOB_CANCELLED');
+  };
+
+  ensureNotCancelled();
   onProgress?.('Extracting text', 8);
   const pdfText = await extractPdfText(fileBuffer);
   const chunks = chunkTextByParagraph(pdfText);
@@ -400,11 +408,13 @@ async function generatePdfAudio(params: {
     Math.ceil(targetCharsTotal / Math.max(1, activeChunks.length))
   );
 
+  ensureNotCancelled();
   onProgress?.('Generating script', 15);
   const scriptChunks: string[] = [];
   let prevTail = '';
   let scriptInputChars = 0;
   for (let i = 0; i < activeChunks.length; i++) {
+    ensureNotCancelled();
     scriptInputChars += activeChunks[i].length;
     const script = await generateScriptChunk(
       apiKey,
@@ -426,6 +436,7 @@ async function generatePdfAudio(params: {
   const gapSamples = Math.floor((24000 * gapMs) / 1000);
   const silence = Buffer.alloc(gapSamples * 2, 0);
   let ttsChars = 0;
+  ensureNotCancelled();
   onProgress?.('Synthesizing audio', 52);
 
   if (mode === 'podcast') {
@@ -433,9 +444,11 @@ async function generatePdfAudio(params: {
     let processed = 0;
     const total = Math.max(1, turns.length);
     for (const turn of turns) {
+      ensureNotCancelled();
       const ttsVoice = turn.speaker === 'guest' ? secondaryVoice : voice;
       const subParts = chunkLongSpeech(turn.text, 1300);
       for (const subPart of subParts) {
+        ensureNotCancelled();
         ttsChars += subPart.length;
         const pcm = await synthesizePcm(apiKey, subPart, ttsVoice);
         pcmParts.push(pcm, silence);
@@ -445,6 +458,7 @@ async function generatePdfAudio(params: {
     }
   } else {
     for (let i = 0; i < scriptChunks.length; i++) {
+      ensureNotCancelled();
       ttsChars += scriptChunks[i].length;
       const pcm = await synthesizePcm(apiKey, scriptChunks[i], voice);
       pcmParts.push(pcm, silence);
@@ -461,6 +475,7 @@ async function generatePdfAudio(params: {
     ttsChars,
   });
 
+  ensureNotCancelled();
   onProgress?.('Uploading audio', 90);
   let audioUrl = '';
   try {
@@ -671,6 +686,7 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
     stage: 'Queued',
     createdAt: now,
     updatedAt: now,
+    cancelRequested: false,
   };
   pdfAudioJobs.set(id, job);
   prunePdfAudioJobs();
@@ -693,10 +709,15 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
         voice,
         secondaryVoice,
         targetMinutes,
-        includeBase64Fallback: false,
+        includeBase64Fallback: true,
+        shouldCancel: () => {
+          const current = pdfAudioJobs.get(id);
+          return !current || !!current.cancelRequested || current.status === 'cancelled';
+        },
         onProgress: (stage, progress) => {
           const running = pdfAudioJobs.get(id);
           if (!running) return;
+          if (running.cancelRequested || running.status === 'cancelled') return;
           running.status = 'processing';
           running.stage = stage;
           running.progress = Math.max(0, Math.min(100, progress));
@@ -707,6 +728,7 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
 
       const done = pdfAudioJobs.get(id);
       if (!done) return;
+      if (done.cancelRequested || done.status === 'cancelled') return;
       done.status = 'completed';
       done.stage = 'Completed';
       done.progress = 100;
@@ -714,7 +736,7 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
       done.updatedAt = new Date().toISOString();
       pdfAudioJobs.set(id, done);
 
-      if (done.conversationId) {
+      if (done.conversationId && result.audioUrl) {
         const info = `Generated ${result.mode} audio from **${done.fileName}** (${result.chunks} chunks, ~${Math.round(result.durationSeconds / 60)} min target ${result.targetMinutes}m).\n\nEstimated generation cost: **$${result.estimatedCostUsd.toFixed(4)}**.\n\n[Open / Download audio](${result.audioUrl})`;
         const dbAttachments = [
           {
@@ -744,6 +766,14 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
     } catch (err: any) {
       const failed = pdfAudioJobs.get(id);
       if (!failed) return;
+      if ((err?.message || '').includes('PDF_AUDIO_JOB_CANCELLED') || failed.cancelRequested || failed.status === 'cancelled') {
+        failed.status = 'cancelled';
+        failed.stage = 'Cancelled by user';
+        failed.progress = 100;
+        failed.updatedAt = new Date().toISOString();
+        pdfAudioJobs.set(id, failed);
+        return;
+      }
       failed.status = 'failed';
       failed.stage = 'Failed';
       failed.progress = 100;
@@ -757,6 +787,26 @@ router.post('/pdf-podcast/jobs', authMiddleware, upload.single('pdf'), async (re
   return res.json({ job });
 });
 
+router.post('/pdf-podcast/jobs/:jobId/cancel', authMiddleware, async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const job = pdfAudioJobs.get(req.params.jobId);
+  if (!job || job.userId !== userId) return res.status(404).json({ error: 'Job not found' });
+
+  if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+    return res.json({ job });
+  }
+
+  job.cancelRequested = true;
+  job.status = 'cancelled';
+  job.stage = 'Cancelled by user';
+  job.progress = 100;
+  job.updatedAt = new Date().toISOString();
+  pdfAudioJobs.set(job.id, job);
+  return res.json({ job });
+});
+
 router.get('/pdf-podcast/jobs', authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
@@ -764,7 +814,11 @@ router.get('/pdf-podcast/jobs', authMiddleware, async (req: Request, res: Respon
   const jobs = [...pdfAudioJobs.values()]
     .filter(j => j.userId === userId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 30);
+    .slice(0, 30)
+    .map(job => ({
+      ...job,
+      result: job.result ? { ...job.result, audioBase64: undefined } : undefined,
+    }));
 
   return res.json({ jobs });
 });
