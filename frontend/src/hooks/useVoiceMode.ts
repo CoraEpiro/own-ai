@@ -132,8 +132,25 @@ export function useVoiceMode(): UseVoiceModeReturn {
       .replace(/`([^`]+)`/g, '$1')
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/^\s*[-*]\s+/gm, '')
-      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\n{3,}/g, '\n\n');
+  }, []);
+
+  const normalizeVoiceFinalText = useCallback((text: string): string => {
+    return cleanVoiceText(text)
+      .replace(/[ \t]{2,}/g, ' ')
       .trim();
+  }, [cleanVoiceText]);
+
+  const mergeTranscriptDelta = useCallback((prev: string, rawDelta: string): string => {
+    const delta = cleanVoiceText(rawDelta);
+    if (!delta) return prev;
+    if (!prev) return delta;
+
+    const prevLast = prev[prev.length - 1];
+    const deltaFirst = delta[0];
+    const boundaryLooksWordJoin = /[A-Za-z0-9]/.test(prevLast) && /[A-Za-z0-9]/.test(deltaFirst);
+    const needsSpace = boundaryLooksWordJoin && !/\s/.test(prevLast) && !/\s/.test(deltaFirst);
+    return needsSpace ? `${prev} ${delta}` : `${prev}${delta}`;
   }, []);
 
   // ── Audio Playback ──────────────────────────────────────
@@ -348,16 +365,18 @@ export function useVoiceMode(): UseVoiceModeReturn {
 
         case 'response.audio_transcript.delta':
           if (msg.delta) {
-            const cleanedDelta = cleanVoiceText(msg.delta);
-            setTranscript(prev => prev + cleanedDelta);
-            currentAssistantTextRef.current += cleanedDelta;
+            setTranscript(prev => {
+              const merged = mergeTranscriptDelta(prev, msg.delta);
+              currentAssistantTextRef.current = merged;
+              return merged;
+            });
           }
           break;
 
         case 'response.audio_transcript.done':
           // Full AI transcript received — keep displayed
           if (msg.transcript) {
-            const cleaned = cleanVoiceText(msg.transcript);
+            const cleaned = normalizeVoiceFinalText(msg.transcript);
             currentAssistantTextRef.current = cleaned;
             setTranscript(cleaned);
           }
@@ -366,8 +385,9 @@ export function useVoiceMode(): UseVoiceModeReturn {
         case 'conversation.item.input_audio_transcription.completed':
           // User's speech transcription
           if (msg.transcript) {
-            currentUserTextRef.current = msg.transcript;
-            setUserTranscript(msg.transcript);
+            const cleanedUserText = normalizeVoiceFinalText(msg.transcript);
+            currentUserTextRef.current = cleanedUserText;
+            setUserTranscript(cleanedUserText);
           }
           break;
 
@@ -417,7 +437,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     } catch {
       // Non-JSON message, ignore
     }
-  }, [playAudioChunk, saveTurn, interruptPlayback, cleanVoiceText]);
+  }, [playAudioChunk, saveTurn, interruptPlayback, mergeTranscriptDelta, normalizeVoiceFinalText]);
 
   // ── Connect ─────────────────────────────────────────────
 
