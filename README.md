@@ -40,6 +40,25 @@ own-ai/
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001
 
+### Desktop App (macOS / Windows)
+
+You can package this same repo as a desktop app (Electron) — no separate project required.
+
+```bash
+# one-time install desktop tooling
+cd desktop
+npm install
+
+# run desktop in dev mode
+npm run dev
+
+# create installers
+npm run dist:mac   # macOS .dmg + .zip
+npm run dist:win   # Windows .exe (NSIS + portable)
+```
+
+Desktop packaging outputs are generated in `desktop/dist/`.
+
 ### Deployment
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.

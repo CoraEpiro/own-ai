@@ -1,0 +1,53 @@
+{
+  "name": "own-ai-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "npm --prefix ../frontend run build -- --watch",
+    "dev:electron": "wait-on ../frontend/dist/index.html && cross-env NODE_ENV=development ELECTRON_RENDERER_URL=http://localhost:4173 concurrently -k \"npm --prefix ../frontend run preview -- --host --port 4173 --strictPort\" \"electron .\"",
+    "prepare:renderer": "npm --prefix ../frontend run build && node ./scripts/sync-renderer.js",
+    "build": "npm run prepare:renderer && electron-builder --dir",
+    "dist:mac": "npm run prepare:renderer && electron-builder --mac dmg zip",
+    "dist:win": "npm run prepare:renderer && electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.ownai.desktop",
+    "productName": "Own AI",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "asar": true,
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
