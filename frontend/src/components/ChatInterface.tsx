@@ -6,6 +6,7 @@ import {
   Paperclip, FileText, Image as ImageIcon, FileSpreadsheet, FileCode,
   Upload, File, Mic, MicOff, Globe, Waves,
   FolderPlus, Folder as FolderIcon, FolderOpen, MoreHorizontal, Database,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -1353,6 +1354,11 @@ const ChatInterface: React.FC = () => {
           {sidebarOpen && (
             <div className="mt-2.5 flex items-center gap-0.5">
               <button onClick={() => navigate('/dashboard')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Dashboard"><BarChart3 className="h-4 w-4" /></button>
+              {user?.isAdmin && (
+                <button onClick={() => navigate('/admin')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Admin">
+                  <Shield className="h-4 w-4" />
+                </button>
+              )}
               <button onClick={() => navigate('/buckets')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Knowledge Buckets"><Database className="h-4 w-4" /></button>
               <button onClick={() => navigate('/profile')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Settings"><UserIcon className="h-4 w-4" /></button>
               <button onClick={toggleDarkMode} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Theme">

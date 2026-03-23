@@ -48,6 +48,7 @@ export interface User {
   email: string;
   password: string;
   bio?: string;
+  is_admin?: boolean;
   created_at: Date;
 }
 
@@ -117,10 +118,16 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   return data;
 };
 
-export const createUser = async (userData: { email: string; password: string }): Promise<User> => {
+export const createUser = async (
+  userData: { email: string; password: string; isAdmin?: boolean }
+): Promise<User> => {
   const { data, error } = await supabase
     .from('users')
-    .insert([{ email: userData.email, password: userData.password }])
+    .insert([{
+      email: userData.email,
+      password: userData.password,
+      is_admin: !!userData.isAdmin,
+    }])
     .select()
     .single();
   if (error) throw new Error('Failed to create user');
@@ -135,6 +142,25 @@ export const getUserById = async (userId: string): Promise<User | null> => {
     .single();
   if (error) return null;
   return data;
+};
+
+export const setUserAdmin = async (userId: string, isAdmin: boolean): Promise<void> => {
+  const { error } = await supabase
+    .from('users')
+    .update({ is_admin: isAdmin })
+    .eq('id', userId);
+  if (error) throw new Error('Failed to update admin role');
+};
+
+export const isUserAdmin = async (userId: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', userId)
+    .single();
+
+  if (error || !data) return false;
+  return !!data.is_admin;
 };
 
 export const getUserBio = async (userId: string): Promise<string> => {
@@ -622,4 +648,230 @@ export const getBucketContentForContext = async (conversationId: string): Promis
     return result.substring(0, 32000) + '\n\n[... truncated for context limit]';
   }
   return result;
+};
+
+// ── Admin Operations ──────────────────────────────────
+
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  isAdmin: boolean;
+  createdAt: string;
+  messageCount: number;
+  totalTokens: number;
+  totalCost: number;
+  lastActiveAt: string | null;
+  balance: number | null;
+}
+
+export interface AdminFeedbackRow {
+  id: string;
+  user_id: string | null;
+  type: 'suggestion' | 'report';
+  subject: string;
+  message: string;
+  status: 'open' | 'in_review' | 'resolved' | 'dismissed';
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminTransactionRow {
+  id: string;
+  user_id: string | null;
+  type: 'usage_charge' | 'credit' | 'refund' | 'adjustment';
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  description: string;
+  scheduled_for: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export const getAdminUsersOverview = async (): Promise<AdminUserSummary[]> => {
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, email, is_admin, created_at')
+    .order('created_at', { ascending: false });
+
+  if (usersError || !users?.length) return [];
+
+  const userIds = users.map(u => u.id);
+  const { data: messages } = await supabase
+    .from('chat_messages')
+    .select('user_id, tokens_used, cost, timestamp')
+    .in('user_id', userIds);
+
+  const stats: Record<string, {
+    messageCount: number;
+    totalTokens: number;
+    totalCost: number;
+    lastActiveAt: string | null;
+  }> = {};
+
+  for (const row of messages || []) {
+    const current = stats[row.user_id] ??= {
+      messageCount: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      lastActiveAt: null,
+    };
+
+    current.messageCount += 1;
+    current.totalTokens += row.tokens_used || 0;
+    current.totalCost += row.cost || 0;
+    if (!current.lastActiveAt || (row.timestamp && row.timestamp > current.lastActiveAt)) {
+      current.lastActiveAt = row.timestamp || current.lastActiveAt;
+    }
+  }
+
+  return users.map((user: any) => ({
+    id: user.id,
+    email: user.email,
+    isAdmin: !!user.is_admin,
+    createdAt: user.created_at,
+    messageCount: stats[user.id]?.messageCount || 0,
+    totalTokens: stats[user.id]?.totalTokens || 0,
+    totalCost: stats[user.id]?.totalCost || 0,
+    lastActiveAt: stats[user.id]?.lastActiveAt || null,
+    balance: null,
+  }));
+};
+
+export const getAdminOverview = async () => {
+  const [usersRes, messagesRes, feedbackRes, txRes] = await Promise.all([
+    supabase.from('users').select('id', { count: 'exact', head: true }),
+    supabase.from('chat_messages').select('cost', { count: 'exact' }),
+    supabase.from('admin_feedback').select('id, status'),
+    supabase.from('admin_transactions').select('id, status'),
+  ]);
+
+  const totalUsers = usersRes.count || 0;
+  const totalMessages = messagesRes.count || 0;
+  const totalCost = (messagesRes.data || []).reduce((sum, row: any) => sum + (row.cost || 0), 0);
+
+  const feedback = feedbackRes.data || [];
+  const transactions = txRes.data || [];
+
+  return {
+    totalUsers,
+    totalMessages,
+    totalCost,
+    openFeedback: feedback.filter((f: any) => f.status === 'open' || f.status === 'in_review').length,
+    pendingTransactions: transactions.filter((t: any) => t.status === 'pending').length,
+  };
+};
+
+export const createUserFeedback = async (
+  userId: string | null,
+  type: 'suggestion' | 'report',
+  subject: string,
+  message: string
+): Promise<AdminFeedbackRow> => {
+  const safeSubject = sanitizeStringForDb(subject).trim().slice(0, 200);
+  const safeMessage = sanitizeStringForDb(message).trim().slice(0, 5000);
+
+  const { data, error } = await supabase
+    .from('admin_feedback')
+    .insert([{
+      user_id: userId,
+      type,
+      subject: safeSubject,
+      message: safeMessage,
+      status: 'open',
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to create feedback: ${error.message}`);
+  return data;
+};
+
+export const getAdminFeedback = async (): Promise<AdminFeedbackRow[]> => {
+  const { data, error } = await supabase
+    .from('admin_feedback')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return [];
+  return data || [];
+};
+
+export const updateAdminFeedback = async (
+  feedbackId: string,
+  updates: { status?: AdminFeedbackRow['status']; adminNote?: string }
+): Promise<void> => {
+  const payload: Record<string, any> = { updated_at: new Date().toISOString() };
+  if (updates.status) payload.status = updates.status;
+  if (typeof updates.adminNote === 'string') {
+    payload.admin_note = sanitizeStringForDb(updates.adminNote).slice(0, 2000);
+  }
+
+  const { error } = await supabase
+    .from('admin_feedback')
+    .update(payload)
+    .eq('id', feedbackId);
+  if (error) throw new Error(`Failed to update feedback: ${error.message}`);
+};
+
+export const createAdminTransaction = async (input: {
+  userId?: string | null;
+  type: AdminTransactionRow['type'];
+  amount: number;
+  currency?: string;
+  status?: AdminTransactionRow['status'];
+  description: string;
+  scheduledFor?: string | null;
+  metadata?: Record<string, any>;
+}): Promise<AdminTransactionRow> => {
+  const { data, error } = await supabase
+    .from('admin_transactions')
+    .insert([{
+      user_id: input.userId || null,
+      type: input.type,
+      amount: input.amount,
+      currency: (input.currency || 'USD').toUpperCase(),
+      status: input.status || 'pending',
+      description: sanitizeStringForDb(input.description).slice(0, 500),
+      scheduled_for: input.scheduledFor || null,
+      metadata: sanitizeJsonValueForDb(input.metadata || {}),
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to create transaction: ${error.message}`);
+  return data;
+};
+
+export const getAdminTransactions = async (): Promise<AdminTransactionRow[]> => {
+  const { data, error } = await supabase
+    .from('admin_transactions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data || [];
+};
+
+export const updateAdminTransaction = async (
+  transactionId: string,
+  updates: {
+    status?: AdminTransactionRow['status'];
+    scheduledFor?: string | null;
+    description?: string;
+    metadata?: Record<string, any>;
+  }
+): Promise<void> => {
+  const payload: Record<string, any> = { updated_at: new Date().toISOString() };
+  if (updates.status) payload.status = updates.status;
+  if (updates.scheduledFor !== undefined) payload.scheduled_for = updates.scheduledFor;
+  if (typeof updates.description === 'string') payload.description = sanitizeStringForDb(updates.description).slice(0, 500);
+  if (updates.metadata) payload.metadata = sanitizeJsonValueForDb(updates.metadata);
+
+  const { error } = await supabase
+    .from('admin_transactions')
+    .update(payload)
+    .eq('id', transactionId);
+  if (error) throw new Error(`Failed to update transaction: ${error.message}`);
 };

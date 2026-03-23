@@ -5,6 +5,7 @@ import { getApiUrl } from '../config/api';
 interface User {
   id: string;
   email: string;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {

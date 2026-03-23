@@ -18,6 +18,7 @@ import { bucketRoutes } from './routes/buckets';
 import { memoryRoutes } from './routes/memories';
 import { modelRecommendationRoutes } from './routes/modelRecommendation';
 import { setupRealtimeWebSocket } from './routes/realtimeVoice';
+import { adminRoutes, publicAdminRoutes } from './routes/admin';
 
 const app = express();
 const server = createServer(app);
@@ -98,6 +99,8 @@ app.use('/api/folders', folderRoutes);
 app.use('/api/buckets', bucketRoutes);
 app.use('/api/memories', memoryRoutes);
 app.use('/api/recommend-model', modelRecommendationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/feedback', publicAdminRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

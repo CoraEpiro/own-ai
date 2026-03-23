@@ -8,7 +8,13 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res: express.Response
   const userId = req.user?.id;
   const user = await getUserById(userId);
   if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
+  res.json({
+    id: user.id,
+    email: user.email,
+    bio: user.bio || '',
+    isAdmin: !!user.is_admin,
+    createdAt: user.created_at,
+  });
 });
 
 // GET /api/user/bio — fetch user's custom instructions

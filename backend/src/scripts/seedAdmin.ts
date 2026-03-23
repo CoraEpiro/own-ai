@@ -24,7 +24,7 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
-    await createUser({ email, password: hashedPassword });
+    await createUser({ email, password: hashedPassword, isAdmin: true });
   } catch (err) {
     console.error('Could not create admin user (is Supabase reachable and configured?):', err);
     process.exit(1);
@@ -38,4 +38,3 @@ main().catch((err) => {
   console.error('Failed to seed admin user:', err);
   process.exit(1);
 });
-
