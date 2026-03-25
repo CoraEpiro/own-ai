@@ -19,22 +19,22 @@ interface PromptAnalysis {
 const HEURISTIC_RULES = {
   reasoning: {
     keywords: ['prove', 'proof', 'derive', 'solve', 'step-by-step', 'reasoning', 'logic', 'theorem', 'hypothesis', 'algorithm', 'math', 'mathematical', 'equation', 'calculate', 'explain the process'],
-    model: 'o1',
+    model: 'o3',
     confidence: 0.90,
   },
   coding: {
     keywords: ['write code', 'debug', 'refactor', 'function', 'class', 'implement', 'api', 'fix', 'code', 'programming', 'typescript', 'javascript', 'react', 'async', 'promise'],
-    model: 'claude-3-5-sonnet-latest',
+    model: 'claude-sonnet-4-6',
     confidence: 0.85,
   },
   search: {
     keywords: ['current', 'latest', 'news', 'weather', 'today', 'yesterday', 'price', 'stock', 'who won', 'when is', 'search', 'find out', 'find', 'lookup', 'look up', 'recent', 'live', 'population', 'stats', 'statistics', 'check'],
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     confidence: 0.90,
   },
   simple: {
     keywords: ['explain', 'summarize', 'translate', 'list', 'format', 'what is', 'how to', 'define', 'tell me', 'describe'],
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     confidence: 0.80,
   },
 };
@@ -93,43 +93,43 @@ function getRecommendationForCategory(category: string): { model: string; reason
   switch (category) {
     case 'reasoning':
       return {
-        model: 'o1',
-        reasoning: 'This task requires step-by-step logical reasoning. o1 is specialized for complex mathematical and logical proofs.',
+        model: 'o3',
+        reasoning: 'This task requires step-by-step logical reasoning. o3 is specialized for complex mathematical and logical proofs.',
         confidence: 0.90,
-        alternatives: ['o3-mini', 'gpt-4o'],
+        alternatives: ['o4-mini', 'gpt-5.4'],
         enableDeepSearch: false,
       };
     case 'coding':
       return {
-        model: 'claude-3-5-sonnet-latest',
-        reasoning: 'This is a coding task. Claude 3.5 Sonnet excels at debugging, refactoring, and implementing complex patterns.',
+        model: 'claude-sonnet-4-6',
+        reasoning: 'This is a coding task. Claude Sonnet excels at debugging, refactoring, and implementing complex patterns.',
         confidence: 0.85,
-        alternatives: ['gpt-4o', 'o3-mini'],
+        alternatives: ['gpt-5.4', 'o4-mini'],
         enableDeepSearch: false,
       };
     case 'search':
       return {
-        model: 'gemini-2.0-flash',
-        reasoning: 'Your query requires real-time information. Gemini 2.0 Flash includes Google Search grounding for up-to-date answers.',
+        model: 'gemini-2.5-flash',
+        reasoning: 'Your query requires real-time information. Gemini 2.5 Flash includes Google Search grounding for up-to-date answers.',
         confidence: 0.90,
-        alternatives: ['gpt-4o'],
+        alternatives: ['gpt-5.4'],
         enableDeepSearch: true,
       };
     case 'vision':
       return {
-        model: 'gpt-4o',
-        reasoning: 'You have image attachments. GPT-4o has excellent vision capabilities and can analyze images while providing code or analysis.',
+        model: 'gpt-5.4',
+        reasoning: 'You have image attachments. GPT-5.4 has excellent vision capabilities and can analyze images while providing code or analysis.',
         confidence: 0.85,
-        alternatives: ['claude-3-5-sonnet-latest'],
+        alternatives: ['claude-sonnet-4-6'],
         enableDeepSearch: false,
       };
     case 'simple':
     default:
       return {
-        model: 'gpt-4o-mini',
-        reasoning: 'This is a straightforward question or explanation task. GPT-4o Mini is fast, accurate, and very cost-effective for simple queries.',
+        model: 'gpt-5-mini',
+        reasoning: 'This is a straightforward question or explanation task. GPT-5 Mini is fast, accurate, and very cost-effective for simple queries.',
         confidence: 0.80,
-        alternatives: ['gemini-2.0-flash', 'claude-3-5-haiku-latest'],
+        alternatives: ['gemini-2.5-flash', 'claude-haiku-4-5-20251001'],
         enableDeepSearch: false,
       };
   }
@@ -183,13 +183,20 @@ export function recommendModelHeuristic(
     }
   }
 
-  // Fallback: if recommended model is gemini-2.0-flash, switch to 2.5
-  if (recommendation.model === 'gemini-2.0-flash' || recommendation.model === 'gemini-2.5-pro') {
-    recommendation.model = 'gemini-2.5-flash';
-  }
-  // Check alternatives too
+  const legacyModelAliases: Record<string, string> = {
+    o1: 'o3',
+    'o3-mini': 'o4-mini',
+    'gpt-4o': 'gpt-5.4',
+    'gpt-4o-mini': 'gpt-5-mini',
+    'claude-3-5-sonnet-latest': 'claude-sonnet-4-6',
+    'claude-3-5-haiku-latest': 'claude-haiku-4-5-20251001',
+    'gemini-2.0-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-flash',
+  };
+
+  recommendation.model = legacyModelAliases[recommendation.model] || recommendation.model;
   if (recommendation.alternatives) {
-    recommendation.alternatives = recommendation.alternatives.map(m => (m === 'gemini-2.0-flash' || m === 'gemini-2.5-pro') ? 'gemini-2.5-flash' : m);
+    recommendation.alternatives = recommendation.alternatives.map(m => legacyModelAliases[m] || m);
   }
 
   // Calculate tokens

@@ -56,11 +56,26 @@ function formatFileSize(bytes: number): string {
 function normalizeModelId(modelId: string): string {
   const id = (modelId || '').trim();
   const aliases: Record<string, string> = {
+    o1: 'o3',
+    'o3-mini': 'o4-mini',
+    'gpt-4o': 'gpt-5.4',
+    'gpt-4o-mini': 'gpt-5-mini',
+    'gemini-2.0-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-flash',
     'claude-3.5-sonnet': 'claude-sonnet-4-6',
     'claude-3-5-sonnet-latest': 'claude-sonnet-4-6',
     'claude-3-5-haiku-latest': 'claude-haiku-4-5-20251001',
   };
   return aliases[id] || id;
+}
+
+function providerFromModelId(modelId: string): string {
+  const id = normalizeModelId(modelId);
+  if (id === 'auto') return 'Auto';
+  if (id.startsWith('claude')) return 'Anthropic';
+  if (id.startsWith('gemini')) return 'Google';
+  if (id.startsWith('gpt') || id.startsWith('o3') || id.startsWith('o4')) return 'OpenAI';
+  return 'OpenAI';
 }
 
 type PdfAudioMode = 'summary' | 'narration' | 'podcast';
@@ -202,7 +217,7 @@ const ChatInterface: React.FC = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gpt-5.4');
+  const [selectedModel, setSelectedModel] = useState(() => normalizeModelId(localStorage.getItem('selected-model') || 'auto'));
   const [models, setModels] = useState<LLMModel[]>([]);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [showModelSelector, setShowModelSelector] = useState(false);
@@ -315,8 +330,8 @@ const ChatInterface: React.FC = () => {
   // ── Derived theme ──────────────────────────────────────────────────────
   const currentModel = models.find(m => m.id === normalizeModelId(selectedModel));
   const theme: ProviderTheme = useMemo(
-    () => getProviderTheme(currentModel?.provider ?? 'OpenAI'),
-    [currentModel?.provider],
+    () => getProviderTheme(currentModel?.provider ?? providerFromModelId(selectedModel)),
+    [currentModel?.provider, selectedModel],
   );
 
   // ── Token estimation (for message metadata) ────────────────────────────
@@ -338,7 +353,14 @@ const ChatInterface: React.FC = () => {
         setModelLoadError(null);
         const { data } = await axios.get(getApiUrl('/models'));
         setModels(data.models);
-        if (data.models.length > 0) setSelectedModel(data.models[0].id);
+        if (data.models.length > 0) {
+          const current = normalizeModelId(selectedModel);
+          const hasCurrent = data.models.some((m: LLMModel) => normalizeModelId(m.id) === current);
+          if (!hasCurrent) {
+            const autoModel = data.models.find((m: LLMModel) => normalizeModelId(m.id) === 'auto');
+            setSelectedModel(normalizeModelId(autoModel?.id || data.models[0].id));
+          }
+        }
       } catch {
         setModelLoadError('Failed to load models.');
         setModels([]);
@@ -396,6 +418,10 @@ const ChatInterface: React.FC = () => {
 
   // ── Get model recommendation as user types ────────────────────────────────
   useEffect(() => {
+    if (normalizeModelId(selectedModel) !== 'auto') {
+      setModelRecommendation(null);
+      return;
+    }
     if (!input.trim() || input.length < 10) {
       setModelRecommendation(null);
       return;
@@ -415,6 +441,10 @@ const ChatInterface: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [input, pendingFiles, messages, selectedModel]);
+
+  useEffect(() => {
+    localStorage.setItem('selected-model', normalizeModelId(selectedModel));
+  }, [selectedModel]);
   const shouldScrollRef = useRef(false);
   useEffect(() => {
     if (shouldScrollRef.current) {
@@ -1643,7 +1673,7 @@ const ChatInterface: React.FC = () => {
             )}
 
             {/* Model Recommendation Badge */}
-            {modelRecommendation && showRecommendation && (selectedModel !== modelRecommendation.recommendedModel || (modelRecommendation.enableDeepSearch && !deepSearch)) && (
+            {normalizeModelId(selectedModel) === 'auto' && modelRecommendation && showRecommendation && (selectedModel !== modelRecommendation.recommendedModel || (modelRecommendation.enableDeepSearch && !deepSearch)) && (
               <div className="mb-3 p-3 rounded-2xl animate-fade-in" style={{ background: `${theme.accent}15`, border: `1px solid ${theme.accent}40` }}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

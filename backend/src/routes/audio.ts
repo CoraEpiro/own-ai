@@ -63,9 +63,9 @@ interface PdfAudioJob {
 }
 
 const pdfAudioJobs = new Map<string, PdfAudioJob>();
-const PDF_SCRIPT_INPUT_COST_PER_1K = 0.00015; // gpt-4o-mini approx
-const PDF_SCRIPT_OUTPUT_COST_PER_1K = 0.0006; // gpt-4o-mini approx
-const PDF_TTS_COST_PER_1M_CHARS = 10; // gpt-4o-mini-tts approx
+const PDF_SCRIPT_INPUT_COST_PER_1K = 0.00025; // gpt-5-mini approx
+const PDF_SCRIPT_OUTPUT_COST_PER_1K = 0.002; // gpt-5-mini approx
+const PDF_TTS_COST_PER_1M_CHARS = 10; // rough TTS estimate
 const DEFAULT_TARGET_MINUTES: Record<PdfAudioMode, number> = {
   summary: 4,
   narration: 8,
@@ -263,21 +263,20 @@ async function generateScriptChunk(
   const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
   const attempts = [
     {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       payload: {
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [
           { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 900,
-        temperature: 0.5,
+        max_completion_tokens: 900,
       },
     },
     {
-      model: 'gpt-5-mini',
+      model: 'gpt-5.4',
       payload: {
-        model: 'gpt-5-mini',
+        model: 'gpt-5.4',
         messages: [
           { role: 'system', content: 'You are an expert script writer for spoken audio content.' },
           { role: 'user', content: prompt },

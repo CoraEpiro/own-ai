@@ -22,6 +22,22 @@ import { streamToProvider } from '../services/providers';
 
 const router = express.Router();
 
+function normalizeModelId(modelId: string): string {
+  const id = (modelId || '').trim();
+  const aliases: Record<string, string> = {
+    o1: 'o3',
+    'o3-mini': 'o4-mini',
+    'gpt-4o': 'gpt-5.4',
+    'gpt-4o-mini': 'gpt-5-mini',
+    'gemini-2.0-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-flash',
+    'claude-3.5-sonnet': 'claude-sonnet-4-6',
+    'claude-3-5-sonnet-latest': 'claude-sonnet-4-6',
+    'claude-3-5-haiku-latest': 'claude-haiku-4-5-20251001',
+  };
+  return aliases[id] || id;
+}
+
 // ── Helpers ────────────────────────────────────────────
 
 function generateTitle(message: string): string {
@@ -195,6 +211,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
   let { prompt, model = 'gpt-5.4', conversationId, systemPrompt, attachments = [], reasoningEffort, deepSearch } = req.body;
+  model = normalizeModelId(model);
   console.log(`[stream-chat] model=${model}, attachments=${attachments.length}, prompt="${prompt?.substring(0, 60)}…"`);
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
     return res.status(400).json({ error: 'Missing prompt' });

@@ -29,6 +29,20 @@ interface AIMessageProps {
   onRetry?: () => void;
 }
 
+function normalizeMathDelimiters(markdown: string): string {
+  // Convert LaTeX \[...\] and \(...\) into remark-math friendly $$...$$ and $...$
+  // while preserving fenced code blocks.
+  return markdown
+    .split(/(```[\s\S]*?```)/g)
+    .map((segment) => {
+      if (segment.startsWith('```')) return segment;
+      return segment
+        .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
+        .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
+    })
+    .join('');
+}
+
 // ── Copy button inside code blocks ───────────────────────────────────────
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -244,6 +258,8 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
     );
   }
 
+  const renderContent = useMemo(() => normalizeMathDelimiters(content), [content]);
+
   return (
     <div>
       {/* Collapsed reasoning */}
@@ -367,7 +383,7 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
             },
           }}
         >
-          {content}
+          {renderContent}
         </ReactMarkdown>
         {isStreaming && (
           <span
