@@ -1,0 +1,24 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.ownai.desktop
+productName: Own AI
+files:
+  - filter:
+      - main.js
+      - preload.js
+      - renderer/**/*
+asar: true
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.productivity
+win:
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+electronVersion: 31.7.7
