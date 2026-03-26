@@ -111,7 +111,15 @@ export function normalizeAssistantMarkdown(markdown: string): string {
     .replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}')    // [sqrt x]
     // Clean up reversed escaping patterns
     .replace(/\\c\\\[/g, '\\[')
-    .replace(/\\c\\\]/g, '\\]');
+    .replace(/\\c\\\]/g, '\\]')
+    // Strip escaped single characters that are wrong (e.g., \T -> T, but keep \frac)
+    .replace(/\\([A-Z])([\s=\-\+\*/])/g, '$1$2')     // \T = -> T =
+    // Remove stray closing brackets after LaTeX commands
+    .replace(/\\dot\s+([^\s\]]+)\]/g, '\\dot{$1}')   // \dot x] -> \dot{x}
+    .replace(/\\ddot\s+([^\s\]]+)\]/g, '\\ddot{$1}')
+    // Fix broken single $ delimiters around variables in sentences
+    .replace(/\s\$([A-Z])\$\s/g, ' $$$1$ ')            // " $V$ " -> " $V$ " (keep as inline)
+    .replace(/\$([A-Z])\$\./g, ' $$$1$ ')              // "$V$." -> " $V$ " at end of sentence
 
   return text
     .split(/(```[\s\S]*?```)/g)
