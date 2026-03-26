@@ -1,116 +1,87 @@
-function escapeUnmatchedInlineDollars(line: string): string {
-  const withoutDouble = line.replace(/\$\$/g, '');
-  const singleDollarMatches = withoutDouble.match(/(?<!\\)\$/g) || [];
-  if (singleDollarMatches.length % 2 === 0) return line;
-  return line.replace(/(?<!\\)\$/g, '\\$');
-}
-
-function looksLikeFormulaLine(line: string): boolean {
+function isMathLine(line: string): boolean {
   const t = line.trim();
   if (!t) return false;
+  if (t.startsWith('```') || t.startsWith('#') || t.startsWith('-') || t.startsWith('*') || t.startsWith('>')) return false;
   if (t.includes('$')) return false;
-  if (/^(```|#{1,6}\s|[*-]\s|>\s)/.test(t)) return false;
-
-  const hasLatexCommand = /\\[a-zA-Z]+/.test(t);
-  const hasMathSymbols = /[=^_{}]/.test(t);
-  const hasGreekWord = /\b(alpha|beta|gamma|theta|lambda|pi|sigma|omega)\b/i.test(t);
-  if (!(hasLatexCommand || hasMathSymbols || hasGreekWord)) return false;
-
-  const words = t.split(/\s+/);
-  const proseLike = words.length >= 9 && /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t);
-  return !proseLike;
+  
+  const hasLatexCommand = /\\(frac|sqrt|sum|prod|int|dot|ddot|theta|mathbf|mathrm|text|left|right|lbrace|rbrace|alpha|beta|gamma|pi|sigma|omega|partial|infty|delta|nabla|approx|equiv|leq|geq|neq|pm|times|div|cup|cap|in|subset|superset|forall|exists|ldots|cdots|vdots|ddots|prime|dagger|dagger|dag|ddag|checkmark|dag|ast|star|bullet|circ|sim|simeq|cong|approx|equiv|not|neg|exists|forall|perp|parallel|propto|mid|nmid|therefore|because)\b/.test(t);
+  
+  return hasLatexCommand || /[=_{}^]/.test(t);
 }
 
 function normalizeSegment(segment: string): string {
-  let normalized = segment;
+  let text = segment;
 
-  normalized = normalized
+  text = text
     .replace(/^\\(#{1,6}\s)/gm, '$1')
-    .replace(/^\\([>*-]\s)/gm, '$1')
-    .replace(/\s\\###/g, ' ###')
-    .replace(/\s\\##/g, ' ##')
-    .replace(/\s\\#/g, ' #')
-    .replace(/^\s*\\###/gm, '###')
-    .replace(/^\s*\\##/gm, '##')
-    .replace(/^\s*\\#/gm, '#');
+    .replace(/^\\([>*\-]\s)/gm, '$1')
+    .replace(/(\s)\\(#{1,6})(\s|$)/gm, '$1$2$3')
+    .replace(/\\([a-z])\-/g, '-');
 
-  let withDelimiters = normalized;
-
-  const openInline = (withDelimiters.match(/\\\(/g) || []).length;
-  const closeInline = (withDelimiters.match(/\\\)/g) || []).length;
-  if (openInline === closeInline) {
-    withDelimiters = withDelimiters.replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
+  const openInline = (text.match(/\\\(/g) || []).length;
+  const closeInline = (text.match(/\\\)/g) || []).length;
+  if (openInline === closeInline && openInline > 0) {
+    text = text.replace(/\\\(([\s\S]*?)\\\)/g, (m, expr) => `$${expr.trim()}$`);
   } else {
-    withDelimiters = withDelimiters.replace(/\\\(/g, '(').replace(/\\\)/g, ')');
+    text = text.replace(/\\\(/g, '(').replace(/\\\)/g, ')');
   }
 
-  const openBlock = (withDelimiters.match(/\\\[/g) || []).length;
-  const closeBlock = (withDelimiters.match(/\\\]/g) || []).length;
-  if (openBlock === closeBlock) {
-    withDelimiters = withDelimiters.replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`);
+  const openBlock = (text.match(/\\\[/g) || []).length;
+  const closeBlock = (text.match(/\\\]/g) || []).length;
+  if (openBlock === closeBlock && openBlock > 0) {
+    text = text.replace(/\\\[([\s\S]*?)\\\]/g, (m, expr) => `$$\n${expr.trim()}\n$$`);
   } else {
-    withDelimiters = withDelimiters.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
+    text = text.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
   }
 
-  const lines = withDelimiters.split('\n');
-  const repairedBracketBlocks: string[] = [];
+  const lines = text.split('\n');
+  const result: string[] = [];
+
   for (let i = 0; i < lines.length; i++) {
-    let current = lines[i].trim();
+    const line = lines[i];
+    const trimmed = line.trim();
 
-    if (current.includes('\\dot') || current.includes('\\ddot')) {
-      current = current.replace(/\\\)/g, '').replace(/\\\(/g, '');
-    }
-
-    if (current !== '[') {
-      repairedBracketBlocks.push(lines[i]);
+    if (!trimmed || trimmed.startsWith('```') || /^(#{1,6}\s|[*\-]\s|>\s)/.test(trimmed)) {
+      result.push(line);
       continue;
     }
 
-    let closeIndex = -1;
-    for (let j = i + 1; j < lines.length; j++) {
-      if (lines[j].trim() === ']') {
-        closeIndex = j;
-        break;
+    if (trimmed === '[') {
+      let closeIdx = -1;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].trim() === ']') {
+          closeIdx = j;
+          break;
+        }
       }
-    }
-    if (closeIndex === -1) {
-      repairedBracketBlocks.push(lines[i]);
+      if (closeIdx > i) {
+        const inner = lines.slice(i + 1, closeIdx).join('\n').trim();
+        if (inner && isMathLine(inner)) {
+          result.push('$$', inner, '$$');
+          i = closeIdx;
+          continue;
+        }
+      }
+      result.push(line);
       continue;
     }
 
-    const innerLines = lines.slice(i + 1, closeIndex);
-    const inner = innerLines.join('\n').trim();
-    const mathLike = /\\[a-zA-Z]+|[=^_{}]|\\dot|\\ddot|\b(alpha|beta|gamma|theta|lambda|pi|sigma|omega)\b/i.test(inner);
-
-    if (!inner || !mathLike) {
-      repairedBracketBlocks.push(lines[i], ...innerLines, lines[closeIndex]);
-      i = closeIndex;
-      continue;
+    if (isMathLine(trimmed)) {
+      const indent = line.match(/^\s*/)?.[0] || '';
+      result.push(indent + '$$', trimmed, indent + '$$');
+    } else if (trimmed.includes('$') && !trimmed.startsWith('$$')) {
+      const dollarCount = (trimmed.match(/(?<!\\)\$/g) || []).length;
+      if (dollarCount % 2 !== 0) {
+        result.push(line.replace(/(?<!\\)\$/g, '\\$'));
+      } else {
+        result.push(line);
+      }
+    } else {
+      result.push(line);
     }
-
-    repairedBracketBlocks.push('$$', inner, '$$');
-    i = closeIndex;
   }
 
-  withDelimiters = repairedBracketBlocks.join('\n');
-
-  const withWrappedFormulaLines = withDelimiters
-    .split('\n')
-    .flatMap((line) => {
-      const t = line.trim();
-      if (!t || t.startsWith('```') || /^(#{1,6}\s|[*-]\s|>\s)/.test(t)) return [line];
-      if (t.includes('$')) return [line];
-      const hasLatex = /\\(dot|ddot|frac|sqrt|sum|prod|int|mathbf|mathrm|text|left|right|lbrace|rbrace)\b/.test(t);
-      if (hasLatex) return ['$$', t, '$$'];
-      if (looksLikeFormulaLine(line)) return ['$$', t, '$$'];
-      return [line];
-    })
-    .join('\n');
-
-  return withWrappedFormulaLines
-    .split('\n')
-    .map(escapeUnmatchedInlineDollars)
-    .join('\n');
+  return result.join('\n').replace(/\r\n/g, '\n');
 }
 
 export function normalizeAssistantMarkdown(markdown: string): string {
