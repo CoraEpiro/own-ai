@@ -31,16 +31,33 @@ interface AIMessageProps {
 }
 
 function normalizeMathDelimiters(markdown: string): string {
-  // Keep preprocessing conservative:
-  // - Convert explicit LaTeX delimiters only (\[...\], \(...\))
-  // - Normalize clearly escaped markdown markers
-  // - Downgrade broken delimiters to plain text instead of poisoning full render
-  // - Escape unmatched inline '$' so malformed math can't break markdown parsing
+  // Stable markdown/math normalization:
+  // - Convert explicit LaTeX delimiters (\[...\], \(...\))
+  // - Keep markdown escapes minimal
+  // - Wrap high-confidence naked formula lines in $$...$$
+  // - Escape unmatched inline '$' to prevent parser bleed
   const escapeUnmatchedInlineDollars = (line: string): string => {
     const withoutDouble = line.replace(/\$\$/g, '');
     const singleDollarMatches = withoutDouble.match(/(?<!\\)\$/g) || [];
     if (singleDollarMatches.length % 2 === 0) return line;
     return line.replace(/(?<!\\)\$/g, '\\$');
+  };
+
+  const looksLikeFormulaLine = (line: string): boolean => {
+    const t = line.trim();
+    if (!t) return false;
+    if (t.includes('$')) return false;
+    if (/^(```|#{1,6}\s|[*-]\s|>\s)/.test(t)) return false;
+
+    const hasLatexCommand = /\\[a-zA-Z]+/.test(t);
+    const hasMathSymbols = /[=^_{}]/.test(t);
+    const hasGreekWord = /\b(alpha|beta|gamma|theta|lambda|pi|sigma|omega)\b/i.test(t);
+    if (!(hasLatexCommand || hasMathSymbols || hasGreekWord)) return false;
+
+    // Avoid converting normal prose into math.
+    const words = t.split(/\s+/);
+    const proseLike = words.length >= 9 && /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t);
+    return !proseLike;
   };
 
   return markdown
@@ -49,13 +66,18 @@ function normalizeMathDelimiters(markdown: string): string {
       if (segment.startsWith('```')) return segment;
       const normalizedEscapes = segment
         .replace(/^\\(#{1,6}\s)/gm, '$1')
-        .replace(/^\\([>*-]\s)/gm, '$1')
-        .replace(/\\([()[\]])/g, '$1');
+        .replace(/^\\([>*-]\s)/gm, '$1');
 
       const withDelimiters = normalizedEscapes
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
-      return withDelimiters
+
+      const withWrappedFormulaLines = withDelimiters
+        .split('\n')
+        .flatMap((line) => (looksLikeFormulaLine(line) ? ['$$', line.trim(), '$$'] : [line]))
+        .join('\n');
+
+      return withWrappedFormulaLines
         .split('\n')
         .map(escapeUnmatchedInlineDollars)
         .join('\n');
