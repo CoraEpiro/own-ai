@@ -401,6 +401,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     // Stream from the appropriate provider
     const providerText = await streamToProvider(modelDef.provider, budgetedMessages, model, res, { reasoningEffort, deepSearch });
     const assistantText = normalizeAssistantMarkdown(providerText);
+    const canonicalReplace = JSON.stringify({ type: 'replace_content', content: assistantText });
+    res.write(`data: ${canonicalReplace}\n\n`);
 
     // Calculate cost
     const outputTokens = estimateTokens(assistantText);
