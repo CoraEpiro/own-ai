@@ -3,16 +3,19 @@ function isMathLine(line: string): boolean {
   if (!t) return false;
   if (t.startsWith('```') || t.startsWith('#') || t.startsWith('-') || t.startsWith('*') || t.startsWith('>')) return false;
   
-  // Check for LaTeX commands (even if already wrapped in $)
+  // Check for LaTeX commands with ANY escaping (even if partially broken)
   const hasLatexCommand = /\\(frac|sqrt|sum|prod|int|dot|ddot|theta|mathbf|mathrm|text|left|right|lbrace|rbrace|alpha|beta|gamma|pi|sigma|omega|partial|infty|delta|nabla|approx|equiv|leq|geq|neq|pm|times|div|cup|cap|in|subset|superset|forall|exists|ldots|cdots|vdots|ddots|prime|dagger|dagger|dag|ddag|checkmark|dag|ast|star|bullet|circ|sim|simeq|cong|approx|equiv|not|neg|exists|forall|perp|parallel|propto|mid|nmid|therefore|because)\b/.test(t);
   
   // Check for equation-like patterns (V(x), F(r), etc.)
   const hasEquation = /[A-Z]\([^)]*\)/.test(t) && /[=_{}^\\]/.test(t);
   
-  // Check for standalone variables with operators
-  const hasStandaloneVars = /^[A-Z]=/.test(t) && /[_{}^]/.test(t);
+  // Check for standalone math variables like L=T-V, E=mc^2
+  const hasMathAssignment = /^[A-Z]+\s*=\s*[A-Z\(\)\-\+\*/\\]/.test(t);
   
-  return hasLatexCommand || hasEquation || hasStandaloneVars || /[=_{}^]/.test(t);
+  // Check for subscripts/superscripts which indicate math
+  const hasMathOperators = /[=_{}^]/.test(t);
+  
+  return hasLatexCommand || hasEquation || hasMathAssignment || hasMathOperators;
 }
 
 function normalizeSegment(segment: string): string {
@@ -80,7 +83,9 @@ function normalizeSegment(segment: string): string {
 
     if (isMathLine(trimmed)) {
       const indent = line.match(/^\s*/)?.[0] || '';
-      result.push(indent + '$$', trimmed, indent + '$$');
+      // If already has $ delimiters, strip them since we'll wrap with $$
+      let cleanedLine = trimmed.replace(/^\$+\s*/, '').replace(/\s*\$+$/, '');
+      result.push(indent + '$$', cleanedLine, indent + '$$');
     } else if (trimmed.includes('$') && !trimmed.startsWith('$$')) {
       const dollarCount = (trimmed.match(/(?<!\\)\$/g) || []).length;
       if (dollarCount % 2 !== 0) {
@@ -97,7 +102,18 @@ function normalizeSegment(segment: string): string {
 }
 
 export function normalizeAssistantMarkdown(markdown: string): string {
-  return (markdown || '')
+  let text = (markdown || '')
+    // AGGRESSIVE FIRST PASS: Fix broken patterns from old DB saves
+    .replace(/\\c\[dot\s+([^\]]+)\]/g, '\\dot{$1}')  // \c[dot x] pattern
+    .replace(/\[dot\s+([^\]]*?)\]/g, '\\dot{$1}')     // [dot x] pattern
+    .replace(/\[ddot\s+([^\]]*?)\]/g, '\\ddot{$1}')   // [ddot x] pattern
+    .replace(/\[frac\s+([^\s]+)\s+([^\]]+)\]/g, '\\frac{$1}{$2}')  // [frac a b]
+    .replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}')    // [sqrt x]
+    // Clean up reversed escaping patterns
+    .replace(/\\c\\\[/g, '\\[')
+    .replace(/\\c\\\]/g, '\\]');
+
+  return text
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => (segment.startsWith('```') ? segment : normalizeSegment(segment)))
     .join('')
