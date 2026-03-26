@@ -53,11 +53,13 @@ function normalizeMathDelimiters(markdown: string): string {
       if (/^(```|>|[*-]\s|#{1,6}\s)/.test(t)) return false;
 
       const hasLatexCommand = /\\(frac|dot|ddot|sum|int|partial|left|right|qquad|cdot|sqrt|alpha|beta|gamma|theta|lambda|pi)\b/.test(t);
+      const hasLatexWordNoSlash = /\b(frac|dot|ddot|sum|int|partial|left|right|qquad|cdot|sqrt|alpha|beta|gamma|theta|lambda|pi)\b/.test(t);
       const hasMathOperators = /[=^_{}]/.test(t);
       const shortLine = t.split(/\s+/).length <= 8;
       const likelySentence = /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t);
 
       if (hasLatexCommand) return true;
+      if (hasLatexWordNoSlash && shortLine && !likelySentence) return true;
       if (hasMathOperators && shortLine && !likelySentence) return true;
       return false;
     };
@@ -86,7 +88,22 @@ function normalizeMathDelimiters(markdown: string): string {
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
 
-      const withAutoMath = autoWrapNakedLatexLines(withDelimiters);
+      const sanitizeBrokenLatexDelimiters = (text: string): string => {
+        const openInline = (text.match(/\\\(/g) || []).length;
+        const closeInline = (text.match(/\\\)/g) || []).length;
+        const openBlock = (text.match(/\\\[/g) || []).length;
+        const closeBlock = (text.match(/\\\]/g) || []).length;
+        let out = text;
+        if (openInline !== closeInline) {
+          out = out.replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
+        }
+        if (openBlock !== closeBlock) {
+          out = out.replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\]');
+        }
+        return out;
+      };
+
+      const withAutoMath = autoWrapNakedLatexLines(sanitizeBrokenLatexDelimiters(withDelimiters));
       return withAutoMath
         .split('\n')
         .map(escapeUnmatchedInlineDollars)
