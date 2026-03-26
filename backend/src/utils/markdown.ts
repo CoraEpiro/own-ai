@@ -2,15 +2,27 @@ function isMathLine(line: string): boolean {
   const t = line.trim();
   if (!t) return false;
   if (t.startsWith('```') || t.startsWith('#') || t.startsWith('-') || t.startsWith('*') || t.startsWith('>')) return false;
-  if (t.includes('$')) return false;
   
+  // Check for LaTeX commands (even if already wrapped in $)
   const hasLatexCommand = /\\(frac|sqrt|sum|prod|int|dot|ddot|theta|mathbf|mathrm|text|left|right|lbrace|rbrace|alpha|beta|gamma|pi|sigma|omega|partial|infty|delta|nabla|approx|equiv|leq|geq|neq|pm|times|div|cup|cap|in|subset|superset|forall|exists|ldots|cdots|vdots|ddots|prime|dagger|dagger|dag|ddag|checkmark|dag|ast|star|bullet|circ|sim|simeq|cong|approx|equiv|not|neg|exists|forall|perp|parallel|propto|mid|nmid|therefore|because)\b/.test(t);
   
-  return hasLatexCommand || /[=_{}^]/.test(t);
+  // Check for equation-like patterns (V(x), F(r), etc.)
+  const hasEquation = /[A-Z]\([^)]*\)/.test(t) && /[=_{}^\\]/.test(t);
+  
+  // Check for standalone variables with operators
+  const hasStandaloneVars = /^[A-Z]=/.test(t) && /[_{}^]/.test(t);
+  
+  return hasLatexCommand || hasEquation || hasStandaloneVars || /[=_{}^]/.test(t);
 }
 
 function normalizeSegment(segment: string): string {
   let text = segment;
+
+  // Fix broken patterns like [dot x] -> \dot{x}, [frac a b] -> \frac{a}{b}
+  text = text.replace(/\[dot\s+([^\]]+)\]/g, '\\dot{$1}');
+  text = text.replace(/\[ddot\s+([^\]]+)\]/g, '\\ddot{$1}');
+  text = text.replace(/\[frac\s+([^\s]+)\s+([^\]]+)\]/g, '\\frac{$1}{$2}');
+  text = text.replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}');
 
   text = text
     .replace(/^\\(#{1,6}\s)/gm, '$1')
