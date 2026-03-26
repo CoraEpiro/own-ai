@@ -301,6 +301,13 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       }
     }
 
+    // Markdown/math output contract: avoid malformed delimiters that break renderer on reload.
+    allMessages.push({
+      role: 'system',
+      content:
+        'Formatting contract: Return valid Markdown. For math, use only $...$ (inline) and $$...$$ (block). Never emit naked LaTeX commands without delimiters. Do not output escaped markdown markers like \\# or \\- for normal headings/lists.',
+    });
+
     if (conv?.summary) {
       allMessages.push({
         role: 'system',

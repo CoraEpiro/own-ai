@@ -33,47 +33,14 @@ interface AIMessageProps {
 function normalizeMathDelimiters(markdown: string): string {
   // Keep preprocessing conservative:
   // - Convert explicit LaTeX delimiters only (\[...\], \(...\))
-  // - Normalize obviously escaped markdown markers
-  // - Escape unmatched inline '$' so malformed math does not break whole markdown rendering
+  // - Normalize clearly escaped markdown markers
+  // - Downgrade broken delimiters to plain text instead of poisoning full render
+  // - Escape unmatched inline '$' so malformed math can't break markdown parsing
   const escapeUnmatchedInlineDollars = (line: string): string => {
     const withoutDouble = line.replace(/\$\$/g, '');
     const singleDollarMatches = withoutDouble.match(/(?<!\\)\$/g) || [];
     if (singleDollarMatches.length % 2 === 0) return line;
     return line.replace(/(?<!\\)\$/g, '\\$');
-  };
-
-  const autoWrapNakedLatexLines = (text: string): string => {
-    const lines = text.split('\n');
-    const out: string[] = [];
-
-    const looksLikeNakedMath = (line: string): boolean => {
-      const t = line.trim();
-      if (!t) return false;
-      if (t.includes('$')) return false;
-      if (/^(```|>|[*-]\s|#{1,6}\s)/.test(t)) return false;
-
-      const hasLatexCommand = /\\(frac|dot|ddot|sum|int|partial|left|right|qquad|cdot|sqrt|alpha|beta|gamma|theta|lambda|pi)\b/.test(t);
-      const hasLatexWordNoSlash = /\b(frac|dot|ddot|sum|int|partial|left|right|qquad|cdot|sqrt|alpha|beta|gamma|theta|lambda|pi)\b/.test(t);
-      const hasMathOperators = /[=^_{}]/.test(t);
-      const shortLine = t.split(/\s+/).length <= 8;
-      const likelySentence = /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t);
-
-      if (hasLatexCommand) return true;
-      if (hasLatexWordNoSlash && shortLine && !likelySentence) return true;
-      if (hasMathOperators && shortLine && !likelySentence) return true;
-      return false;
-    };
-
-    for (const line of lines) {
-      if (looksLikeNakedMath(line)) {
-        out.push('$$');
-        out.push(line.trim());
-        out.push('$$');
-      } else {
-        out.push(line);
-      }
-    }
-    return out.join('\n');
   };
 
   return markdown
@@ -82,29 +49,13 @@ function normalizeMathDelimiters(markdown: string): string {
       if (segment.startsWith('```')) return segment;
       const normalizedEscapes = segment
         .replace(/^\\(#{1,6}\s)/gm, '$1')
-        .replace(/^\\([>*-]\s)/gm, '$1');
+        .replace(/^\\([>*-]\s)/gm, '$1')
+        .replace(/\\([()[\]])/g, '$1');
 
       const withDelimiters = normalizedEscapes
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
-
-      const sanitizeBrokenLatexDelimiters = (text: string): string => {
-        const openInline = (text.match(/\\\(/g) || []).length;
-        const closeInline = (text.match(/\\\)/g) || []).length;
-        const openBlock = (text.match(/\\\[/g) || []).length;
-        const closeBlock = (text.match(/\\\]/g) || []).length;
-        let out = text;
-        if (openInline !== closeInline) {
-          out = out.replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
-        }
-        if (openBlock !== closeBlock) {
-          out = out.replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\]');
-        }
-        return out;
-      };
-
-      const withAutoMath = autoWrapNakedLatexLines(sanitizeBrokenLatexDelimiters(withDelimiters));
-      return withAutoMath
+      return withDelimiters
         .split('\n')
         .map(escapeUnmatchedInlineDollars)
         .join('\n');
