@@ -32,7 +32,7 @@ interface AIMessageProps {
 
 function normalizeMathDelimiters(markdown: string): string {
   // Convert LaTeX \[...\] and \(...\) into remark-math friendly $$...$$ and $...$.
-  // Also wrap obvious bare LaTeX lines as block math, while preserving fenced code blocks.
+  // Also detect unwrapped multiline math blocks while preserving fenced code blocks.
   return markdown
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => {
@@ -43,7 +43,25 @@ function normalizeMathDelimiters(markdown: string): string {
 
       const lines = withDelimiters.split('\n');
       const out: string[] = [];
-      const latexLine = /\\(frac|sum|int|partial|dot|sqrt|left|right|big|begin|end|alpha|beta|gamma|theta|lambda|pi)\b/;
+      const latexLine = /\\[a-zA-Z]+/;
+      const looksMathLike = (line: string): boolean => {
+        const t = line.trim();
+        if (!t) return false;
+        if (t.includes('$')) return false;
+        if (/^[-*]\s+/.test(t)) return false; // markdown list items
+        if (latexLine.test(t)) return true;
+        if (/^[\[\]()]+$/.test(t)) return true; // stray bracket-only lines
+        if (/^[=+\-*/^_.,:;|<>]+$/.test(t)) return true; // operator-only lines
+        if (/[=+\-*/^_{}[\]()]/.test(t) && !/[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t)) return true;
+        if (/^\d+[a-zA-Z]$/.test(t) || /^[a-zA-Z]\d+$/.test(t)) return true;
+        return false;
+      };
+      const looksNaturalSentence = (line: string): boolean => {
+        const t = line.trim();
+        if (!t) return false;
+        if (latexLine.test(t) || /[=+\-*/^_{}[\]()]/.test(t)) return false;
+        return t.split(/\s+/).length >= 4;
+      };
       let block: string[] = [];
 
       const flushBlock = () => {
@@ -56,12 +74,23 @@ function normalizeMathDelimiters(markdown: string): string {
 
       for (const line of lines) {
         const trimmed = line.trim();
-        const alreadyMath = trimmed.includes('$');
-        const looksBareLatex = !!trimmed && !alreadyMath && latexLine.test(trimmed);
-        if (looksBareLatex) {
+        if (!trimmed) {
+          flushBlock();
+          out.push(line);
+          continue;
+        }
+
+        if (looksMathLike(trimmed)) {
           block.push(line);
           continue;
         }
+
+        if (block.length && !looksNaturalSentence(trimmed)) {
+          // Continue short equation lines like "2q", "=", "+" after a LaTeX starter.
+          block.push(line);
+          continue;
+        }
+
         flushBlock();
         out.push(line);
       }
