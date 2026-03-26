@@ -108,6 +108,7 @@ export interface ChatMessageRow {
     messageId: string;
     role: 'user' | 'assistant';
     content: string;
+    selectedText?: string;
   } | null;
 }
 
@@ -334,7 +335,7 @@ export const saveConversationMessage = async (
   tokensUsed?: number,
   cost?: number,
   attachments?: any[],
-  replyTo?: { messageId: string; role: 'user' | 'assistant'; content: string } | null,
+  replyTo?: { messageId: string; role: 'user' | 'assistant'; content: string; selectedText?: string } | null,
 ): Promise<ChatMessageRow> => {
   const safeContent = sanitizeStringForDb(content || '');
   const safeAttachments = attachments?.length
@@ -345,6 +346,7 @@ export const saveConversationMessage = async (
       messageId: replyTo.messageId,
       role: replyTo.role,
       content: replyTo.content,
+      ...(replyTo.selectedText ? { selectedText: replyTo.selectedText } : {}),
     }) as any)
     : undefined;
 

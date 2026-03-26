@@ -271,6 +271,7 @@ const ChatInterface: React.FC = () => {
   const [modelRecommendation, setModelRecommendation] = useState<any>(null);
   const [showRecommendation, setShowRecommendation] = useState(true);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [replySelectedText, setReplySelectedText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -635,6 +636,7 @@ const ChatInterface: React.FC = () => {
           messageId: replyToMessage.id,
           role: replyToMessage.role,
           content: replyToMessage.content,
+          ...(replySelectedText ? { selectedText: replySelectedText } : {}),
         }
         : undefined,
     };
@@ -678,7 +680,7 @@ const ChatInterface: React.FC = () => {
       const body: Record<string, unknown> = { prompt: userMessage.content, model: selectedModel };
       if (currentConversationId) body.conversationId = currentConversationId;
       if (systemPrompt.trim()) body.systemPrompt = systemPrompt.trim();
-      if (replyToMessage) body.replyTo = { messageId: replyToMessage.id };
+      if (replyToMessage) body.replyTo = { messageId: replyToMessage.id, ...(replySelectedText ? { selectedText: replySelectedText } : {}) };
       if (uploadedAttachments.length) body.attachments = uploadedAttachments;
       if (currentModel?.capabilities?.includes('reasoning')) body.reasoningEffort = reasoningEffort;
       if (deepSearch) {
@@ -689,6 +691,7 @@ const ChatInterface: React.FC = () => {
         }
       }
       setReplyToMessage(null);
+      setReplySelectedText('');
       if (!currentConversationId && attachedBucketIds.size > 0) body.bucketIds = Array.from(attachedBucketIds);
 
       const response = await fetch(getApiUrl('/stream-chat'), {
@@ -867,6 +870,7 @@ const ChatInterface: React.FC = () => {
       const conv: ConversationWithMessages = data.conversation;
       setMessages(conv.messages);
       setReplyToMessage(null);
+      setReplySelectedText('');
       shouldScrollRef.current = true;
       setCurrentConversationId(id);
       setSelectedModel(normalizeModelId(conv.model));
@@ -1012,6 +1016,7 @@ const ChatInterface: React.FC = () => {
     setPendingFiles([]); setPendingPreviews([]);
     setAttachedBucketIds(new Set());
     setReplyToMessage(null);
+    setReplySelectedText('');
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1072,7 +1077,9 @@ const ChatInterface: React.FC = () => {
           <CornerUpLeft className="h-3 w-3" />
           Replying to {message.replyTo.role === 'assistant' ? 'assistant' : 'you'}
         </div>
-        <p className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">{message.replyTo.content}</p>
+        <p className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">
+          {message.replyTo.selectedText || message.replyTo.content}
+        </p>
       </div>
     );
   };
@@ -1540,7 +1547,10 @@ const ChatInterface: React.FC = () => {
                             darkMode={darkMode}
                             reasoningContent={message.reasoningContent}
                             isStreaming={streamingAssistantId === message.id}
-                            onReply={() => setReplyToMessage(message)}
+                            onReply={(selectedText) => {
+                              setReplyToMessage(message);
+                              setReplySelectedText(selectedText || '');
+                            }}
                             actionTheme={{
                               actionIcon: theme.actionIcon,
                               actionIconDark: theme.actionIconDark,
@@ -1611,7 +1621,10 @@ const ChatInterface: React.FC = () => {
                         )}
                         <div className="mt-2 flex justify-end">
                           <button
-                            onClick={() => setReplyToMessage(message)}
+                            onClick={() => {
+                              setReplyToMessage(message);
+                              setReplySelectedText('');
+                            }}
                             className="text-[11px] inline-flex items-center gap-1 opacity-80 hover:opacity-100"
                             style={{ color: darkMode ? '#ddd' : '#fff' }}
                             title="Reply"
@@ -1691,11 +1704,16 @@ const ChatInterface: React.FC = () => {
                 <div className="min-w-0">
                   <div className="font-semibold mb-0.5">Replying to {replyToMessage.role === 'assistant' ? 'assistant' : 'your message'}</div>
                   <p className="whitespace-pre-wrap break-words opacity-90">
-                    {replyToMessage.content.length > 180 ? `${replyToMessage.content.slice(0, 180)}…` : replyToMessage.content}
+                    {(replySelectedText || replyToMessage.content).length > 180
+                      ? `${(replySelectedText || replyToMessage.content).slice(0, 180)}…`
+                      : (replySelectedText || replyToMessage.content)}
                   </p>
                 </div>
                 <button
-                  onClick={() => setReplyToMessage(null)}
+                  onClick={() => {
+                    setReplyToMessage(null);
+                    setReplySelectedText('');
+                  }}
                   className="text-[11px] px-2 py-1 rounded-md"
                   style={{ background: darkMode ? '#333' : '#e5e7eb', color: darkMode ? '#ccc' : '#666' }}
                 >

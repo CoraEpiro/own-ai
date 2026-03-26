@@ -37,6 +37,7 @@ export interface Message {
     messageId: string;
     role: 'user' | 'assistant';
     content: string;
+    selectedText?: string;
   };
 }
 

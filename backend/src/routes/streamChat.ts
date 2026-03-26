@@ -358,7 +358,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       id: a.id, type: a.type, mimeType: a.mimeType, fileName: a.fileName, url: a.url, size: a.size,
       ...(a.extractedText ? { extractedText: a.extractedText } : {}),
     }));
-    let safeReplyTo: { messageId: string; role: 'user' | 'assistant'; content: string } | undefined;
+    let safeReplyTo: { messageId: string; role: 'user' | 'assistant'; content: string; selectedText?: string } | undefined;
     if (replyTo && typeof replyTo === 'object' && typeof replyTo.messageId === 'string') {
       const target = await getConversationMessageById(conversationId, replyTo.messageId, userId);
       if (target) {
@@ -366,6 +366,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
           messageId: target.id,
           role: target.role,
           content: (target.message || '').slice(0, 500),
+          ...(typeof replyTo.selectedText === 'string' && replyTo.selectedText.trim()
+            ? { selectedText: replyTo.selectedText.trim().slice(0, 500) }
+            : {}),
         };
       }
     }

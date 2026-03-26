@@ -27,19 +27,46 @@ interface AIMessageProps {
   isStreaming?: boolean;
   actionTheme?: ActionTheme;
   onRetry?: () => void;
-  onReply?: () => void;
+  onReply?: (selectedText?: string) => void;
 }
 
 function normalizeMathDelimiters(markdown: string): string {
-  // Convert LaTeX \[...\] and \(...\) into remark-math friendly $$...$$ and $...$
-  // while preserving fenced code blocks.
+  // Convert LaTeX \[...\] and \(...\) into remark-math friendly $$...$$ and $...$.
+  // Also wrap obvious bare LaTeX lines as block math, while preserving fenced code blocks.
   return markdown
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => {
       if (segment.startsWith('```')) return segment;
-      return segment
+      const withDelimiters = segment
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
+
+      const lines = withDelimiters.split('\n');
+      const out: string[] = [];
+      const latexLine = /\\(frac|sum|int|partial|dot|sqrt|left|right|big|begin|end|alpha|beta|gamma|theta|lambda|pi)\b/;
+      let block: string[] = [];
+
+      const flushBlock = () => {
+        if (!block.length) return;
+        out.push('$$');
+        out.push(...block.map(l => l.trim()));
+        out.push('$$');
+        block = [];
+      };
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        const alreadyMath = trimmed.includes('$');
+        const looksBareLatex = !!trimmed && !alreadyMath && latexLine.test(trimmed);
+        if (looksBareLatex) {
+          block.push(line);
+          continue;
+        }
+        flushBlock();
+        out.push(line);
+      }
+      flushBlock();
+      return out.join('\n');
     })
     .join('');
 }
@@ -185,7 +212,7 @@ function MessageActions({ text, theme, darkMode, onRetry, onReply }: {
   theme: ActionTheme;
   darkMode: boolean;
   onRetry?: () => void;
-  onReply?: () => void;
+  onReply?: (selectedText?: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -214,7 +241,16 @@ function MessageActions({ text, theme, darkMode, onRetry, onReply }: {
         <ThumbsDown className="h-4 w-4" />
       </button>
       {onReply && (
-        <button onClick={onReply} className="action-btn" title="Reply" style={{ color: iconColor }}>
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const selectedText = window.getSelection?.()?.toString().trim();
+            onReply(selectedText || undefined);
+          }}
+          className="action-btn"
+          title="Reply"
+          style={{ color: iconColor }}
+        >
           <CornerUpLeft className="h-4 w-4" />
         </button>
       )}

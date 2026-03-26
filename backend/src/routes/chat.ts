@@ -52,6 +52,7 @@ router.get('/:conversationId', authMiddleware, async (req: AuthRequest, res) => 
       messageId: m.reply_to.messageId,
       role: m.reply_to.role,
       content: m.reply_to.content,
+      selectedText: m.reply_to.selectedText,
     } : undefined,
     attachments: (m.attachments || []).map((a: any) => ({
       id: a.id,
