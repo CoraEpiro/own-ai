@@ -31,81 +31,32 @@ interface AIMessageProps {
 }
 
 function normalizeMathDelimiters(markdown: string): string {
-  // Convert LaTeX \[...\] and \(...\) into remark-math friendly $$...$$ and $...$.
-  // Also detect unwrapped multiline math blocks while preserving fenced code blocks.
+  // Keep preprocessing conservative:
+  // - Convert explicit LaTeX delimiters only (\[...\], \(...\))
+  // - Normalize obviously escaped markdown markers
+  // - Escape unmatched inline '$' so malformed math does not break whole markdown rendering
+  const escapeUnmatchedInlineDollars = (line: string): string => {
+    const withoutDouble = line.replace(/\$\$/g, '');
+    const singleDollarMatches = withoutDouble.match(/(?<!\\)\$/g) || [];
+    if (singleDollarMatches.length % 2 === 0) return line;
+    return line.replace(/(?<!\\)\$/g, '\\$');
+  };
+
   return markdown
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => {
       if (segment.startsWith('```')) return segment;
       const normalizedEscapes = segment
-        // Common model-escaped markdown/text artifacts
-        .replace(/\\\$/g, '$')
         .replace(/^\\(#{1,6}\s)/gm, '$1')
         .replace(/^\\([>*-]\s)/gm, '$1');
 
       const withDelimiters = normalizedEscapes
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
-
-      const lines = withDelimiters.split('\n');
-      const out: string[] = [];
-      const latexLine = /\\[a-zA-Z]+/;
-      const looksMathLike = (line: string): boolean => {
-        const t = line.trim();
-        if (!t) return false;
-        if (t.includes('$')) return false;
-        if (/^[-*]\s+/.test(t)) return false; // markdown list items
-        if (latexLine.test(t)) return true;
-        if (/^[\[\]()]+$/.test(t)) return true; // stray bracket-only lines
-        if (/^[=+\-*/^_.,:;|<>]+$/.test(t)) return true; // operator-only lines
-        if (/[=+\-*/^_{}[\]()]/.test(t) && !/[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t)) return true;
-        if (/^\d+[a-zA-Z]$/.test(t) || /^[a-zA-Z]\d+$/.test(t)) return true;
-        return false;
-      };
-      const looksNaturalSentence = (line: string): boolean => {
-        const t = line.trim();
-        if (!t) return false;
-        if (latexLine.test(t) || /[=+\-*/^_{}[\]()]/.test(t)) return false;
-        return t.split(/\s+/).length >= 4;
-      };
-      let block: string[] = [];
-
-      const flushBlock = () => {
-        if (!block.length) return;
-        out.push('$$');
-        out.push(...block.map(l => l.trim()));
-        out.push('$$');
-        block = [];
-      };
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        const normalizedLine = trimmed !== '$$' && line.includes('$$')
-          ? line.replace(/\$\$/g, '$')
-          : line;
-        const normalizedTrimmed = normalizedLine.trim();
-        if (!normalizedTrimmed) {
-          flushBlock();
-          out.push(normalizedLine);
-          continue;
-        }
-
-        if (looksMathLike(normalizedTrimmed)) {
-          block.push(normalizedLine);
-          continue;
-        }
-
-        if (block.length && !looksNaturalSentence(normalizedTrimmed)) {
-          // Continue short equation lines like "2q", "=", "+" after a LaTeX starter.
-          block.push(normalizedLine);
-          continue;
-        }
-
-        flushBlock();
-        out.push(normalizedLine);
-      }
-      flushBlock();
-      return out.join('\n');
+      return withDelimiters
+        .split('\n')
+        .map(escapeUnmatchedInlineDollars)
+        .join('\n');
     })
     .join('');
 }
