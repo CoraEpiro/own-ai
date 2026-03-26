@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '../config';
+import { normalizeAssistantMarkdown } from '../utils/markdown';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -337,7 +338,10 @@ export const saveConversationMessage = async (
   attachments?: any[],
   replyTo?: { messageId: string; role: 'user' | 'assistant'; content: string; selectedText?: string } | null,
 ): Promise<ChatMessageRow> => {
-  const safeContent = sanitizeStringForDb(content || '');
+  const normalizedContent = role === 'assistant'
+    ? normalizeAssistantMarkdown(content || '')
+    : (content || '');
+  const safeContent = sanitizeStringForDb(normalizedContent);
   const safeAttachments = attachments?.length
     ? (sanitizeJsonValueForDb(attachments) as any[])
     : undefined;
