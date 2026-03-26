@@ -33,6 +33,11 @@ export interface Message {
   cost?: number;
   attachments?: Attachment[];
   reasoningContent?: string;
+  replyTo?: {
+    messageId: string;
+    role: 'user' | 'assistant';
+    content: string;
+  };
 }
 
 export interface Conversation {

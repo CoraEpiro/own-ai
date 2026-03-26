@@ -5,7 +5,7 @@ import {
   Sparkles, Zap, Menu, X, Settings, Brain, Code2, PenLine, GraduationCap, Search,
   Paperclip, FileText, Image as ImageIcon, FileSpreadsheet, FileCode,
   Upload, File, Mic, MicOff, Globe, Waves,
-  FolderPlus, Folder as FolderIcon, FolderOpen, MoreHorizontal, Database,
+  FolderPlus, Folder as FolderIcon, FolderOpen, MoreHorizontal, Database, CornerUpLeft,
   Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -270,6 +270,7 @@ const ChatInterface: React.FC = () => {
   // Model recommendation
   const [modelRecommendation, setModelRecommendation] = useState<any>(null);
   const [showRecommendation, setShowRecommendation] = useState(true);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -629,6 +630,13 @@ const ChatInterface: React.FC = () => {
       tokens: inputTokens,
       cost: inputCost,
       attachments: fileAttachmentPreviews.length ? fileAttachmentPreviews : undefined,
+      replyTo: replyToMessage
+        ? {
+          messageId: replyToMessage.id,
+          role: replyToMessage.role,
+          content: replyToMessage.content,
+        }
+        : undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -670,6 +678,7 @@ const ChatInterface: React.FC = () => {
       const body: Record<string, unknown> = { prompt: userMessage.content, model: selectedModel };
       if (currentConversationId) body.conversationId = currentConversationId;
       if (systemPrompt.trim()) body.systemPrompt = systemPrompt.trim();
+      if (replyToMessage) body.replyTo = { messageId: replyToMessage.id };
       if (uploadedAttachments.length) body.attachments = uploadedAttachments;
       if (currentModel?.capabilities?.includes('reasoning')) body.reasoningEffort = reasoningEffort;
       if (deepSearch) {
@@ -679,6 +688,7 @@ const ChatInterface: React.FC = () => {
           body.customSites = customSearchSites;
         }
       }
+      setReplyToMessage(null);
       if (!currentConversationId && attachedBucketIds.size > 0) body.bucketIds = Array.from(attachedBucketIds);
 
       const response = await fetch(getApiUrl('/stream-chat'), {
@@ -856,6 +866,7 @@ const ChatInterface: React.FC = () => {
       });
       const conv: ConversationWithMessages = data.conversation;
       setMessages(conv.messages);
+      setReplyToMessage(null);
       shouldScrollRef.current = true;
       setCurrentConversationId(id);
       setSelectedModel(normalizeModelId(conv.model));
@@ -1000,6 +1011,7 @@ const ChatInterface: React.FC = () => {
     setSystemPrompt(''); setSelectedPersona('default');
     setPendingFiles([]); setPendingPreviews([]);
     setAttachedBucketIds(new Set());
+    setReplyToMessage(null);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1041,6 +1053,26 @@ const ChatInterface: React.FC = () => {
             </div>
           );
         })}
+      </div>
+    );
+  };
+
+  const ReplyQuote = ({ message }: { message: Message }) => {
+    if (!message.replyTo) return null;
+    return (
+      <div
+        className="mb-2 rounded-lg border-l-2 px-3 py-2 text-xs"
+        style={{
+          borderColor: theme.accent,
+          background: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+          color: darkMode ? '#c9c9c9' : '#666',
+        }}
+      >
+        <div className="font-semibold mb-0.5 flex items-center gap-1">
+          <CornerUpLeft className="h-3 w-3" />
+          Replying to {message.replyTo.role === 'assistant' ? 'assistant' : 'you'}
+        </div>
+        <p className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">{message.replyTo.content}</p>
       </div>
     );
   };
@@ -1502,11 +1534,13 @@ const ChatInterface: React.FC = () => {
                               : message.content;
                             return (
                               <>
+                          <ReplyQuote message={message} />
                           <AIMessage
                             content={contentWithoutAudioLink}
                             darkMode={darkMode}
                             reasoningContent={message.reasoningContent}
                             isStreaming={streamingAssistantId === message.id}
+                            onReply={() => setReplyToMessage(message)}
                             actionTheme={{
                               actionIcon: theme.actionIcon,
                               actionIconDark: theme.actionIconDark,
@@ -1570,10 +1604,22 @@ const ChatInterface: React.FC = () => {
                           borderRadius: theme.userBubbleRadius,
                         }}
                       >
+                        <ReplyQuote message={message} />
                         <p className="whitespace-pre-wrap break-words text-[15px]">{message.content}</p>
                         {message.attachments && message.attachments.length > 0 && (
                           <AttachmentBadges attachments={message.attachments} variant="user" />
                         )}
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            onClick={() => setReplyToMessage(message)}
+                            className="text-[11px] inline-flex items-center gap-1 opacity-80 hover:opacity-100"
+                            style={{ color: darkMode ? '#ddd' : '#fff' }}
+                            title="Reply"
+                          >
+                            <CornerUpLeft className="h-3 w-3" />
+                            Reply
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1630,6 +1676,31 @@ const ChatInterface: React.FC = () => {
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {replyToMessage && (
+              <div
+                className="mb-2 rounded-xl border-l-2 px-3 py-2 text-xs flex items-start justify-between gap-3 animate-fade-in"
+                style={{
+                  borderColor: theme.accent,
+                  background: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  color: darkMode ? '#d0d0d0' : '#555',
+                }}
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold mb-0.5">Replying to {replyToMessage.role === 'assistant' ? 'assistant' : 'your message'}</div>
+                  <p className="whitespace-pre-wrap break-words opacity-90">
+                    {replyToMessage.content.length > 180 ? `${replyToMessage.content.slice(0, 180)}…` : replyToMessage.content}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReplyToMessage(null)}
+                  className="text-[11px] px-2 py-1 rounded-md"
+                  style={{ background: darkMode ? '#333' : '#e5e7eb', color: darkMode ? '#ccc' : '#666' }}
+                >
+                  Cancel
+                </button>
               </div>
             )}
 

@@ -104,6 +104,11 @@ export interface ChatMessageRow {
   cost?: number;
   timestamp: string;
   attachments?: any[];
+  reply_to?: {
+    messageId: string;
+    role: 'user' | 'assistant';
+    content: string;
+  } | null;
 }
 
 // ── User Operations ────────────────────────────────────
@@ -304,6 +309,22 @@ export const getConversationMessages = async (
   return data || [];
 };
 
+export const getConversationMessageById = async (
+  conversationId: string,
+  messageId: string,
+  userId: string
+): Promise<ChatMessageRow | null> => {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('id', messageId)
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId)
+    .single();
+  if (error) return null;
+  return data;
+};
+
 export const saveConversationMessage = async (
   userId: string,
   conversationId: string,
@@ -312,11 +333,19 @@ export const saveConversationMessage = async (
   model?: string,
   tokensUsed?: number,
   cost?: number,
-  attachments?: any[]
+  attachments?: any[],
+  replyTo?: { messageId: string; role: 'user' | 'assistant'; content: string } | null,
 ): Promise<ChatMessageRow> => {
   const safeContent = sanitizeStringForDb(content || '');
   const safeAttachments = attachments?.length
     ? (sanitizeJsonValueForDb(attachments) as any[])
+    : undefined;
+  const safeReplyTo = replyTo
+    ? (sanitizeJsonValueForDb({
+      messageId: replyTo.messageId,
+      role: replyTo.role,
+      content: replyTo.content,
+    }) as any)
     : undefined;
 
   const { data, error } = await supabase
@@ -330,6 +359,7 @@ export const saveConversationMessage = async (
       tokens_used: tokensUsed,
       cost,
       ...(safeAttachments?.length ? { attachments: safeAttachments } : {}),
+      ...(safeReplyTo ? { reply_to: safeReplyTo } : {}),
     }])
     .select()
     .single();

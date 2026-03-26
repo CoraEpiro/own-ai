@@ -9,7 +9,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   Copy, Check, Volume2, VolumeX, Loader2, ChevronDown,
-  ThumbsUp, ThumbsDown, RotateCcw,
+  ThumbsUp, ThumbsDown, RotateCcw, CornerUpLeft,
 } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
@@ -27,6 +27,7 @@ interface AIMessageProps {
   isStreaming?: boolean;
   actionTheme?: ActionTheme;
   onRetry?: () => void;
+  onReply?: () => void;
 }
 
 function normalizeMathDelimiters(markdown: string): string {
@@ -179,11 +180,12 @@ function TTSButton({ text, iconColor }: { text: string; iconColor: string }) {
 }
 
 // ── Action buttons row (copy, thumbs, retry, TTS) ────────────────────────
-function MessageActions({ text, theme, darkMode, onRetry }: {
+function MessageActions({ text, theme, darkMode, onRetry, onReply }: {
   text: string;
   theme: ActionTheme;
   darkMode: boolean;
   onRetry?: () => void;
+  onReply?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -211,6 +213,11 @@ function MessageActions({ text, theme, darkMode, onRetry }: {
       <button className="action-btn" title="Bad response" style={{ color: iconColor }}>
         <ThumbsDown className="h-4 w-4" />
       </button>
+      {onReply && (
+        <button onClick={onReply} className="action-btn" title="Reply" style={{ color: iconColor }}>
+          <CornerUpLeft className="h-4 w-4" />
+        </button>
+      )}
       {onRetry && (
         <button onClick={onRetry} className="action-btn" title="Retry" style={{ color: iconColor }}>
           <RotateCcw className="h-4 w-4" />
@@ -251,7 +258,7 @@ function ReasoningBlock({ content, darkMode }: { content: string; darkMode: bool
 }
 
 // ── Main component ──────────────────────────────────────────────────────
-export default function AIMessage({ content, darkMode = false, reasoningContent, isStreaming = false, actionTheme, onRetry }: AIMessageProps) {
+export default function AIMessage({ content, darkMode = false, reasoningContent, isStreaming = false, actionTheme, onRetry, onReply }: AIMessageProps) {
   if (!content) {
     return (
       <span className="inline-block w-2 h-5 bg-gray-400 dark:bg-gray-500 animate-pulse rounded-sm" />
@@ -396,7 +403,7 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
 
       {/* Action buttons — always visible, like ChatGPT/Claude/Gemini */}
       {actionTheme && (
-        <MessageActions text={content} theme={actionTheme} darkMode={darkMode} onRetry={onRetry} />
+        <MessageActions text={content} theme={actionTheme} darkMode={darkMode} onRetry={onRetry} onReply={onReply} />
       )}
     </div>
   );

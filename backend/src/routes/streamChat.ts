@@ -9,6 +9,7 @@ import {
   getConversationById,
   getConversationMessages,
   saveConversationMessage,
+  getConversationMessageById,
   updateConversationTitle,
   updateConversationSummary,
   updateConversationSystemPrompt,
@@ -210,7 +211,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
-  let { prompt, model = 'gpt-5.4', conversationId, systemPrompt, attachments = [], reasoningEffort, deepSearch } = req.body;
+  let { prompt, model = 'gpt-5.4', conversationId, systemPrompt, attachments = [], reasoningEffort, deepSearch, replyTo } = req.body;
   model = normalizeModelId(model);
   console.log(`[stream-chat] model=${model}, attachments=${attachments.length}, prompt="${prompt?.substring(0, 60)}…"`);
   if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
@@ -357,7 +358,29 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       id: a.id, type: a.type, mimeType: a.mimeType, fileName: a.fileName, url: a.url, size: a.size,
       ...(a.extractedText ? { extractedText: a.extractedText } : {}),
     }));
-    await saveConversationMessage(userId, conversationId, 'user', prompt, model, userTokens, 0, dbAttachments.length ? dbAttachments : undefined);
+    let safeReplyTo: { messageId: string; role: 'user' | 'assistant'; content: string } | undefined;
+    if (replyTo && typeof replyTo === 'object' && typeof replyTo.messageId === 'string') {
+      const target = await getConversationMessageById(conversationId, replyTo.messageId, userId);
+      if (target) {
+        safeReplyTo = {
+          messageId: target.id,
+          role: target.role,
+          content: (target.message || '').slice(0, 500),
+        };
+      }
+    }
+
+    await saveConversationMessage(
+      userId,
+      conversationId,
+      'user',
+      prompt,
+      model,
+      userTokens,
+      0,
+      dbAttachments.length ? dbAttachments : undefined,
+      safeReplyTo || null,
+    );
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');

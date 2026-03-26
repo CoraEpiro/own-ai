@@ -48,6 +48,11 @@ router.get('/:conversationId', authMiddleware, async (req: AuthRequest, res) => 
     model: m.model,
     tokens: m.tokens_used,
     cost: m.cost,
+    replyTo: m.reply_to ? {
+      messageId: m.reply_to.messageId,
+      role: m.reply_to.role,
+      content: m.reply_to.content,
+    } : undefined,
     attachments: (m.attachments || []).map((a: any) => ({
       id: a.id,
       type: a.type,
