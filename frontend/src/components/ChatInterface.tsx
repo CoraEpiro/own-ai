@@ -1068,14 +1068,14 @@ const ChatInterface: React.FC = () => {
       <div
         className="mb-2 rounded-lg border-l-2 px-3 py-2 text-xs"
         style={{
-          borderColor: theme.accent,
-          background: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          color: darkMode ? '#c9c9c9' : '#666',
+          borderColor: darkMode ? '#52525b' : '#d4d4d8',
+          background: darkMode ? 'rgba(39,39,42,0.75)' : 'rgba(244,244,245,0.95)',
+          color: darkMode ? '#d4d4d8' : '#52525b',
         }}
       >
         <div className="font-semibold mb-0.5 flex items-center gap-1">
           <CornerUpLeft className="h-3 w-3" />
-          Replying to {message.replyTo.role === 'assistant' ? 'assistant' : 'you'}
+          Replying to assistant
         </div>
         <p className="line-clamp-2 whitespace-pre-wrap break-words opacity-90">
           {message.replyTo.selectedText || message.replyTo.content}
@@ -1463,7 +1463,7 @@ const ChatInterface: React.FC = () => {
             
             {/* Cost display — top right absolute */}
             <div className="absolute right-0 top-2 text-[10px] opacity-40 hover:opacity-100 transition-opacity flex flex-col items-end gap-0.5" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
-              {currentConversationId && currentChatCost > 0 && (
+              {currentConversationId && (
                 <span>Chat: ${formatCurrency(currentChatCost)}</span>
               )}
               {todayCost > 0 && (
@@ -1619,20 +1619,6 @@ const ChatInterface: React.FC = () => {
                         {message.attachments && message.attachments.length > 0 && (
                           <AttachmentBadges attachments={message.attachments} variant="user" />
                         )}
-                        <div className="mt-2 flex justify-end">
-                          <button
-                            onClick={() => {
-                              setReplyToMessage(message);
-                              setReplySelectedText('');
-                            }}
-                            className="text-[11px] inline-flex items-center gap-1 opacity-80 hover:opacity-100"
-                            style={{ color: darkMode ? '#ddd' : '#fff' }}
-                            title="Reply"
-                          >
-                            <CornerUpLeft className="h-3 w-3" />
-                            Reply
-                          </button>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -1702,7 +1688,7 @@ const ChatInterface: React.FC = () => {
                 }}
               >
                 <div className="min-w-0">
-                  <div className="font-semibold mb-0.5">Replying to {replyToMessage.role === 'assistant' ? 'assistant' : 'your message'}</div>
+                  <div className="font-semibold mb-0.5">Replying to assistant</div>
                   <p className="whitespace-pre-wrap break-words opacity-90">
                     {(replySelectedText || replyToMessage.content).length > 180
                       ? `${(replySelectedText || replyToMessage.content).slice(0, 180)}…`

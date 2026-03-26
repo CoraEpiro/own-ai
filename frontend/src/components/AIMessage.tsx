@@ -334,6 +334,26 @@ function ReasoningBlock({ content, darkMode }: { content: string; darkMode: bool
 
 // ── Main component ──────────────────────────────────────────────────────
 export default function AIMessage({ content, darkMode = false, reasoningContent, isStreaming = false, actionTheme, onRetry, onReply }: AIMessageProps) {
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [selectedSnippet, setSelectedSnippet] = useState('');
+
+  const captureSelection = useCallback(() => {
+    if (!onReply || !contentRef.current) return;
+    const selection = window.getSelection?.();
+    const text = selection?.toString().trim() || '';
+    if (!text) {
+      setSelectedSnippet('');
+      return;
+    }
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    if (!range) return;
+    const container = contentRef.current;
+    const within =
+      container.contains(range.startContainer) &&
+      container.contains(range.endContainer);
+    setSelectedSnippet(within ? text.slice(0, 500) : '');
+  }, [onReply]);
+
   if (!content) {
     return (
       <span className="inline-block w-2 h-5 bg-gray-400 dark:bg-gray-500 animate-pulse rounded-sm" />
@@ -350,7 +370,11 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
       )}
 
       {/* Markdown content */}
-      <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-code:before:hidden prose-code:after:hidden prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none prose-table:rounded-lg prose-table:border prose-table:border-gray-200 dark:prose-table:border-zinc-700 prose-th:bg-gray-100 dark:prose-th:bg-zinc-800 prose-blockquote:border-l-4 prose-blockquote:border-blue-400 dark:prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-900/10">
+      <div
+        ref={contentRef}
+        onMouseUp={captureSelection}
+        className="prose prose-sm sm:prose-base max-w-none dark:prose-invert prose-code:before:hidden prose-code:after:hidden prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none prose-table:rounded-lg prose-table:border prose-table:border-gray-200 dark:prose-table:border-zinc-700 prose-th:bg-gray-100 dark:prose-th:bg-zinc-800 prose-blockquote:border-l-4 prose-blockquote:border-blue-400 dark:prose-blockquote:border-blue-600 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-900/10"
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
           rehypePlugins={[rehypeKatex]}
@@ -473,6 +497,20 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
             style={{ background: darkMode ? '#9ca3af' : '#6b7280' }}
             aria-hidden="true"
           />
+        )}
+        {selectedSnippet && onReply && (
+          <div className="mt-2">
+            <button
+              onClick={() => {
+                onReply(selectedSnippet);
+                setSelectedSnippet('');
+                window.getSelection?.()?.removeAllRanges();
+              }}
+              className="text-xs px-2 py-1 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+            >
+              Reply to selection
+            </button>
+          </div>
         )}
       </div>
 
