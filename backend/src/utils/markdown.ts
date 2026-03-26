@@ -22,11 +22,19 @@ function looksLikeFormulaLine(line: string): boolean {
 }
 
 function normalizeSegment(segment: string): string {
-  const normalizedEscapes = segment
-    .replace(/^\\(#{1,6}\s)/gm, '$1')
-    .replace(/^\\([>*-]\s)/gm, '$1');
+  let normalized = segment;
 
-  let withDelimiters = normalizedEscapes;
+  normalized = normalized
+    .replace(/^\\(#{1,6}\s)/gm, '$1')
+    .replace(/^\\([>*-]\s)/gm, '$1')
+    .replace(/\s\\###/g, ' ###')
+    .replace(/\s\\##/g, ' ##')
+    .replace(/\s\\#/g, ' #')
+    .replace(/^\s*\\###/gm, '###')
+    .replace(/^\s*\\##/gm, '##')
+    .replace(/^\s*\\#/gm, '#');
+
+  let withDelimiters = normalized;
 
   const openInline = (withDelimiters.match(/\\\(/g) || []).length;
   const closeInline = (withDelimiters.match(/\\\)/g) || []).length;
@@ -47,7 +55,12 @@ function normalizeSegment(segment: string): string {
   const lines = withDelimiters.split('\n');
   const repairedBracketBlocks: string[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const current = lines[i].trim();
+    let current = lines[i].trim();
+
+    if (current.includes('\\dot') || current.includes('\\ddot')) {
+      current = current.replace(/\\\)/g, '').replace(/\\\(/g, '');
+    }
+
     if (current !== '[') {
       repairedBracketBlocks.push(lines[i]);
       continue;
@@ -83,7 +96,15 @@ function normalizeSegment(segment: string): string {
 
   const withWrappedFormulaLines = withDelimiters
     .split('\n')
-    .flatMap((line) => (looksLikeFormulaLine(line) ? ['$$', line.trim(), '$$'] : [line]))
+    .flatMap((line) => {
+      const t = line.trim();
+      if (!t || t.startsWith('```') || /^(#{1,6}\s|[*-]\s|>\s)/.test(t)) return [line];
+      if (t.includes('$')) return [line];
+      const hasLatex = /\\(dot|ddot|frac|sqrt|sum|prod|int|mathbf|mathrm|text|left|right|lbrace|rbrace)\b/.test(t);
+      if (hasLatex) return ['$$', t, '$$'];
+      if (looksLikeFormulaLine(line)) return ['$$', t, '$$'];
+      return [line];
+    })
     .join('\n');
 
   return withWrappedFormulaLines
