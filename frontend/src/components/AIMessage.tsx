@@ -37,7 +37,13 @@ function normalizeMathDelimiters(markdown: string): string {
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => {
       if (segment.startsWith('```')) return segment;
-      const withDelimiters = segment
+      const normalizedEscapes = segment
+        // Common model-escaped markdown/text artifacts
+        .replace(/\\\$/g, '$')
+        .replace(/^\\(#{1,6}\s)/gm, '$1')
+        .replace(/^\\([>*-]\s)/gm, '$1');
+
+      const withDelimiters = normalizedEscapes
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
 
@@ -74,25 +80,29 @@ function normalizeMathDelimiters(markdown: string): string {
 
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed) {
+        const normalizedLine = trimmed !== '$$' && line.includes('$$')
+          ? line.replace(/\$\$/g, '$')
+          : line;
+        const normalizedTrimmed = normalizedLine.trim();
+        if (!normalizedTrimmed) {
           flushBlock();
-          out.push(line);
+          out.push(normalizedLine);
           continue;
         }
 
-        if (looksMathLike(trimmed)) {
-          block.push(line);
+        if (looksMathLike(normalizedTrimmed)) {
+          block.push(normalizedLine);
           continue;
         }
 
-        if (block.length && !looksNaturalSentence(trimmed)) {
+        if (block.length && !looksNaturalSentence(normalizedTrimmed)) {
           // Continue short equation lines like "2q", "=", "+" after a LaTeX starter.
-          block.push(line);
+          block.push(normalizedLine);
           continue;
         }
 
         flushBlock();
-        out.push(line);
+        out.push(normalizedLine);
       }
       flushBlock();
       return out.join('\n');
