@@ -42,6 +42,38 @@ function normalizeMathDelimiters(markdown: string): string {
     return line.replace(/(?<!\\)\$/g, '\\$');
   };
 
+  const autoWrapNakedLatexLines = (text: string): string => {
+    const lines = text.split('\n');
+    const out: string[] = [];
+
+    const looksLikeNakedMath = (line: string): boolean => {
+      const t = line.trim();
+      if (!t) return false;
+      if (t.includes('$')) return false;
+      if (/^(```|>|[*-]\s|#{1,6}\s)/.test(t)) return false;
+
+      const hasLatexCommand = /\\(frac|dot|ddot|sum|int|partial|left|right|qquad|cdot|sqrt|alpha|beta|gamma|theta|lambda|pi)\b/.test(t);
+      const hasMathOperators = /[=^_{}]/.test(t);
+      const shortLine = t.split(/\s+/).length <= 8;
+      const likelySentence = /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t);
+
+      if (hasLatexCommand) return true;
+      if (hasMathOperators && shortLine && !likelySentence) return true;
+      return false;
+    };
+
+    for (const line of lines) {
+      if (looksLikeNakedMath(line)) {
+        out.push('$$');
+        out.push(line.trim());
+        out.push('$$');
+      } else {
+        out.push(line);
+      }
+    }
+    return out.join('\n');
+  };
+
   return markdown
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => {
@@ -53,7 +85,9 @@ function normalizeMathDelimiters(markdown: string): string {
       const withDelimiters = normalizedEscapes
         .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
         .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
-      return withDelimiters
+
+      const withAutoMath = autoWrapNakedLatexLines(withDelimiters);
+      return withAutoMath
         .split('\n')
         .map(escapeUnmatchedInlineDollars)
         .join('\n');
