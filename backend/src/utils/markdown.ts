@@ -44,6 +44,43 @@ function normalizeSegment(segment: string): string {
     withDelimiters = withDelimiters.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
   }
 
+  const lines = withDelimiters.split('\n');
+  const repairedBracketBlocks: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i].trim();
+    if (current !== '[') {
+      repairedBracketBlocks.push(lines[i]);
+      continue;
+    }
+
+    let closeIndex = -1;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].trim() === ']') {
+        closeIndex = j;
+        break;
+      }
+    }
+    if (closeIndex === -1) {
+      repairedBracketBlocks.push(lines[i]);
+      continue;
+    }
+
+    const innerLines = lines.slice(i + 1, closeIndex);
+    const inner = innerLines.join('\n').trim();
+    const mathLike = /\\[a-zA-Z]+|[=^_{}]|\\dot|\\ddot|\b(alpha|beta|gamma|theta|lambda|pi|sigma|omega)\b/i.test(inner);
+
+    if (!inner || !mathLike) {
+      repairedBracketBlocks.push(lines[i], ...innerLines, lines[closeIndex]);
+      i = closeIndex;
+      continue;
+    }
+
+    repairedBracketBlocks.push('$$', inner, '$$');
+    i = closeIndex;
+  }
+
+  withDelimiters = repairedBracketBlocks.join('\n');
+
   const withWrappedFormulaLines = withDelimiters
     .split('\n')
     .flatMap((line) => (looksLikeFormulaLine(line) ? ['$$', line.trim(), '$$'] : [line]))
