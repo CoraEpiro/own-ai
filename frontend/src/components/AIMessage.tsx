@@ -68,9 +68,22 @@ function normalizeMathDelimiters(markdown: string): string {
         .replace(/^\\(#{1,6}\s)/gm, '$1')
         .replace(/^\\([>*-]\s)/gm, '$1');
 
-      const withDelimiters = normalizedEscapes
-        .replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`)
-        .replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
+      let withDelimiters = normalizedEscapes;
+      const openInline = (withDelimiters.match(/\\\(/g) || []).length;
+      const closeInline = (withDelimiters.match(/\\\)/g) || []).length;
+      if (openInline === closeInline) {
+        withDelimiters = withDelimiters.replace(/\\\(([\s\S]*?)\\\)/g, (_m, expr) => `$${String(expr).trim()}$`);
+      } else {
+        withDelimiters = withDelimiters.replace(/\\\(/g, '(').replace(/\\\)/g, ')');
+      }
+
+      const openBlock = (withDelimiters.match(/\\\[/g) || []).length;
+      const closeBlock = (withDelimiters.match(/\\\]/g) || []).length;
+      if (openBlock === closeBlock) {
+        withDelimiters = withDelimiters.replace(/\\\[([\s\S]*?)\\\]/g, (_m, expr) => `$$\n${String(expr).trim()}\n$$`);
+      } else {
+        withDelimiters = withDelimiters.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
+      }
 
       const withWrappedFormulaLines = withDelimiters
         .split('\n')

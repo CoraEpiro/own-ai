@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Readable } from 'stream';
 import { Response } from 'express';
 import { ChatMessage, StreamOptions } from './index';
+import { MarkdownStreamNormalizer } from '../../utils/markdown';
 
 function formatMessages(messages: ChatMessage[]): any[] {
   return messages.map(m => {
@@ -93,6 +94,7 @@ async function streamViaChatCompletions(
   });
 
   let assistantText = '';
+  const normalizer = new MarkdownStreamNormalizer();
   const stream = response.data as unknown as Readable;
 
   return new Promise((resolve, reject) => {
@@ -105,13 +107,43 @@ async function streamViaChatCompletions(
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.delta?.content;
-            if (content) assistantText += content;
+            if (content) {
+              const event = normalizer.ingest(content);
+              if (!event) return;
+              if (event.type === 'append') {
+                assistantText += event.content;
+                const openAIFormat = JSON.stringify({
+                  choices: [{ delta: { content: event.content } }],
+                });
+                res.write(`data: ${openAIFormat}\n\n`);
+              } else {
+                assistantText = event.content;
+                const replaceEvent = JSON.stringify({ type: 'replace_content', content: event.content });
+                res.write(`data: ${replaceEvent}\n\n`);
+              }
+            }
           } catch {}
         }
       });
-      res.write(chunk);
     });
-    stream.on('end', () => resolve(assistantText));
+    stream.on('end', () => {
+      const finalEvent = normalizer.finalize();
+      if (finalEvent) {
+        if (finalEvent.type === 'replace') {
+          assistantText = finalEvent.content;
+          const replaceEvent = JSON.stringify({ type: 'replace_content', content: finalEvent.content });
+          res.write(`data: ${replaceEvent}\n\n`);
+        } else {
+          assistantText += finalEvent.content;
+          const openAIFormat = JSON.stringify({
+            choices: [{ delta: { content: finalEvent.content } }],
+          });
+          res.write(`data: ${openAIFormat}\n\n`);
+        }
+      }
+      res.write('data: [DONE]\n\n');
+      resolve(assistantText);
+    });
     stream.on('error', reject);
   });
 }
@@ -193,6 +225,7 @@ async function streamViaResponsesAPI(
   });
 
   let assistantText = '';
+  const normalizer = new MarkdownStreamNormalizer();
   const stream = response.data as unknown as Readable;
 
   return new Promise((resolve, reject) => {
@@ -214,12 +247,19 @@ async function streamViaResponsesAPI(
 
           // Extract text deltas from the Responses API format
           if (event.type === 'response.output_text.delta' && event.delta) {
-            assistantText += event.delta;
-            // Convert to Chat Completions SSE format for the frontend
-            const ccFormat = JSON.stringify({
-              choices: [{ delta: { content: event.delta } }],
-            });
-            res.write(`data: ${ccFormat}\n\n`);
+            const normalizedEvent = normalizer.ingest(event.delta);
+            if (!normalizedEvent) continue;
+            if (normalizedEvent.type === 'append') {
+              assistantText += normalizedEvent.content;
+              const ccFormat = JSON.stringify({
+                choices: [{ delta: { content: normalizedEvent.content } }],
+              });
+              res.write(`data: ${ccFormat}\n\n`);
+            } else {
+              assistantText = normalizedEvent.content;
+              const replaceEvent = JSON.stringify({ type: 'replace_content', content: normalizedEvent.content });
+              res.write(`data: ${replaceEvent}\n\n`);
+            }
           }
         } catch {}
       }
@@ -236,13 +276,35 @@ async function streamViaResponsesAPI(
           try {
             const event = JSON.parse(payload);
             if (event.type === 'response.output_text.delta' && event.delta) {
-              assistantText += event.delta;
-              const ccFormat = JSON.stringify({
-                choices: [{ delta: { content: event.delta } }],
-              });
-              res.write(`data: ${ccFormat}\n\n`);
+              const normalizedEvent = normalizer.ingest(event.delta);
+              if (!normalizedEvent) continue;
+              if (normalizedEvent.type === 'append') {
+                assistantText += normalizedEvent.content;
+                const ccFormat = JSON.stringify({
+                  choices: [{ delta: { content: normalizedEvent.content } }],
+                });
+                res.write(`data: ${ccFormat}\n\n`);
+              } else {
+                assistantText = normalizedEvent.content;
+                const replaceEvent = JSON.stringify({ type: 'replace_content', content: normalizedEvent.content });
+                res.write(`data: ${replaceEvent}\n\n`);
+              }
             }
           } catch {}
+        }
+      }
+      const finalEvent = normalizer.finalize();
+      if (finalEvent) {
+        if (finalEvent.type === 'replace') {
+          assistantText = finalEvent.content;
+          const replaceEvent = JSON.stringify({ type: 'replace_content', content: finalEvent.content });
+          res.write(`data: ${replaceEvent}\n\n`);
+        } else {
+          assistantText += finalEvent.content;
+          const ccFormat = JSON.stringify({
+            choices: [{ delta: { content: finalEvent.content } }],
+          });
+          res.write(`data: ${ccFormat}\n\n`);
         }
       }
       res.write('data: [DONE]\n\n');

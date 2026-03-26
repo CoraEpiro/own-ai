@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { ChatMessage, StreamOptions } from './index';
 import { performWebSearch } from '../webSearchService';
+import { MarkdownStreamNormalizer } from '../../utils/markdown';
 
 function formatMessages(messages: ChatMessage[]): any[] {
   return messages
@@ -132,6 +133,7 @@ export async function streamAnthropic(
   }
 
   let assistantText = '';
+  const normalizer = new MarkdownStreamNormalizer();
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
 
@@ -151,15 +153,37 @@ export async function streamAnthropic(
           const parsed = JSON.parse(data);
           if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
             const text = parsed.delta.text;
-            assistantText += text;
-            // Transform to OpenAI SSE format for frontend compatibility
-            const openAIFormat = JSON.stringify({
-              choices: [{ delta: { content: text } }],
-            });
-            res.write(`data: ${openAIFormat}\n\n`);
+            const event = normalizer.ingest(text);
+            if (!event) continue;
+            if (event.type === 'append') {
+              assistantText += event.content;
+              const openAIFormat = JSON.stringify({
+                choices: [{ delta: { content: event.content } }],
+              });
+              res.write(`data: ${openAIFormat}\n\n`);
+            } else {
+              assistantText = event.content;
+              const replaceEvent = JSON.stringify({ type: 'replace_content', content: event.content });
+              res.write(`data: ${replaceEvent}\n\n`);
+            }
           }
         } catch {}
       }
+    }
+  }
+
+  const finalEvent = normalizer.finalize();
+  if (finalEvent) {
+    if (finalEvent.type === 'replace') {
+      assistantText = finalEvent.content;
+      const replaceEvent = JSON.stringify({ type: 'replace_content', content: finalEvent.content });
+      res.write(`data: ${replaceEvent}\n\n`);
+    } else {
+      assistantText += finalEvent.content;
+      const openAIFormat = JSON.stringify({
+        choices: [{ delta: { content: finalEvent.content } }],
+      });
+      res.write(`data: ${openAIFormat}\n\n`);
     }
   }
 

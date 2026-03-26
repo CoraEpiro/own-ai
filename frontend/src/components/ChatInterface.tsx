@@ -733,6 +733,16 @@ const ChatInterface: React.FC = () => {
           try {
             const parsed = JSON.parse(payload);
             if (parsed.type === 'meta') { metaReceived = parsed; continue; }
+            if (parsed.type === 'replace_content' && typeof parsed.content === 'string') {
+              fullText = parsed.content;
+              if (typingRafRef.current[assistantId]) {
+                cancelAnimationFrame(typingRafRef.current[assistantId]);
+                delete typingRafRef.current[assistantId];
+              }
+              typingTargetRef.current[assistantId] = parsed.content;
+              setMessages(prev => prev.map(m => (m.id === assistantId ? { ...m, content: parsed.content } : m)));
+              continue;
+            }
             const delta = parsed.choices?.[0]?.delta;
             // Capture reasoning/thinking content (OpenAI reasoning models)
             const reasoning = delta?.reasoning_content || delta?.reasoning;

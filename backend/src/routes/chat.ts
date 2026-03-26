@@ -7,6 +7,7 @@ import {
   getConversationBuckets,
 } from '../services/databaseService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { normalizeAssistantMarkdown } from '../utils/markdown';
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.get('/:conversationId', authMiddleware, async (req: AuthRequest, res) => 
   const formattedMessages = messages.map(m => ({
     id: m.id,
     role: m.role,
-    content: m.message,
+    content: m.role === 'assistant' ? normalizeAssistantMarkdown(m.message || '') : m.message,
     timestamp: m.timestamp,
     model: m.model,
     tokens: m.tokens_used,

@@ -20,6 +20,7 @@ import {
   addMemory,
 } from '../services/databaseService';
 import { streamToProvider } from '../services/providers';
+import { normalizeAssistantMarkdown } from '../utils/markdown';
 
 const router = express.Router();
 
@@ -398,7 +399,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     res.setHeader('Connection', 'keep-alive');
 
     // Stream from the appropriate provider
-    const assistantText = await streamToProvider(modelDef.provider, budgetedMessages, model, res, { reasoningEffort, deepSearch });
+    const providerText = await streamToProvider(modelDef.provider, budgetedMessages, model, res, { reasoningEffort, deepSearch });
+    const assistantText = normalizeAssistantMarkdown(providerText);
 
     // Calculate cost
     const outputTokens = estimateTokens(assistantText);
