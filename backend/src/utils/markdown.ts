@@ -116,29 +116,9 @@ function normalizeSegment(segment: string): string {
 }
 
 export function normalizeAssistantMarkdown(markdown: string): string {
-  const text = (markdown || '');
-  
-  // If text doesn't contain any math/latex markers, don't modify it
-  if (!/[\\\$\#\{\}\[\]]/.test(text)) {
-    return text.replace(/\r\n/g, '\n');
-  }
-
-  let normalized = text
-    // ONLY fix broken patterns from old DB saves if they exist
-    .replace(/\\c\[dot\s+([^\]]+)\]/g, '\\dot{$1}')  // \c[dot x] pattern
-    .replace(/\[dot\s+([^\]]*?)\]/g, '\\dot{$1}')     // [dot x] pattern
-    .replace(/\[ddot\s+([^\]]*?)\]/g, '\\ddot{$1}')   // [ddot x] pattern
-    .replace(/\[frac\s+([^\s]+)\s+([^\]]+)\]/g, '\\frac{$1}{$2}')  // [frac a b]
-    .replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}')    // [sqrt x]
-    // Clean up reversed escaping patterns
-    .replace(/\\c\\\[/g, '\\[')
-    .replace(/\\c\\\]/g, '\\]');
-
-  return normalized
-    .split(/(```[\s\S]*?```)/g)
-    .map((segment) => (segment.startsWith('```') ? segment : normalizeSegment(segment)))
-    .join('')
-    .replace(/\r\n/g, '\n');
+  // DISABLED: Normalizer was breaking non-Latin text (Turkish, Arabic, etc.)
+  // Until we have a truly safe implementation, pass through unchanged
+  return (markdown || '').replace(/\r\n/g, '\n');
 }
 
 export type StreamNormalizationEvent =
