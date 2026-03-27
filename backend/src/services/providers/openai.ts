@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Readable } from 'stream';
 import { Response } from 'express';
+import { TextDecoder } from 'util';
 import { ChatMessage, StreamOptions } from './index';
 import { MarkdownStreamNormalizer } from '../../utils/markdown';
 
@@ -96,20 +97,55 @@ async function streamViaChatCompletions(
   let assistantText = '';
   const normalizer = new MarkdownStreamNormalizer();
   const stream = response.data as unknown as Readable;
+  const decoder = new TextDecoder();
 
   return new Promise((resolve, reject) => {
+    let buffer = '';
     stream.on('data', (chunk: Buffer) => {
-      const chunkStr = chunk.toString();
-      chunkStr.split('\n').forEach(line => {
-        if (line.startsWith('data: ')) {
-          const data = line.replace('data: ', '');
-          if (data === '[DONE]') return;
+      buffer += decoder.decode(chunk, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            const event = normalizer.ingest(content);
+            if (!event) continue;
+            if (event.type === 'append') {
+              assistantText += event.content;
+              const openAIFormat = JSON.stringify({
+                choices: [{ delta: { content: event.content } }],
+              });
+              res.write(`data: ${openAIFormat}\n\n`);
+            } else {
+              assistantText = event.content;
+              const replaceEvent = JSON.stringify({ type: 'replace_content', content: event.content });
+              res.write(`data: ${replaceEvent}\n\n`);
+            }
+          }
+        } catch {}
+      }
+    });
+    stream.on('end', () => {
+      const tail = decoder.decode();
+      if (tail) buffer += tail;
+      if (buffer.trim()) {
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (!data || data === '[DONE]') continue;
           try {
             const parsed = JSON.parse(data);
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               const event = normalizer.ingest(content);
-              if (!event) return;
+              if (!event) continue;
               if (event.type === 'append') {
                 assistantText += event.content;
                 const openAIFormat = JSON.stringify({
@@ -124,9 +160,7 @@ async function streamViaChatCompletions(
             }
           } catch {}
         }
-      });
-    });
-    stream.on('end', () => {
+      }
       const finalEvent = normalizer.finalize();
       if (finalEvent) {
         if (finalEvent.type === 'replace') {
@@ -227,12 +261,13 @@ async function streamViaResponsesAPI(
   let assistantText = '';
   const normalizer = new MarkdownStreamNormalizer();
   const stream = response.data as unknown as Readable;
+  const decoder = new TextDecoder();
 
   return new Promise((resolve, reject) => {
     let buffer = '';
 
     stream.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString();
+      buffer += decoder.decode(chunk, { stream: true });
       const lines = buffer.split('\n');
       // Keep last incomplete line in buffer
       buffer = lines.pop() || '';
@@ -266,6 +301,8 @@ async function streamViaResponsesAPI(
     });
 
     stream.on('end', () => {
+      const tail = decoder.decode();
+      if (tail) buffer += tail;
       // Process remaining buffer
       if (buffer.trim()) {
         const lines = buffer.split('\n');
