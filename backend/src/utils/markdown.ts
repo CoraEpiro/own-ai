@@ -21,17 +21,31 @@ function isMathLine(line: string): boolean {
 function normalizeSegment(segment: string): string {
   let text = segment;
 
+  // Skip if text is primarily non-Latin (e.g., Turkish, Arabic, Chinese)
+  const latinCharCount = (text.match(/[a-zA-Z]/g) || []).length;
+  const totalCharCount = text.length;
+  const isNonLatin = latinCharCount < totalCharCount * 0.3;
+
+  if (isNonLatin && !text.includes('\\')) {
+    // For non-Latin text without LaTeX, don't apply aggressive regex
+    return text;
+  }
+
   // Fix broken patterns like [dot x] -> \dot{x}, [frac a b] -> \frac{a}{b}
   text = text.replace(/\[dot\s+([^\]]+)\]/g, '\\dot{$1}');
   text = text.replace(/\[ddot\s+([^\]]+)\]/g, '\\ddot{$1}');
   text = text.replace(/\[frac\s+([^\s]+)\s+([^\]]+)\]/g, '\\frac{$1}{$2}');
   text = text.replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}');
 
-  text = text
-    .replace(/^\\(#{1,6}\s)/gm, '$1')
-    .replace(/^\\([>*\-]\s)/gm, '$1')
-    .replace(/(\s)\\(#{1,6})(\s|$)/gm, '$1$2$3')
-    .replace(/\\([a-z])\-/g, '-');
+  // ONLY apply ASCII-specific replacements if we detect LaTeX commands
+  if (/\\[a-zA-Z]+/.test(text)) {
+    text = text
+      .replace(/^\\(#{1,6}\s)/gm, '$1')
+      .replace(/^\\([>*\-]\s)/gm, '$1')
+      .replace(/(\s)\\(#{1,6})(\s|$)/gm, '$1$2$3')
+      // Strip escaped single uppercase letters ONLY in math context
+      .replace(/\\([A-Z])([\s=\-\+\*/])/g, '$1$2');
+  }
 
   const openInline = (text.match(/\\\(/g) || []).length;
   const closeInline = (text.match(/\\\)/g) || []).length;
@@ -102,8 +116,15 @@ function normalizeSegment(segment: string): string {
 }
 
 export function normalizeAssistantMarkdown(markdown: string): string {
-  let text = (markdown || '')
-    // AGGRESSIVE FIRST PASS: Fix broken patterns from old DB saves
+  const text = (markdown || '');
+  
+  // If text doesn't contain any math/latex markers, don't modify it
+  if (!/[\\\$\#\{\}\[\]]/.test(text)) {
+    return text.replace(/\r\n/g, '\n');
+  }
+
+  let normalized = text
+    // ONLY fix broken patterns from old DB saves if they exist
     .replace(/\\c\[dot\s+([^\]]+)\]/g, '\\dot{$1}')  // \c[dot x] pattern
     .replace(/\[dot\s+([^\]]*?)\]/g, '\\dot{$1}')     // [dot x] pattern
     .replace(/\[ddot\s+([^\]]*?)\]/g, '\\ddot{$1}')   // [ddot x] pattern
@@ -111,17 +132,9 @@ export function normalizeAssistantMarkdown(markdown: string): string {
     .replace(/\[sqrt\s+([^\]]+)\]/g, '\\sqrt{$1}')    // [sqrt x]
     // Clean up reversed escaping patterns
     .replace(/\\c\\\[/g, '\\[')
-    .replace(/\\c\\\]/g, '\\]')
-    // Strip escaped single characters that are wrong (e.g., \T -> T, but keep \frac)
-    .replace(/\\([A-Z])([\s=\-\+\*/])/g, '$1$2')     // \T = -> T =
-    // Remove stray closing brackets after LaTeX commands
-    .replace(/\\dot\s+([^\s\]]+)\]/g, '\\dot{$1}')   // \dot x] -> \dot{x}
-    .replace(/\\ddot\s+([^\s\]]+)\]/g, '\\ddot{$1}')
-    // Fix broken single $ delimiters around variables in sentences
-    .replace(/\s\$([A-Z])\$\s/g, ' $$$1$ ')            // " $V$ " -> " $V$ " (keep as inline)
-    .replace(/\$([A-Z])\$\./g, ' $$$1$ ')              // "$V$." -> " $V$ " at end of sentence
+    .replace(/\\c\\\]/g, '\\]');
 
-  return text
+  return normalized
     .split(/(```[\s\S]*?```)/g)
     .map((segment) => (segment.startsWith('```') ? segment : normalizeSegment(segment)))
     .join('')
