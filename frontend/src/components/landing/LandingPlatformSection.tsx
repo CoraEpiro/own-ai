@@ -48,9 +48,9 @@ const LandingPlatformSection: React.FC = () => (
             navigation structure need to scale into desktop and mobile without a total redesign.
           </p>
 
-          <div className="mt-8 rounded-[30px] border border-[var(--border-default)] bg-[var(--surface-1)] p-6 shadow-[var(--shadow-card)]">
+          <div className="mt-8 rounded-[30px] border border-[var(--border-default)] bg-white dark:bg-[#1C1C1F] p-6 shadow-[var(--shadow-card)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-glow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-gradient text-white">
                 <Apple className="h-4.5 w-4.5" />
               </div>
               <div>
@@ -90,7 +90,7 @@ const LandingPlatformSection: React.FC = () => (
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 {points.map((point) => (
-                  <div key={point} className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+                  <div key={point} className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] dark:bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-secondary)]">
                     {point}
                   </div>
                 ))}

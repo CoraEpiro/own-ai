@@ -2,43 +2,22 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeft,
+  ArrowRight,
   Check,
-  CheckCircle2,
   Eye,
   EyeOff,
   Loader2,
   Lock,
   Mail,
-  Moon,
   ShieldCheck,
-  Sparkles,
-  Sun,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import OwnAILogo from './brand/OwnAILogo';
 import useThemePreference from '../hooks/useThemePreference';
 
-const desktopValuePoints = [
-  'OpenAI, Claude, and Gemini in one premium workspace',
-  '€2 free credit to explore the product with no card required',
-  'Usage-based billing that fits deadline months better than fixed subscriptions',
-];
-
-const mobileValuePoints = ['€2 free to start', 'Visible usage cost', 'Built for web now, ready for more'];
-
-const authHighlights = [
-  { label: 'Shared context', value: 'Memory, instructions, and voice settings stay aligned' },
-  { label: 'Trust signal', value: 'Per-message cost remains visible before waste compounds' },
-];
-
-const oauthProviders = ['Google', 'Apple'] as const;
-
+/* ─── Password helpers ────────────────────────────────────── */
 const getPasswordStrength = (value: string) => {
-  if (!value) {
-    return 0;
-  }
-
+  if (!value) return 0;
   let score = 0;
   if (value.length >= 8) score += 1;
   if (/[A-Z]/.test(value)) score += 1;
@@ -55,14 +34,118 @@ const strengthMeta = [
   { label: 'Strong', color: '#10B981' },
 ];
 
-const getErrorMessage = (error: unknown) => {
-  if (error instanceof Error) {
-    return error.message;
-  }
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Something went wrong';
 
-  return 'Something went wrong';
-};
+/* ─── Left panel — editorial near-black ─────────────────────*/
+const providers = [
+  { label: 'OpenAI', color: '#10B981' },
+  { label: 'Anthropic', color: '#F59E0B' },
+  { label: 'Google', color: '#3B82F6' },
+];
 
+const AuthBrandPanel: React.FC = () => (
+  <section className="auth-brand-panel relative hidden min-h-screen flex-col justify-between overflow-hidden px-10 py-10 text-white lg:flex xl:px-14 xl:py-12">
+    {/* Grain on left panel */}
+    <div className="grain-overlay opacity-[0.045]" />
+
+    {/* Subtle provider glow orbs */}
+    <div className="pointer-events-none absolute right-[-6rem] top-[-4rem] h-[28rem] w-[28rem] rounded-full opacity-[0.08]"
+      style={{ background: 'radial-gradient(circle, #10B981, transparent 65%)' }} />
+    <div className="pointer-events-none absolute bottom-[-6rem] left-[-4rem] h-[24rem] w-[24rem] rounded-full opacity-[0.06]"
+      style={{ background: 'radial-gradient(circle, #3B82F6, transparent 65%)' }} />
+
+    {/* Top row — logo links home, no redundant back button */}
+    <div className="relative z-10">
+      <Link to="/">
+        <OwnAILogo size={32} tone="light" wordmarkClassName="text-xl" />
+      </Link>
+    </div>
+
+    {/* Main content */}
+    <div className="relative z-10 max-w-xl">
+      {/* Provider pills */}
+      <div className="flex flex-wrap gap-2">
+        {providers.map(({ label, color }) => (
+          <span
+            key={label}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
+            style={{
+              background: `${color}12`,
+              border: `1px solid ${color}28`,
+              color,
+            }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      {/* Headline */}
+      <h1
+        className="mt-8 font-display font-extrabold leading-[0.92] tracking-[-0.055em] text-white"
+        style={{ fontSize: 'clamp(2.75rem, 4.5vw, 4rem)' }}
+      >
+        All the AI.
+        <br />
+        None of
+        <br />
+        the waste.
+      </h1>
+
+      <p className="mt-6 max-w-sm text-[1rem] leading-[1.75] text-white/52">
+        One workspace for GPT, Claude, and Gemini.
+        Pay only for what you send.
+      </p>
+
+      {/* Cost comparison */}
+      <div className="mt-10 grid gap-3 sm:grid-cols-2">
+        <div
+          className="rounded-[18px] p-5"
+          style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.14)' }}
+        >
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400/80">
+            Typical subscription stack
+          </div>
+          <div className="mt-2 font-display text-3xl font-bold tracking-tight text-red-400">
+            $60+
+          </div>
+          <div className="mt-1 text-[11px] text-red-400/55">per month, whether used or not</div>
+        </div>
+
+        <div
+          className="rounded-[18px] p-5"
+          style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.16)' }}
+        >
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400/80">
+            Own AI typical month
+          </div>
+          <div className="mt-2 font-display text-3xl font-bold tracking-tight text-emerald-400">
+            €4–8
+          </div>
+          <div className="mt-1 text-[11px] text-emerald-400/55">usage-based, with €2 free to start</div>
+        </div>
+      </div>
+
+      {/* Credit badge */}
+      <div
+        className="mt-5 inline-flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-medium text-white/75"
+        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+      >
+        <Check className="h-4 w-4 text-emerald-400" />
+        €2 free credit added on sign-up · No card required
+      </div>
+    </div>
+
+    {/* Bottom tagline */}
+    <div className="relative z-10 text-[10px] font-medium uppercase tracking-[0.28em] text-white/28">
+      One interface · One bill · More control
+    </div>
+  </section>
+);
+
+/* ─── Auth form ───────────────────────────────────────────── */
 const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -77,24 +160,17 @@ const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   const redirectTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (redirectTimerRef.current) {
-        window.clearTimeout(redirectTimerRef.current);
-      }
-    };
+  useEffect(() => () => {
+    if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
   }, []);
 
   const strength = getPasswordStrength(password);
-  const passwordChecks = useMemo(
-    () => [
-      { label: 'At least 8 characters', valid: password.length >= 8 },
-      { label: 'One uppercase letter', valid: /[A-Z]/.test(password) },
-      { label: 'One number', valid: /[0-9]/.test(password) },
-      { label: 'One symbol', valid: /[^A-Za-z0-9]/.test(password) },
-    ],
-    [password]
-  );
+  const passwordChecks = useMemo(() => [
+    { label: 'At least 8 characters', valid: password.length >= 8 },
+    { label: 'One uppercase letter', valid: /[A-Z]/.test(password) },
+    { label: 'One number', valid: /[0-9]/.test(password) },
+    { label: 'One symbol', valid: /[^A-Za-z0-9]/.test(password) },
+  ], [password]);
 
   const passwordsMatch = !confirmPassword || password === confirmPassword;
   const submitDisabled =
@@ -102,23 +178,14 @@ const AuthForm: React.FC = () => {
 
   const switchMode = (nextIsLogin: boolean) => {
     setIsLogin(nextIsLogin);
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setSuccess(false);
+    setEmail(''); setPassword(''); setConfirmPassword('');
+    setShowPassword(false); setSuccess(false);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (!isLogin && password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
+    if (!isLogin && password !== confirmPassword) { toast.error('Passwords do not match'); return; }
     setLoading(true);
-
     try {
       if (isLogin) {
         await login(email, password);
@@ -139,264 +206,199 @@ const AuthForm: React.FC = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
-      <div className="landing-mesh opacity-70" />
-      <div className="landing-orb landing-orb-a opacity-70" />
-      <div className="landing-orb landing-orb-b opacity-60" />
-      <div className="landing-orb landing-orb-c opacity-50" />
+      <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(460px,0.9fr)]">
 
-      <div className="relative grid min-h-screen lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
-        <section className="auth-brand-panel relative hidden min-h-screen flex-col justify-between overflow-hidden px-10 py-10 lg:flex xl:px-14 xl:py-12">
-          <div className="auth-brand-panel-glow auth-brand-panel-glow-a" />
-          <div className="auth-brand-panel-glow auth-brand-panel-glow-b" />
-          <div className="auth-brand-panel-grid" />
+        {/* Left — editorial brand panel */}
+        <AuthBrandPanel />
 
-          <div className="relative z-10 flex items-center justify-between gap-4">
-            <OwnAILogo size={36} tone="light" wordmarkClassName="text-2xl" />
+        {/* Right — form */}
+        <section className="relative flex min-h-screen flex-col justify-center px-5 py-10 sm:px-8 lg:px-10 lg:py-12">
+
+          {/* Top bar — back link left, theme toggle right */}
+          <div className="absolute inset-x-5 top-5 z-20 flex items-center justify-between sm:inset-x-8 sm:top-8">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-medium text-white/88 transition-colors hover:bg-white/16"
+              className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back home
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
             </Link>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+              aria-label="Toggle theme"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                {isDark
+                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 000 10A5 5 0 0012 7z" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                }
+              </svg>
+            </button>
           </div>
 
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white/75">
-              Premium multi-model workspace
-            </div>
-
-            <h1 className="mt-8 font-display text-5xl font-extrabold tracking-[-0.05em] text-white xl:text-6xl xl:leading-[1.02]">
-              All the AI.
-              <br />
-              None of the waste.
+          {/* Mobile brand block — shown only below lg */}
+          <div className="mb-7 lg:hidden">
+            <Link to="/"><OwnAILogo size={28} /></Link>
+            <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+              All the AI. None of the waste.
             </h1>
-
-            <p className="mt-6 max-w-xl text-base leading-8 text-white/78 xl:text-lg">
-              A cleaner way into OpenAI, Claude, and Gemini, with visible pricing and a design system that already thinks
-              in web, desktop, and mobile terms.
-            </p>
-
-            <div className="mt-8 space-y-3">
-              {desktopValuePoints.map((point) => (
-                <div key={point} className="auth-value-pill">
-                  <CheckCircle2 className="h-4.5 w-4.5 text-white" />
-                  <span className="text-sm text-white/88">{point}</span>
-                </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {providers.map(({ label, color }) => (
+                <span
+                  key={label}
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                  style={{ background: `${color}12`, border: `1px solid ${color}28`, color }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+                  {label}
+                </span>
               ))}
             </div>
-
-            <div className="mt-10 grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(250px,0.92fr)]">
-              <div className="auth-desktop-mockup">
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <span className="landing-window-dot bg-white/45" />
-                    <span className="landing-window-dot bg-white/28" />
-                    <span className="landing-window-dot bg-white/15" />
-                  </div>
-                  <div className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-white/65">
-                    GPT-4o active
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="h-4 w-4/5 rounded-full bg-white/14" />
-                  <div className="h-4 w-full rounded-full bg-white/9" />
-                  <div className="h-4 w-3/5 rounded-full bg-white/11" />
-                </div>
-
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[24px] border border-white/10 bg-black/16 p-4">
-                    <div className="text-xs uppercase tracking-[0.22em] text-white/48">This exchange cost</div>
-                    <div className="mt-2 text-3xl font-semibold tracking-tight text-white">€0.018</div>
-                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full w-[58%] rounded-full bg-white" />
-                    </div>
-                  </div>
-                  <div className="rounded-[24px] border border-white/10 bg-black/16 p-4">
-                    <div className="text-xs uppercase tracking-[0.22em] text-white/48">Models available</div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {['GPT-4o', 'Claude', 'Gemini'].map((item) => (
-                        <span key={item} className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-white/88">
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {authHighlights.map((item) => (
-                  <div key={item.label} className="auth-side-note">
-                    <div className="text-xs uppercase tracking-[0.22em] text-white/48">{item.label}</div>
-                    <div className="mt-2 text-sm leading-6 text-white/84">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <div className="relative z-10 text-[11px] uppercase tracking-[0.26em] text-white/50">
-            One interface. One bill. More control.
-          </div>
-        </section>
-
-        <section className="relative flex min-h-screen flex-col justify-center px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-          <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 sm:top-6">
-            <button type="button" onClick={toggleTheme} className="shell-icon-button" aria-label="Toggle theme">
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+          {/* Form card */}
+          <div className="mx-auto w-full max-w-[440px]">
+            <div
+              className="rounded-[24px] border border-[var(--border-default)] bg-[var(--bg-base)] p-6 sm:p-8"
+              style={{ boxShadow: isDark
+                ? '0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)'
+                : '0 4px 24px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05)'
+              }}
             >
-              <ArrowLeft className="h-4 w-4" />
-              Home
-            </Link>
-          </div>
-
-          <div className="mx-auto flex w-full max-w-lg flex-col">
-            <div className="mb-6 lg:hidden">
-              <OwnAILogo size={34} wordmarkClassName="text-2xl" />
-              <div className="mt-5 rounded-[28px] border border-[var(--border-default)] bg-[var(--surface-1)] p-5 shadow-[var(--shadow-card)]">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,0.2)] bg-[rgba(99,102,241,0.08)] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--brand-indigo)]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Premium entry flow
-                </div>
-                <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-                  Join every major model in one place.
-                </h1>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {mobileValuePoints.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[32px] border border-[var(--border-default)] bg-[rgba(255,255,255,0.74)] p-5 shadow-[var(--shadow-elevated)] backdrop-blur-2xl dark:bg-[rgba(17,17,19,0.8)] sm:p-7">
               {success ? (
-                <div className="animate-modal-in text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-gradient shadow-glow-sm">
-                    <Check className="h-8 w-8 text-white" />
+                /* ── Success state ── */
+                <div className="animate-modal-in py-6 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--text-primary)]">
+                    <Check className="h-7 w-7 text-[var(--bg-base)]" />
                   </div>
-                  <h2 className="mt-5 font-display text-3xl font-bold tracking-tight text-[var(--text-primary)]">You&apos;re in.</h2>
+                  <h2 className="mt-5 font-display text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+                    You're in.
+                  </h2>
                   <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                    Your account is ready and the €2 starter credit has been added. Redirecting you into the workspace now.
+                    Account ready. €2 starter credit has been added.
+                    Taking you to the workspace now.
                   </p>
-                  <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[var(--surface-3)]">
-                    <div className="h-full w-full rounded-full bg-brand-gradient shimmer-bar" />
+                  <div className="mt-6 h-1 overflow-hidden rounded-full bg-[var(--surface-3)]">
+                    <div className="shimmer-bar h-full w-full rounded-full bg-[var(--text-primary)]" />
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-center">
-                    <div className="flex w-full max-w-[290px] rounded-full border border-[var(--border-subtle)] bg-[var(--surface-2)] p-1">
-                      {[
-                        { label: 'Log in', value: true },
-                        { label: 'Sign up', value: false },
-                      ].map((item) => {
-                        const active = item.value === isLogin;
-                        return (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => switchMode(item.value)}
-                            className="flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200"
-                            style={{
-                              background: active ? 'var(--surface-1)' : 'transparent',
-                              color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                              boxShadow: active ? 'var(--shadow-card)' : 'none',
-                            }}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                  {/* ── Mode toggle ── */}
+                  <div className="flex w-full rounded-full border border-[var(--border-subtle)] bg-[var(--surface-2)] p-1">
+                    {[
+                      { label: 'Log in', value: true },
+                      { label: 'Sign up', value: false },
+                    ].map((item) => {
+                      const active = item.value === isLogin;
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => switchMode(item.value)}
+                          className="flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200"
+                          style={{
+                            background: active ? 'var(--bg-base)' : 'transparent',
+                            color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                            boxShadow: active
+                              ? isDark
+                                ? '0 1px 4px rgba(0,0,0,0.5)'
+                                : '0 1px 4px rgba(0,0,0,0.08)'
+                              : 'none',
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="mt-8">
-                    <h2 className="font-display text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+                  {/* ── Heading ── */}
+                  <div className="mt-7">
+                    <h2 className="font-display text-[1.625rem] font-bold tracking-tight text-[var(--text-primary)]">
                       {isLogin ? 'Welcome back' : 'Create your account'}
                     </h2>
-                    <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+                    <p className="mt-2 text-[0.875rem] leading-6 text-[var(--text-secondary)]">
                       {isLogin
-                        ? 'Pick up your workspace where you left it, with the same models, memory, and billing clarity.'
-                        : 'Start with €2 in real credit and a pricing model that fits bursts of actual usage.'}
+                        ? 'Pick up where you left off — same models, memory, and billing.'
+                        : 'Start with €2 in real credit and pay only for what you use.'}
                     </p>
                   </div>
 
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {oauthProviders.map((provider) => (
+                  {/* ── OAuth placeholders ── */}
+                  <div className="mt-6 grid grid-cols-2 gap-2.5">
+                    {(['Google', 'Apple'] as const).map((provider) => (
                       <button
                         key={provider}
                         type="button"
                         disabled
-                        className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--border-default)] bg-[var(--surface-2)] px-4 text-sm font-medium text-[var(--text-secondary)] opacity-80"
+                        className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] text-sm font-medium text-[var(--text-muted)] opacity-60"
                       >
-                        <ShieldCheck className="h-4 w-4" />
+                        <ShieldCheck className="h-3.5 w-3.5" />
                         {provider}
-                        <span className="rounded-full border border-[var(--border-default)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        <span className="rounded-full border border-[var(--border-default)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
                           Soon
                         </span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="my-6 flex items-center gap-3">
+                  {/* ── Divider ── */}
+                  <div className="my-5 flex items-center gap-3">
                     <div className="h-px flex-1 bg-[var(--border-subtle)]" />
-                    <span className="text-[11px] uppercase tracking-[0.24em] text-[var(--text-muted)]">or continue with email</span>
+                    <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                      or with email
+                    </span>
                     <div className="h-px flex-1 bg-[var(--border-subtle)]" />
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* ── Form fields ── */}
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Email */}
                     <div>
-                      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
-                        Email address
+                      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                        Email
                       </label>
                       <div className="relative">
                         <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                         <input
                           type="email"
                           value={email}
-                          onChange={(event) => setEmail(event.target.value)}
+                          onChange={(e) => setEmail(e.target.value)}
                           required
                           placeholder="name@university.edu"
-                          className="input-brand h-14 w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-2)] pl-11 pr-4 text-sm text-[var(--text-primary)] outline-none transition-all duration-200"
+                          className="input-brand h-12 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] pl-11 pr-4 text-sm text-[var(--text-primary)] outline-none transition-all"
                         />
                       </div>
                     </div>
 
+                    {/* Password */}
                     <div>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+                      <div className="mb-2 flex items-center justify-between">
+                        <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                           Password
                         </label>
-                        {isLogin ? (
-                          <span className="text-[11px] text-[var(--text-muted)]">Password reset is coming soon</span>
-                        ) : null}
+                        {isLogin && (
+                          <span className="text-[11px] text-[var(--text-muted)]">Reset coming soon</span>
+                        )}
                       </div>
-
                       <div className="relative">
                         <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                         <input
                           type={showPassword ? 'text' : 'password'}
                           value={password}
-                          onChange={(event) => setPassword(event.target.value)}
+                          onChange={(e) => setPassword(e.target.value)}
                           required
                           placeholder="••••••••"
-                          className="input-brand h-14 w-full rounded-2xl border border-[var(--border-default)] bg-[var(--surface-2)] pl-11 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all duration-200"
+                          className="input-brand h-12 w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] pl-11 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all"
                         />
                         <button
                           type="button"
-                          onClick={() => setShowPassword((current) => !current)}
+                          onClick={() => setShowPassword((p) => !p)}
                           className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
@@ -404,17 +406,16 @@ const AuthForm: React.FC = () => {
                         </button>
                       </div>
 
-                      {!isLogin && password ? (
+                      {/* Strength meter — only on signup */}
+                      {!isLogin && password && (
                         <>
-                          <div className="mt-3 flex items-center gap-3">
+                          <div className="mt-2.5 flex items-center gap-2.5">
                             <div className="flex flex-1 gap-1">
-                              {[1, 2, 3, 4].map((index) => (
+                              {[1, 2, 3, 4].map((i) => (
                                 <div
-                                  key={index}
-                                  className="h-1.5 flex-1 rounded-full transition-all duration-200"
-                                  style={{
-                                    background: index <= strength ? strengthMeta[strength].color : 'var(--surface-3)',
-                                  }}
+                                  key={i}
+                                  className="h-1 flex-1 rounded-full transition-all duration-200"
+                                  style={{ background: i <= strength ? strengthMeta[strength].color : 'var(--surface-3)' }}
                                 />
                               ))}
                             </div>
@@ -422,30 +423,30 @@ const AuthForm: React.FC = () => {
                               {strengthMeta[strength].label}
                             </span>
                           </div>
-
-                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <div className="mt-2.5 grid gap-1.5 sm:grid-cols-2">
                             {passwordChecks.map((item) => (
                               <div key={item.label} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                                 <span
-                                  className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                                  className={`flex h-4 w-4 items-center justify-center rounded-full border text-[9px] ${
                                     item.valid
                                       ? 'border-emerald-500/30 bg-emerald-500/12 text-emerald-500'
                                       : 'border-[var(--border-default)] bg-[var(--surface-2)] text-[var(--text-muted)]'
                                   }`}
                                 >
-                                  <Check className="h-3 w-3" />
+                                  <Check className="h-2.5 w-2.5" />
                                 </span>
                                 {item.label}
                               </div>
                             ))}
                           </div>
                         </>
-                      ) : null}
+                      )}
                     </div>
 
-                    {!isLogin ? (
+                    {/* Confirm password */}
+                    {!isLogin && (
                       <div>
-                        <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+                        <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                           Confirm password
                         </label>
                         <div className="relative">
@@ -453,56 +454,53 @@ const AuthForm: React.FC = () => {
                           <input
                             type={showPassword ? 'text' : 'password'}
                             value={confirmPassword}
-                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             required
                             placeholder="Re-enter your password"
-                            className="input-brand h-14 w-full rounded-2xl border bg-[var(--surface-2)] pl-11 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all duration-200"
-                            style={{
-                              borderColor: confirmPassword && !passwordsMatch ? '#EF4444' : 'var(--border-default)',
-                            }}
+                            className="input-brand h-12 w-full rounded-xl border bg-[var(--surface-1)] pl-11 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all"
+                            style={{ borderColor: confirmPassword && !passwordsMatch ? '#EF4444' : 'var(--border-default)' }}
                           />
-                          {confirmPassword && passwordsMatch ? (
+                          {confirmPassword && passwordsMatch && (
                             <Check className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
-                          ) : null}
+                          )}
                         </div>
-                        {confirmPassword && !passwordsMatch ? (
-                          <p className="mt-2 text-xs text-red-500">Passwords need to match before we can create the account.</p>
-                        ) : null}
+                        {confirmPassword && !passwordsMatch && (
+                          <p className="mt-1.5 text-xs text-red-500">Passwords need to match.</p>
+                        )}
                       </div>
-                    ) : null}
+                    )}
 
-                    <button type="submit" disabled={submitDisabled} className="btn-gradient mt-2 flex w-full justify-center py-3.5 text-sm sm:text-base">
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      {loading ? 'Working...' : isLogin ? 'Log in' : 'Create account'}
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={submitDisabled}
+                      className="btn-primary mt-1 flex w-full justify-center py-3.5 text-[0.9375rem]"
+                    >
+                      {loading
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <ArrowRight className="h-4 w-4" />
+                      }
+                      {loading ? 'Working…' : isLogin ? 'Log in' : 'Create account'}
                     </button>
 
-                    {!isLogin ? (
-                      <p className="text-center text-xs leading-6 text-[var(--text-muted)]">
-                        By creating an account, you agree to use the product responsibly. OAuth and password reset can be
-                        layered in later without rethinking this screen.
+                    {!isLogin && (
+                      <p className="text-center text-[11px] leading-5 text-[var(--text-muted)]">
+                        By creating an account you agree to use the product responsibly.
                       </p>
-                    ) : null}
+                    )}
                   </form>
 
-                  <div className="mt-6 flex items-center justify-between gap-3 rounded-[22px] border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-[var(--text-primary)]">
-                        {isLogin ? 'Need an account?' : 'Already have one?'}
-                      </div>
-                      <div className="text-xs text-[var(--text-secondary)]">
-                        {isLogin
-                          ? 'Create one and start with real credits.'
-                          : 'Sign in and continue from your existing workspace.'}
-                      </div>
-                    </div>
+                  {/* ── Mode switcher — single text line, no duplicate card ── */}
+                  <p className="mt-5 text-center text-sm text-[var(--text-secondary)]">
+                    {isLogin ? 'No account yet? ' : 'Already have one? '}
                     <button
                       type="button"
                       onClick={() => switchMode(!isLogin)}
-                      className="rounded-full border border-[var(--border-default)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-2)]"
+                      className="font-semibold text-[var(--text-primary)] underline underline-offset-4 decoration-[var(--border-strong)] transition-opacity hover:opacity-70"
                     >
-                      {isLogin ? 'Sign up' : 'Log in'}
+                      {isLogin ? 'Sign up free' : 'Log in'}
                     </button>
-                  </div>
+                  </p>
                 </>
               )}
             </div>

@@ -7,8 +7,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Sora', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
+        display: ['Outfit', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
@@ -16,7 +16,6 @@ module.exports = {
         brand: {
           indigo: '#6366F1',
           violet: '#8B5CF6',
-          fuchsia: '#D946EF',
         },
         // ── Dark mode surfaces (zinc neutral — no purple tint) ────────
         dark: {
@@ -41,16 +40,14 @@ module.exports = {
         },
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%)',
-        'brand-gradient-subtle': 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(217,70,239,0.15) 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+        'brand-gradient-subtle': 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.12) 100%)',
       },
       boxShadow: {
-        'glow-sm':  '0 0 12px rgba(99,102,241,0.3)',
-        'glow':     '0 0 24px rgba(99,102,241,0.4), 0 0 48px rgba(139,92,246,0.2)',
-        'glow-lg':  '0 0 40px rgba(99,102,241,0.5), 0 0 80px rgba(139,92,246,0.25)',
-        'card-dark':'0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)',
-        'card-light':'0 4px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)',
-        'elevated-dark':'0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)',
+        'card-dark':     '0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)',
+        'card-light':    '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
+        'elevated-dark': '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)',
+        'elevated-light':'0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)',
       },
       animation: {
         // ── Existing ──────────────────────────────────────────────────
@@ -68,6 +65,7 @@ module.exports = {
         'float':      'float 4.5s ease-in-out infinite',
         'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
         'bounce-dot': 'bounceDot 1.2s ease-in-out infinite',
+        'pulse-dot':  'pulseDot 1.8s ease-in-out infinite',
         'gradient-x': 'gradientX 3s ease infinite',
         'spin-slow':  'spin 3s linear infinite',
       },
@@ -127,6 +125,10 @@ module.exports = {
         gradientX: {
           '0%,100%': { backgroundPosition: '0% 50%' },
           '50%':     { backgroundPosition: '100% 50%' },
+        },
+        pulseDot: {
+          '0%,100%': { opacity: '1',    transform: 'scale(1)' },
+          '50%':     { opacity: '0.45', transform: 'scale(0.8)' },
         },
       },
     },

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import 'katex/dist/katex.min.css';
 
 @tailwind base;
@@ -25,7 +25,7 @@
   --brand-indigo:  #6366F1;
   --brand-violet:  #8B5CF6;
   --brand-fuchsia: #D946EF;
-  --brand-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+  --brand-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
 
   --accent-openai:    #10B981;
   --accent-anthropic: #F59E0B;
@@ -38,7 +38,7 @@
 }
 
 .dark {
-  --bg-base:     #0A0A0A;
+  --bg-base:     #18181B;
   --surface-1:   #111113;
   --surface-2:   #18181B;
   --surface-3:   #27272A;
@@ -57,7 +57,7 @@
    BASE LAYER — Apply tokens
    ══════════════════════════════════════════════════════════════════════════ */
 html {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -71,7 +71,7 @@ body {
 }
 
 /* Display font utility */
-.font-display { font-family: 'Sora', sans-serif; }
+.font-display { font-family: 'Outfit', system-ui, sans-serif; }
 
 .surface-panel {
   border-radius: 24px;
@@ -324,18 +324,29 @@ body {
   background: radial-gradient(circle, rgba(217,70,239,0.18) 0%, transparent 72%);
 }
 
+/* ── Editorial landing shell — different bg from app interior ── */
 .landing-shell {
   isolation: isolate;
+  background-color: #FAFAF8;
+}
+.dark .landing-shell {
+  background-color: #0C0C0B;
+}
+
+/* Grain noise overlay — fixed, pointer-events none, renders above content */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
 }
 
 .landing-mesh {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 14% 14%, rgba(99, 102, 241, 0.16), transparent 30%),
-    radial-gradient(circle at 82% 16%, rgba(139, 92, 246, 0.12), transparent 28%),
-    radial-gradient(circle at 50% 76%, rgba(217, 70, 239, 0.1), transparent 28%);
+  display: none; /* removed — grain overlay replaces decorative mesh */
 }
 
 .landing-orb {
@@ -393,14 +404,14 @@ body {
   align-items: center;
   gap: 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(99,102,241,0.16);
-  background: rgba(99,102,241,0.08);
-  padding: 0.6rem 0.95rem;
-  font-size: 0.72rem;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brand-indigo);
+  color: var(--text-muted);
 }
 
 .landing-secondary-button {
@@ -409,25 +420,22 @@ body {
   justify-content: center;
   border-radius: 999px;
   border: 1px solid var(--border-default);
-  background: rgba(255,255,255,0.48);
+  background: var(--surface-1);
   padding: 0.875rem 1.35rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
-  transition: background-color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+  color: var(--text-secondary);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
 }
 
 .landing-secondary-button:hover {
   background: var(--surface-2);
-  border-color: rgba(99,102,241,0.22);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .landing-secondary-button:active {
-  transform: scale(0.985);
-}
-
-.dark .landing-secondary-button {
-  background: rgba(255,255,255,0.04);
+  transform: translateY(1px);
 }
 
 .landing-provider-pill {
@@ -445,15 +453,13 @@ body {
 .landing-outline-card {
   border-radius: 28px;
   border: 1px solid var(--border-default);
-  background: rgba(255,255,255,0.64);
+  background: #FFFFFF;
   padding: 1.4rem;
   box-shadow: var(--shadow-card);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 .dark .landing-outline-card {
-  background: rgba(17,17,19,0.7);
+  background: rgba(28,28,31,0.9);
 }
 
 .landing-device-frame {
@@ -534,26 +540,20 @@ body {
 }
 
 .landing-feature-card {
-  border-radius: 30px;
+  border-radius: 24px;
   border: 1px solid var(--border-default);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)),
-    rgba(255,255,255,0.62);
-  padding: 1.55rem;
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: #FFFFFF;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
 }
 
 .dark .landing-feature-card {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)),
-    rgba(17,17,19,0.76);
+  background: rgba(28,28,31,0.9);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
 }
 
 .auth-brand-panel {
-  background:
-    linear-gradient(145deg, rgba(99,102,241,0.96) 0%, rgba(139,92,246,0.96) 48%, rgba(217,70,239,0.92) 100%);
+  background: #0C0C0B;
 }
 
 .auth-brand-panel-grid {
@@ -628,24 +628,43 @@ body {
   background: var(--brand-gradient);
   color: #fff;
   font-weight: 600;
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 11px 22px;
   font-size: 14px;
   border: none;
   cursor: pointer;
-  transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+  transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 .btn-gradient:hover {
   filter: brightness(1.08);
-  transform: scale(1.02);
-  box-shadow: 0 4px 24px rgba(99,102,241,0.45), 0 0 48px rgba(139,92,246,0.2);
+  opacity: 0.92;
 }
-.btn-gradient:active  { transform: scale(0.98); filter: brightness(0.97); }
+.btn-gradient:active  { transform: translateY(1px); filter: brightness(0.97); }
 .btn-gradient:disabled { opacity: 0.55; pointer-events: none; }
+
+/* ── Primary ink button — inverted: bg = ink, text = page ── */
+/* Used on landing + auth. Black on light, white on dark. No gradient. */
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--bg-base);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.18s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+.btn-primary:hover  { opacity: 0.76; }
+.btn-primary:active { transform: translateY(1px); opacity: 0.82; }
+.btn-primary:disabled { opacity: 0.32; pointer-events: none; }
 
 /* Gradient text */
 .text-gradient {
@@ -801,12 +820,12 @@ body {
 }
 .animate-float { animation: float 4.5s ease-in-out infinite; }
 
-/* Glow pulse */
-@keyframes pulse-glow {
-  0%,100% { box-shadow: 0 0 20px rgba(99,102,241,0.3); }
-  50%      { box-shadow: 0 0 40px rgba(99,102,241,0.6), 0 0 60px rgba(139,92,246,0.3); }
+/* Live dot — streaming / voice active indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.8); }
 }
-.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
 
 /* Breathing logo */
 @keyframes breathe {
@@ -814,6 +833,29 @@ body {
   50%      { opacity: 1;    transform: scale(1.04); }
 }
 .animate-breathe { animation: breathe 3.5s ease-in-out infinite; }
+
+/* Word-by-word headline entrance — staggered via animation-delay on each span */
+@keyframes word-reveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.word-reveal {
+  display: inline-block;
+  animation: word-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Provider pricing marquee ticker */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+  will-change: transform;
+}
+.marquee-track:hover { animation-play-state: paused; }
 
 @keyframes drift-one {
   0%, 100% { transform: translate(0, 0); }

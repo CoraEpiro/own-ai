@@ -1,194 +1,391 @@
-import React from 'react';
-import { ArrowRight, Bot, CreditCard, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const providerPills = [
-  { label: 'GPT-4o', accent: 'var(--accent-openai)' },
-  { label: 'Claude', accent: 'var(--accent-anthropic)' },
-  { label: 'Gemini', accent: 'var(--accent-google)' },
+/* ─── Provider card data ─────────────────────────────────── */
+const providers = [
+  {
+    key: 'gpt',
+    name: 'GPT-4o',
+    label: 'OpenAI',
+    initial: 'O',
+    accent: '#10B981',
+    cost: '€0.018',
+    tag: 'Writing assistant',
+    tagIcon: 'zap',
+    prompt: 'Make my essay intro stronger and more compelling',
+    response:
+      'Your opening can hook readers immediately. Start with a bold claim or a counterintuitive fact, then narrow into your thesis...',
+  },
+  {
+    key: 'claude',
+    name: 'Claude Opus',
+    label: 'Anthropic',
+    initial: 'A',
+    accent: '#F59E0B',
+    cost: '€0.021',
+    tag: 'Deep analysis',
+    tagIcon: 'book',
+    prompt: 'Help me outline my thesis on renewable energy policy',
+    response:
+      'I\'d structure this in three chapters: historical context (1970s–2000s), the current regulatory landscape, and a forward-looking policy framework...',
+  },
+  {
+    key: 'gemini',
+    name: 'Gemini Flash',
+    label: 'Google',
+    initial: 'G',
+    accent: '#3B82F6',
+    cost: '€0.004',
+    tag: 'Web search',
+    tagIcon: 'globe',
+    prompt: 'Search for the latest AI research from this month',
+    response:
+      'Found 8 relevant papers published this week. Top result: "Scaling laws for mixture-of-experts" — proposes a new architecture that reduces inference cost by 40%...',
+  },
+] as const;
+
+/* ─── Marquee data ─────────────────────────────────────────── */
+const marqueeItems = [
+  { model: 'GPT-4o', price: 'Input $2.50 / 1M tokens', color: '#10B981' },
+  { model: 'Claude Opus', price: 'Input $15.00 / 1M tokens', color: '#F59E0B' },
+  { model: 'Gemini 1.5 Flash', price: 'Input $0.075 / 1M tokens', color: '#3B82F6' },
+  { model: 'GPT-4o mini', price: 'Input $0.15 / 1M tokens', color: '#10B981' },
+  { model: 'Claude Haiku', price: 'Input $0.25 / 1M tokens', color: '#F59E0B' },
+  { model: 'Gemini 1.5 Pro', price: 'Input $3.50 / 1M tokens', color: '#3B82F6' },
 ];
 
-const valuePoints = [
-  'One account across OpenAI, Claude, and Gemini',
-  'Transparent per-message costs before waste stacks up',
-  'Memory, voice, search, and study workflows in one workspace',
+/* ─── Position styles for stacked cards ─────────────────────── */
+const positionStyles = [
+  // front (position 0)
+  {
+    transform: 'rotate(0deg) scale(1) translateY(0px)',
+    zIndex: 30,
+    opacity: 1,
+  },
+  // middle (position 1)
+  {
+    transform: 'rotate(-3deg) scale(0.93) translateY(-16px)',
+    zIndex: 20,
+    opacity: 0.82,
+  },
+  // back (position 2)
+  {
+    transform: 'rotate(-6deg) scale(0.86) translateY(-32px)',
+    zIndex: 10,
+    opacity: 0.58,
+  },
 ];
 
-const LandingHero: React.FC = () => (
-  <section className="relative overflow-hidden px-4 pb-16 pt-28 sm:px-6 lg:px-8 lg:pb-24 lg:pt-36">
-    <div className="landing-orb landing-orb-a" />
-    <div className="landing-orb landing-orb-b" />
-    <div className="landing-orb landing-orb-c" />
+/* ─── Animated word span ─────────────────────────────────── */
+interface WordProps { text: string; delay: number; className?: string }
+const W: React.FC<WordProps> = ({ text, delay, className = '' }) => (
+  <span
+    className={`word-reveal inline-block ${className}`}
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    {text}
+  </span>
+);
 
-    <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[minmax(0,1.06fr)_minmax(420px,0.94fr)]">
-      <div className="relative z-10">
-        <div className="landing-eyebrow">
-          <Sparkles className="h-4 w-4 text-[var(--brand-indigo)]" />
-          Built for students who use AI intensely, not expensively
-        </div>
+/* ─── Provider card ──────────────────────────────────────── */
+interface CardProps {
+  provider: typeof providers[number];
+  position: number;
+}
 
-        <h1 className="mt-6 max-w-4xl font-display text-5xl font-extrabold tracking-[-0.05em] text-[var(--text-primary)] sm:text-6xl lg:text-7xl xl:text-[5.25rem] xl:leading-[0.94]">
-          All the AI.
-          <br />
-          <span className="text-gradient">None of the waste.</span>
-        </h1>
+const ProviderCard: React.FC<CardProps> = ({ provider, position }) => {
+  const style = positionStyles[position];
+  const isFront = position === 0;
 
-        <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--text-secondary)] sm:text-lg">
-          Own AI gives you one premium workspace for the best models, with usage-based pricing, personal memory,
-          and cross-device continuity. You keep the power. You stop paying for subscriptions you barely touch.
-        </p>
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link to="/auth" className="btn-gradient justify-center px-7 py-3.5 text-sm sm:text-base">
-            Start free
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <a href="#pricing" className="landing-secondary-button">
-            See pricing logic
-          </a>
-        </div>
-
-        <div className="mt-8 flex flex-wrap gap-3">
-          {providerPills.map((pill) => (
-            <div
-              key={pill.label}
-              className="landing-provider-pill"
-              style={{ borderColor: `${pill.accent}45`, color: pill.accent, background: `${pill.accent}15` }}
+  return (
+    <div
+      className="absolute inset-0 h-full w-full"
+      style={{
+        transform: style.transform,
+        zIndex: style.zIndex,
+        opacity: style.opacity,
+        transformOrigin: 'bottom center',
+        transition:
+          'transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+    >
+      <div
+        className="h-full w-full overflow-hidden rounded-[28px] p-5"
+        style={{
+          background:
+            'linear-gradient(155deg, rgba(22,22,25,0.99) 0%, rgba(10,10,10,0.97) 100%)',
+          border: isFront
+            ? `1px solid ${provider.accent}30`
+            : '1px solid rgba(255,255,255,0.08)',
+          boxShadow: isFront
+            ? `0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05), 0 0 40px ${provider.accent}0A`
+            : '0 16px 40px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
+              style={{
+                background: `${provider.accent}18`,
+                border: `1px solid ${provider.accent}35`,
+              }}
             >
-              <span className="h-2 w-2 rounded-full" style={{ background: pill.accent }} />
-              {pill.label}
+              {provider.initial}
+            </span>
+            <div>
+              <div className="text-[13px] font-semibold tracking-tight text-white">
+                {provider.name}
+              </div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-white/38">
+                {provider.label}
+              </div>
             </div>
-          ))}
-          <div className="landing-provider-pill border-[var(--border-default)] bg-[var(--surface-2)] text-[var(--text-secondary)]">
-            <CreditCard className="h-3.5 w-3.5" />
-            €2 free credit, no card required
+          </div>
+          <div
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{ background: `${provider.accent}14`, color: provider.accent }}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full animate-pulse-dot"
+              style={{ background: provider.accent }}
+            />
+            Live
           </div>
         </div>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-3">
-          {valuePoints.map((point, index) => (
-            <div key={point} className="landing-outline-card animate-slide-up" style={{ animationDelay: `${index * 90}ms` }}>
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-2xl bg-[rgba(99,102,241,0.12)] text-[var(--brand-indigo)]">
-                <Bot className="h-4.5 w-4.5" />
-              </div>
-              <p className="text-sm leading-6 text-[var(--text-secondary)]">{point}</p>
+        {/* Chat preview */}
+        <div className="mt-4 space-y-2.5">
+          {/* User bubble */}
+          <div className="flex justify-end">
+            <div
+              className="max-w-[82%] rounded-2xl rounded-tr-sm px-3 py-2 text-[11px] leading-relaxed text-white/70"
+              style={{ background: 'rgba(255,255,255,0.07)' }}
+            >
+              {provider.prompt}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative z-10">
-        <div className="landing-device-frame animate-float">
-          <div className="landing-device-toolbar">
-            <div className="flex gap-2">
-              <span className="landing-window-dot bg-white/45" />
-              <span className="landing-window-dot bg-white/25" />
-              <span className="landing-window-dot bg-white/15" />
-            </div>
-            <div className="landing-toolbar-badge">Auto mode • Study sprint</div>
           </div>
 
-          <div className="grid gap-4 p-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:p-5">
-            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient shadow-glow-sm">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white">Own AI</div>
-                  <div className="text-xs uppercase tracking-[0.24em] text-white/55">Unified workspace</div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {['Exam prep', 'Research mode', 'Voice recap', 'Saved memory'].map((item, index) => (
-                  <div
-                    key={item}
-                    className={`rounded-2xl border px-3 py-3 text-sm ${
-                      index === 0
-                        ? 'border-[rgba(255,255,255,0.14)] bg-white/12 text-white'
-                        : 'border-white/6 bg-black/20 text-white/65'
-                    }`}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
+          {/* AI response */}
+          <div className="flex gap-2">
+            <div
+              className="mt-0.5 h-5 w-5 shrink-0 flex items-center justify-center rounded-full text-[9px] font-bold text-white"
+              style={{
+                background: `${provider.accent}22`,
+                border: `1px solid ${provider.accent}35`,
+              }}
+            >
+              {provider.initial}
             </div>
-
-            <div className="space-y-4">
-              <div className="rounded-[26px] border border-white/10 bg-black/24 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-white/55">Live conversation</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">Compare three models in one thread</h2>
-                  </div>
-                  <div className="rounded-full border border-emerald-400/25 bg-emerald-400/15 px-3 py-1 text-xs font-medium text-emerald-300">
-                    Billing visible
-                  </div>
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  <div className="ml-auto max-w-[18rem] rounded-[22px] rounded-br-md bg-white px-4 py-3 text-sm leading-6 text-zinc-900">
-                    Summarise this economics lecture, then turn it into a three-day revision plan.
-                  </div>
-                  <div className="max-w-[21rem] rounded-[24px] rounded-bl-md border border-white/8 bg-white/8 px-4 py-3 text-sm leading-6 text-white/88">
-                    Claude: I built a concise summary first. GPT-4o can draft the revision plan. Gemini can fetch live
-                    references if you want web-backed notes.
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="landing-analytics-card">
-                  <div className="text-xs uppercase tracking-[0.24em] text-white/55">This message cost</div>
-                  <div className="mt-2 text-3xl font-semibold tracking-tight text-white">€0.018</div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
-                    <div className="h-full w-[62%] rounded-full bg-brand-gradient" />
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-white/60">
-                    <span>GPT-4o</span>
-                    <span>Claude</span>
-                    <span>Gemini</span>
-                  </div>
-                </div>
-
-                <div className="landing-analytics-card">
-                  <div className="text-xs uppercase tracking-[0.24em] text-white/55">Device continuity</div>
-                  <div className="mt-3 space-y-3">
-                    {['Web workspace synced', 'Desktop-ready layout system', 'Mobile-first surfaces planned'].map((item) => (
-                      <div key={item} className="flex items-center gap-3 text-sm text-white/85">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div
+              className="rounded-2xl rounded-tl-sm px-3 py-2 text-[11px] leading-relaxed"
+              style={{
+                background: `${provider.accent}10`,
+                border: `1px solid ${provider.accent}20`,
+                color: 'rgba(255,255,255,0.72)',
+              }}
+            >
+              {provider.response}
             </div>
           </div>
         </div>
 
-        <div className="landing-floating-chip left-[-1rem] top-[4.5rem] hidden lg:flex">
-          <span className="landing-chip-icon bg-emerald-400/15 text-emerald-300">$</span>
+        <div className="my-4 h-px bg-white/[0.06]" />
+
+        {/* Cost row */}
+        <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-[0.22em] text-white/45">Usage pricing</div>
-            <div className="text-sm font-semibold text-white">See cost before you send</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-white/30">
+              Message cost
+            </div>
+            <div className="mt-0.5 font-mono text-[1.5rem] font-semibold leading-none tracking-tight text-white">
+              {provider.cost}
+            </div>
+          </div>
+          <div
+            className="rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{
+              background: `${provider.accent}16`,
+              border: `1px solid ${provider.accent}28`,
+              color: provider.accent,
+            }}
+          >
+            {provider.label}
           </div>
         </div>
 
-        <div className="landing-floating-chip bottom-6 right-[-1.25rem] hidden lg:flex">
-          <span className="landing-chip-icon bg-amber-400/15 text-amber-300">AI</span>
-          <div>
-            <div className="text-xs uppercase tracking-[0.22em] text-white/45">Model switch</div>
-            <div className="text-sm font-semibold text-white">OpenAI, Claude, Gemini</div>
-          </div>
+        {/* Accent bar */}
+        <div className="mt-3.5 h-[3px] overflow-hidden rounded-full bg-white/[0.05]">
+          <div
+            className="h-full w-3/5 rounded-full"
+            style={{
+              background: `linear-gradient(90deg, ${provider.accent}80, ${provider.accent}20)`,
+            }}
+          />
         </div>
       </div>
     </div>
-  </section>
-);
+  );
+};
+
+/* ─── Hero ───────────────────────────────────────────────── */
+const LandingHero: React.FC = () => {
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setActiveIdx((i) => (i + 1) % providers.length), 3800);
+    return () => clearInterval(id);
+  }, []);
+
+  const getPosition = (cardIdx: number) =>
+    (cardIdx - activeIdx + providers.length) % providers.length;
+
+  const featureChips = [
+    { label: 'GPT · Claude · Gemini', color: '#10B981' },
+    { label: 'Pay per message', color: '#F59E0B' },
+    { label: 'Memory & voice', color: '#3B82F6' },
+    { label: 'Web search built in', color: '#10B981' },
+    { label: 'No subscription', color: '#F59E0B' },
+  ];
+
+  return (
+    <section className="relative flex min-h-[95dvh] flex-col overflow-hidden px-4 pb-0 pt-24 sm:px-6 lg:px-8 lg:pt-28">
+      <div className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 pb-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] lg:pb-0">
+
+        {/* ── Left column ── */}
+        <div className="relative z-10 flex flex-col">
+          <div className="landing-eyebrow">
+            OpenAI · Claude · Gemini · Usage-based pricing
+          </div>
+
+          {/* Staggered headline */}
+          <h1
+            className="mt-7 font-display font-extrabold leading-[0.92] tracking-[-0.055em] text-[var(--text-primary)]"
+            style={{ fontSize: 'clamp(3.25rem, 7.5vw, 6.25rem)' }}
+          >
+            <W text="All" delay={60} />
+            {' '}
+            <W text="the" delay={140} />
+            {' '}
+            <W text="AI." delay={220} />
+            <br />
+            <W text="None" delay={340} />
+            {' '}
+            <W text="of" delay={410} />
+            {' '}
+            <W text="the" delay={480} />
+            <br />
+            <W text="waste." delay={560} />
+          </h1>
+
+          <p
+            className="word-reveal mt-7 max-w-[440px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]"
+            style={{ animationDelay: '700ms' }}
+          >
+            One workspace for GPT, Claude, and Gemini. Pay only for the tokens
+            you actually send — not a flat subscription you barely use.
+          </p>
+
+          {/* CTA row */}
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link to="/auth" className="btn-primary px-7 py-3.5 text-[0.9375rem]">
+              Start free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="flex items-center gap-2 rounded-full border border-[var(--border-default)] px-4 py-3 text-sm font-medium text-[var(--text-muted)]">
+              <CreditCard className="h-3.5 w-3.5" />
+              €2 credit · no card required
+            </div>
+          </div>
+
+          {/* Feature chips — scannable, not a text wall */}
+          <div className="mt-9 flex flex-wrap gap-2">
+            {featureChips.map(({ label, color }, i) => (
+              <span
+                key={label}
+                className="word-reveal inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[0.8125rem] font-medium"
+                style={{
+                  animationDelay: `${820 + i * 60}ms`,
+                  background: `${color}0D`,
+                  border: `1px solid ${color}28`,
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ background: color }}
+                />
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Right column — animated stacked provider cards ── */}
+        <div className="relative z-10 flex flex-col items-center gap-6 lg:items-end">
+          {/* Card stack */}
+          <div
+            className="relative w-full"
+            style={{ maxWidth: '360px', height: '400px' }}
+          >
+            {providers.map((provider, cardIdx) => (
+              <ProviderCard
+                key={provider.key}
+                provider={provider}
+                position={getPosition(cardIdx)}
+              />
+            ))}
+          </div>
+
+          {/* Indicator dots + label */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2">
+              {providers.map((provider, i) => (
+                <button
+                  key={provider.key}
+                  onClick={() => setActiveIdx(i)}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: activeIdx === i ? '24px' : '7px',
+                    height: '7px',
+                    background:
+                      activeIdx === i ? providers[i].accent : 'var(--border-strong)',
+                  }}
+                  aria-label={`Show ${provider.name}`}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              {providers[activeIdx].name} · {providers[activeIdx].label}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Marquee ticker — spans full bleed ── */}
+      <div className="relative z-10 mx-[-1rem] overflow-hidden border-t border-[var(--border-subtle)] sm:mx-[-1.5rem] lg:mx-[-2rem]">
+        <div className="marquee-track py-0">
+          {[...marqueeItems, ...marqueeItems].map((item, i) => (
+            <div
+              key={i}
+              className="flex shrink-0 items-center gap-2.5 px-6 py-3"
+            >
+              <span
+                className="font-mono text-[0.6875rem] font-semibold tracking-wide"
+                style={{ color: item.color }}
+              >
+                {item.model}
+              </span>
+              <span className="text-[0.6875rem] text-[var(--text-muted)]">{item.price}</span>
+              <span className="text-[var(--border-strong)] select-none">·</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default LandingHero;
