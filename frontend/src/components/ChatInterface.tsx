@@ -78,6 +78,13 @@ function providerFromModelId(modelId: string): string {
   return 'OpenAI';
 }
 
+const PROVIDER_META: Record<string, { color: string; icon: string; label: string }> = {
+  OpenAI:    { color: '#10B981', icon: '✦', label: 'OpenAI'    },
+  Anthropic: { color: '#F59E0B', icon: '◆', label: 'Anthropic' },
+  Google:    { color: '#3B82F6', icon: '✿', label: 'Google'    },
+  Auto:      { color: '#8B5CF6', icon: '⚡', label: 'Auto'      },
+};
+
 type PdfAudioMode = 'summary' | 'narration' | 'podcast';
 
 interface PdfAudioJobResult {
@@ -221,6 +228,8 @@ const ChatInterface: React.FC = () => {
   const [models, setModels] = useState<LLMModel[]>([]);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [showSidebarModelSelector, setShowSidebarModelSelector] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modelLoadError, setModelLoadError] = useState<string | null>(null);
@@ -462,6 +471,19 @@ const ChatInterface: React.FC = () => {
       inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 200)}px`;
     }
   }, [input]);
+
+  // ── Click-outside to close avatar menu & model selectors ───────────────
+  useEffect(() => {
+    if (!showAvatarMenu && !showModelSelector && !showSidebarModelSelector) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-avatar-menu]')) setShowAvatarMenu(false);
+      if (!target.closest('[data-model-selector]')) setShowModelSelector(false);
+      if (!target.closest('[data-sidebar-model-selector]')) setShowSidebarModelSelector(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showAvatarMenu, showModelSelector, showSidebarModelSelector]);
 
   // ── Drag & Drop ────────────────────────────────────────────────────────
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -1130,201 +1152,223 @@ const ChatInterface: React.FC = () => {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          SIDEBAR
+          SIDEBAR — chat history only, clean and focused
          ══════════════════════════════════════════════════════════════════ */}
       <aside
         className={`
           ${mobileSidebar ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
           fixed md:relative z-40 md:z-auto
-          ${sidebarOpen ? 'w-[280px]' : 'w-[60px]'}
+          ${sidebarOpen ? 'w-[260px]' : 'w-[56px]'}
           h-full flex flex-col transition-all duration-300 ease-in-out
         `}
-        style={{ background: theme.sidebar, borderRight: `1px solid ${theme.sidebarBorder}` }}
+        style={{
+          background: darkMode ? '#111113' : '#FAFAFA',
+          borderRight: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'}`,
+        }}
       >
-        {/* Logo */}
-        <div className="p-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
-          {sidebarOpen ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: theme.accent }}>
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-bold text-white text-lg tracking-tight">Own AI</span>
-            </div>
-          ) : (
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto" style={{ background: theme.accent }}>
-              <Bot className="h-4 w-4 text-white" />
-            </div>
+        {/* ── Header: logo + collapse toggle ──────────────────────────────── */}
+        <div
+          className="flex items-center px-3 py-3 gap-2"
+          style={{ borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}` }}
+        >
+          {/* Logo mark */}
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="white" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.7"/>
+              <circle cx="8" cy="8" r="2.5" fill="white"/>
+            </svg>
+          </div>
+          {sidebarOpen && (
+            <span className="font-display font-bold text-base tracking-tight flex-1" style={{ color: darkMode ? '#FAFAFA' : '#09090B' }}>
+              Own AI
+            </span>
           )}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 text-gray-400 hover:text-white transition-colors hidden md:block">
-            <ChevronDown className={`h-4 w-4 transition-transform ${sidebarOpen ? '' : '-rotate-90'}`} />
+          {/* Collapse toggle (desktop) */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="hidden md:flex p-1.5 rounded-lg transition-all duration-150 hover:scale-105"
+            style={{
+              color: darkMode ? '#52525B' : '#A1A1AA',
+              background: 'transparent',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${sidebarOpen ? '' : '-rotate-90'}`} />
           </button>
-          <button onClick={() => setMobileSidebar(false)} className="p-1 text-gray-400 hover:text-white md:hidden">
-            <X className="h-5 w-5" />
+          {/* Mobile close */}
+          <button onClick={() => setMobileSidebar(false)} className="md:hidden p-1.5" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* New Chat */}
-        <div className="p-3">
+        {/* ── New Chat button ───────────────────────────────────────────────── */}
+        <div className="px-3 pt-3 pb-2">
           <button
             onClick={newChat}
-            className="w-full text-white rounded-lg px-4 py-2.5 flex items-center justify-center gap-2 font-medium transition-all duration-200 hover:brightness-110"
-            style={{ background: theme.accent }}
+            className={`
+              w-full flex items-center justify-center gap-2 rounded-xl py-2.5 font-medium text-sm
+              transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]
+              ${sidebarOpen ? 'px-4' : 'px-0'}
+            `}
+            style={{
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              color: '#fff',
+              boxShadow: '0 2px 12px rgba(99,102,241,0.35)',
+            }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 flex-shrink-0" />
             {sidebarOpen && <span>New Chat</span>}
           </button>
         </div>
 
-        {/* Model Selector */}
-        {sidebarOpen && (
-          <div className="px-3 pb-3">
-            <div className="relative">
-              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Model</label>
+        {/* ── Model selector ────────────────────────────────────────────────── */}
+        <div className="px-3 pb-3" data-sidebar-model-selector>
+          {sidebarOpen ? (
+            <>
               <button
-                onClick={() => setShowModelSelector(!showModelSelector)}
-                className="w-full rounded-lg px-3 py-2 flex items-center justify-between transition-all duration-200 text-left"
-                style={{ background: theme.sidebarHover, border: `1px solid ${showModelSelector ? theme.accent : theme.sidebarBorder}` }}
-                disabled={models.length === 0}
+                onClick={() => setShowSidebarModelSelector(prev => !prev)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150"
+                style={{
+                  background: showSidebarModelSelector
+                    ? darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+                    : darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                  border: `1px solid ${showSidebarModelSelector ? '#6366F1' : darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                }}
+                onMouseEnter={e => { if (!showSidebarModelSelector) e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'; }}
+                onMouseLeave={e => { if (!showSidebarModelSelector) e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; }}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: theme.accent }} />
-                  <span className="text-sm text-gray-200 truncate">{currentModel?.name || 'Select Model'}</span>
+                {/* Provider color dot */}
+                <div
+                  className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[11px]"
+                  style={{ background: `${PROVIDER_META[providerFromModelId(selectedModel)]?.color ?? '#8B5CF6'}22`, color: PROVIDER_META[providerFromModelId(selectedModel)]?.color ?? '#8B5CF6' }}
+                >
+                  {PROVIDER_META[providerFromModelId(selectedModel)]?.icon ?? '⚡'}
                 </div>
-                <ChevronDown className={`h-4 w-4 text-gray-500 flex-shrink-0 transition-transform ${showModelSelector ? 'rotate-180' : ''}`} />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-xs font-semibold truncate" style={{ color: darkMode ? '#FAFAFA' : '#09090B' }}>
+                    {(models.find(m => normalizeModelId(m.id) === normalizeModelId(selectedModel))?.name) || 'Auto'}
+                  </div>
+                  <div className="text-[10px]" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+                    {PROVIDER_META[providerFromModelId(selectedModel)]?.label ?? 'Auto'}
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 ${showSidebarModelSelector ? 'rotate-180' : ''}`}
+                  style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+                />
               </button>
 
-              {showModelSelector && (
+              {/* Expanded model list — inline in sidebar */}
+              {showSidebarModelSelector && (
                 <div
-                  className="absolute top-full left-0 right-0 mt-1 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto animate-fade-in scrollbar-thin"
-                  style={{ background: theme.sidebarActive, border: `1px solid ${theme.sidebarBorder}` }}
+                  className="mt-1.5 rounded-xl overflow-hidden animate-slide-up"
+                  style={{
+                    background: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
+                    border: `1px solid ${darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                  }}
                 >
-                  {modelLoadError ? (
-                    <div className="px-4 py-3 text-sm text-red-400">{modelLoadError}</div>
-                  ) : (
-                    (() => {
-                      const grouped = models.reduce<Record<string, typeof models>>((acc, m) => {
-                        (acc[m.provider] ??= []).push(m);
-                        return acc;
-                      }, {});
-                      return Object.entries(grouped).map(([provider, providerModels]) => {
-                        const pTheme = getProviderTheme(provider);
-                        return (
-                          <div key={provider}>
-                            <div className="flex items-center gap-2 px-3 py-2 sticky top-0" style={{ background: theme.sidebarActive, borderBottom: `1px solid ${theme.sidebarBorder}` }}>
-                              <span className="w-2 h-2 rounded-full" style={{ background: pTheme.accent }} />
-                              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: pTheme.accent }}>{provider}</span>
-                            </div>
-                            {providerModels.map(model => {
-                              const active = selectedModel === model.id;
-                              const cat = (model as any).category;
-                              return (
-                                <button
-                                  key={model.id}
-                                  onClick={() => { setSelectedModel(model.id); setShowModelSelector(false); }}
-                                  className="w-full text-left px-3 py-2.5 transition-all duration-150"
-                                  style={{
-                                    background: active ? pTheme.accentSoftDark : undefined,
-                                    borderLeft: active ? `3px solid ${pTheme.accent}` : '3px solid transparent',
-                                  }}
-                                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = theme.sidebarHover; }}
-                                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? pTheme.accentSoftDark : 'transparent'; }}
+                  {(['Auto', 'OpenAI', 'Anthropic', 'Google'] as const).map(provider => {
+                    const providerModels = models.filter(m => providerFromModelId(m.id) === provider);
+                    if (providerModels.length === 0) return null;
+                    const meta = PROVIDER_META[provider];
+                    return (
+                      <div key={provider}>
+                        <div
+                          className="flex items-center gap-1.5 px-3 py-1.5"
+                          style={{ borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}
+                        >
+                          <span className="text-[10px]" style={{ color: meta.color }}>{meta.icon}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+                            {meta.label}
+                          </span>
+                        </div>
+                        {providerModels.map(m => {
+                          const isActive = normalizeModelId(selectedModel) === normalizeModelId(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => { setSelectedModel(m.id); localStorage.setItem('selected-model', m.id); setShowSidebarModelSelector(false); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all duration-100"
+                              style={{
+                                background: isActive ? `${meta.color}15` : 'transparent',
+                                borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+                              }}
+                              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'; }}
+                              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                              {isActive && (
+                                <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: meta.color }} />
+                              )}
+                              {!isActive && <div className="w-1 h-1 flex-shrink-0" />}
+                              <div className="flex-1 min-w-0">
+                                <div
+                                  className="text-[11px] font-medium truncate"
+                                  style={{ color: isActive ? meta.color : darkMode ? '#D4D4D8' : '#3F3F46' }}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-sm ${active ? 'text-white font-semibold' : 'text-gray-300'}`}>{model.name}</span>
-                                    {cat && (
-                                      <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full" style={{
-                                        background: cat === 'reasoning' ? 'rgba(168,85,247,0.15)' : cat === 'flagship' ? 'rgba(234,179,8,0.15)' : 'rgba(34,197,94,0.15)',
-                                        color: cat === 'reasoning' ? '#a855f7' : cat === 'flagship' ? '#eab308' : '#22c55e',
-                                      }}>{cat}</span>
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-gray-500 mt-0.5 leading-tight">{model.description}</div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        );
-                      });
-                    })()
-                  )}
+                                  {m.name}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `${meta.color}20` }}>
+                                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
+            </>
+          ) : (
+            /* Collapsed: just a colored dot button */
+            <button
+              onClick={() => { setSidebarOpen(true); setShowSidebarModelSelector(true); }}
+              className="w-full flex items-center justify-center py-2 rounded-xl transition-all duration-150"
+              style={{
+                background: darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                border: `1px solid ${darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              }}
+              title={`Model: ${models.find(m => normalizeModelId(m.id) === normalizeModelId(selectedModel))?.name ?? 'Auto'}`}
+            >
+              <span className="text-base" style={{ color: PROVIDER_META[providerFromModelId(selectedModel)]?.color ?? '#8B5CF6' }}>
+                {PROVIDER_META[providerFromModelId(selectedModel)]?.icon ?? '⚡'}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* ── Search bar ────────────────────────────────────────────────────── */}
+        {sidebarOpen && (
+          <div className="px-3 pb-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }} />
+              <input
+                type="text"
+                placeholder="Search chats..."
+                className="w-full pl-8 pr-3 py-2 rounded-lg text-xs transition-all duration-200"
+                style={{
+                  background: darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                  border: `1px solid ${darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
+                  color: darkMode ? '#A1A1AA' : '#71717A',
+                  outline: 'none',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = '#6366F1')}
+                onBlur={e => (e.currentTarget.style.borderColor = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)')}
+              />
             </div>
           </div>
         )}
 
-        {/* System Prompt / Persona */}
-        {sidebarOpen && (
-          <div className="px-3 pb-3">
-            <button
-              onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-              className="w-full rounded-lg px-3 py-2 flex items-center justify-between transition-all duration-200 text-left"
-              style={{
-                background: systemPrompt ? theme.accentSoftDark : theme.sidebarHover,
-                border: `1px solid ${systemPrompt ? theme.accent : theme.sidebarBorder}`,
-              }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <Settings className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-sm text-gray-200 truncate">{PERSONAS.find(p => p.id === selectedPersona)?.name || 'System Prompt'}</span>
-              </div>
-              <ChevronDown className={`h-3.5 w-3.5 text-gray-500 flex-shrink-0 transition-transform ${showSystemPrompt ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showSystemPrompt && (
-              <div className="mt-2 rounded-xl p-3 animate-fade-in space-y-2" style={{ background: theme.sidebarHover, border: `1px solid ${theme.sidebarBorder}` }}>
-                <div className="flex flex-wrap gap-1.5">
-                  {PERSONAS.map(p => {
-                    const active = selectedPersona === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => { setSelectedPersona(p.id); setSystemPrompt(p.prompt); }}
-                        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full transition-all font-medium"
-                        style={{ background: active ? theme.accent : theme.sidebarActive, color: active ? '#fff' : '#aaa' }}
-                        title={p.description}
-                      >
-                        <p.icon className="h-3 w-3" />
-                        {p.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                <textarea
-                  value={systemPrompt}
-                  onChange={e => { setSystemPrompt(e.target.value); setSelectedPersona('custom'); }}
-                  placeholder="Custom instructions for the AI..."
-                  className="w-full bg-transparent text-xs text-gray-300 placeholder-gray-600 resize-none rounded-lg p-2 focus:outline-none"
-                  style={{ border: `1px solid ${theme.sidebarBorder}` }}
-                  rows={3}
-                />
-                {systemPrompt && (
-                  <button onClick={() => { setSystemPrompt(''); setSelectedPersona('default'); }} className="text-[10px] text-gray-500 hover:text-red-400 transition-colors">
-                    Clear prompt
-                  </button>
-                )}
-
-                {/* Voice selector for TTS */}
-                <div className="flex items-center gap-2 pt-1 border-t" style={{ borderColor: theme.sidebarBorder }}>
-                  <span className="text-[10px] text-gray-500">Voice:</span>
-                  <select
-                    value={ttsVoice}
-                    onChange={e => { setTtsVoice(e.target.value); localStorage.setItem('tts-voice', e.target.value); }}
-                    className="text-[11px] bg-transparent text-gray-300 rounded px-1 py-0.5 focus:outline-none cursor-pointer"
-                    style={{ border: `1px solid ${theme.sidebarBorder}` }}
-                  >
-                    {['alloy', 'ash', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'].map(v => (
-                      <option key={v} value={v} className="bg-gray-800">{v}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Conversations grouped by folders */}
-        <div className="flex-1 px-3 overflow-y-auto scrollbar-thin">
+        {/* ── Conversation list ─────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-2">
 
           {/* New Folder button */}
           {sidebarOpen && (
@@ -1337,40 +1381,49 @@ const ChatInterface: React.FC = () => {
                     onChange={e => setNewFolderName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') createFolder(); if (e.key === 'Escape') setShowNewFolder(false); }}
                     placeholder="Folder name..."
-                    className="flex-1 text-xs bg-transparent text-gray-200 placeholder-gray-600 rounded px-2 py-1 focus:outline-none"
-                    style={{ border: `1px solid ${theme.sidebarBorder}` }}
+                    className="flex-1 text-xs rounded-lg px-2 py-1.5 focus:outline-none"
+                    style={{
+                      background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                      border: `1px solid #6366F1`,
+                      color: darkMode ? '#FAFAFA' : '#09090B',
+                    }}
                   />
-                  <button onClick={createFolder} className="p-1 text-gray-400 hover:text-green-400"><Plus className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => setShowNewFolder(false)} className="p-1 text-gray-400 hover:text-red-400"><X className="h-3.5 w-3.5" /></button>
+                  <button onClick={createFolder} className="p-1 rounded text-emerald-500 hover:bg-emerald-500/10"><Plus className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setShowNewFolder(false)} className="p-1 rounded text-red-400 hover:bg-red-400/10"><X className="h-3.5 w-3.5" /></button>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowNewFolder(true)}
-                  className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-1 py-1"
+                  className="flex items-center gap-1.5 text-[11px] px-1.5 py-1 rounded-lg transition-all duration-150 w-full"
+                  style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = darkMode ? '#A1A1AA' : '#71717A'; e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = darkMode ? '#52525B' : '#A1A1AA'; e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <FolderPlus className="h-3.5 w-3.5" /> New Folder
+                  <FolderPlus className="h-3.5 w-3.5" /> New folder
                 </button>
               )}
             </div>
           )}
 
-          {/* Render each folder */}
+          {/* Folder sections */}
           {folders.map(folder => {
             const folderConvs = conversationsByFolder[folder.id] || [];
             const collapsed = collapsedFolders.has(folder.id);
             return (
-              <div key={folder.id} className="mb-1">
-                {/* Folder header */}
+              <div key={folder.id} className="mb-0.5">
                 <div
-                  className="group flex items-center gap-1 px-1.5 py-1.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors"
+                  className="group flex items-center gap-1.5 px-1.5 py-1.5 rounded-lg cursor-pointer transition-all duration-150"
+                  style={{ color: darkMode ? '#A1A1AA' : '#71717A' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   onClick={() => setCollapsedFolders(prev => {
                     const next = new Set(prev);
                     next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id);
                     return next;
                   })}
                 >
-                  {collapsed ? <ChevronRight className="h-3 w-3 text-gray-500 flex-shrink-0" /> : <ChevronDown className="h-3 w-3 text-gray-500 flex-shrink-0" />}
-                  {collapsed ? <FolderIcon className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" /> : <FolderOpen className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />}
+                  <ChevronRight className={`h-3 w-3 flex-shrink-0 transition-transform duration-200 ${collapsed ? '' : 'rotate-90'}`} />
+                  {collapsed ? <FolderIcon className="h-3.5 w-3.5 flex-shrink-0" /> : <FolderOpen className="h-3.5 w-3.5 flex-shrink-0" />}
                   {editingFolderId === folder.id ? (
                     <input
                       autoFocus
@@ -1379,25 +1432,20 @@ const ChatInterface: React.FC = () => {
                       onKeyDown={e => { if (e.key === 'Enter') renameFolder(folder.id); if (e.key === 'Escape') setEditingFolderId(null); }}
                       onBlur={() => renameFolder(folder.id)}
                       onClick={e => e.stopPropagation()}
-                      className="flex-1 text-xs bg-transparent text-gray-200 rounded px-1 py-0 focus:outline-none min-w-0"
-                      style={{ border: `1px solid ${theme.accent}` }}
+                      className="flex-1 text-xs bg-transparent rounded px-1 focus:outline-none min-w-0"
+                      style={{ border: `1px solid #6366F1`, color: darkMode ? '#FAFAFA' : '#09090B' }}
                     />
                   ) : (
-                    <span className="flex-1 text-xs text-gray-300 truncate font-medium">{folder.name}</span>
+                    <span className="flex-1 text-xs font-medium truncate">{folder.name}</span>
                   )}
-                  <span className="text-[10px] text-gray-600 mr-1">{folderConvs.length}</span>
-                  {sidebarOpen && editingFolderId !== folder.id && (
+                  <span className="text-[10px]" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>{folderConvs.length}</span>
+                  {editingFolderId !== folder.id && (
                     <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
-                      <button onClick={e => { e.stopPropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.name); }} className="p-0.5 text-gray-500 hover:text-gray-300">
-                        <PenLine className="h-3 w-3" />
-                      </button>
-                      <button onClick={e => { e.stopPropagation(); removeFolder(folder.id); }} className="p-0.5 text-gray-500 hover:text-red-400">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                      <button onClick={e => { e.stopPropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.name); }} className="p-0.5 hover:text-white rounded"><PenLine className="h-3 w-3" /></button>
+                      <button onClick={e => { e.stopPropagation(); removeFolder(folder.id); }} className="p-0.5 hover:text-red-400 rounded"><Trash2 className="h-3 w-3" /></button>
                     </div>
                   )}
                 </div>
-                {/* Folder conversations */}
                 {!collapsed && folderConvs.map(conv => renderConversationItem(conv, true))}
               </div>
             );
@@ -1405,49 +1453,119 @@ const ChatInterface: React.FC = () => {
 
           {/* Unfiled conversations */}
           {(conversationsByFolder['__unfiled'] || []).length > 0 && (
-            <div className="mt-1">
+            <div className="mt-0.5">
               {sidebarOpen && folders.length > 0 && (
-                <div className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold px-1.5 py-1">Chats</div>
+                <div
+                  className="text-[10px] uppercase tracking-widest font-semibold px-1.5 py-1.5"
+                  style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+                >
+                  Chats
+                </div>
               )}
               {(conversationsByFolder['__unfiled'] || []).map(conv => renderConversationItem(conv, false))}
             </div>
           )}
 
           {conversations.length === 0 && sidebarOpen && (
-            <div className="text-xs text-gray-600 italic mt-2 px-1">No conversations yet</div>
+            <div className="text-xs px-1.5 py-3 text-center" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+              No conversations yet
+            </div>
           )}
         </div>
 
-        {/* User footer */}
-        <div className="p-3" style={{ borderTop: `1px solid ${theme.sidebarBorder}` }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.accent }}>
-              <UserIcon className="h-4 w-4 text-white" />
-            </div>
-            {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-200 truncate">{user?.email || 'User'}</div>
+        {/* ── Footer: avatar popover + theme toggle only ───────────────────── */}
+        <div
+          className="px-3 py-3 flex items-center gap-2"
+          style={{ borderTop: `1px solid ${darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}` }}
+        >
+          {/* Avatar with popover menu */}
+          <div className="relative flex-shrink-0" data-avatar-menu>
+            <button
+              onClick={() => setShowAvatarMenu(prev => !prev)}
+              className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-150 hover:scale-105"
+              style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: '#fff' }}
+              title="Account"
+            >
+              {(user?.email?.[0] || 'U').toUpperCase()}
+            </button>
+
+            {showAvatarMenu && (
+              <div
+                className="avatar-popover absolute bottom-10 left-0 z-50 min-w-[200px] rounded-xl py-1.5 overflow-hidden"
+                style={{
+                  background: darkMode ? '#18181B' : '#FFFFFF',
+                  border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  boxShadow: darkMode ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(0,0,0,0.12)',
+                }}
+              >
+                {/* User info */}
+                <div
+                  className="px-3 py-2.5 mb-1"
+                  style={{ borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}
+                >
+                  <div className="text-xs font-semibold truncate" style={{ color: darkMode ? '#FAFAFA' : '#09090B' }}>
+                    {user?.email || 'User'}
+                  </div>
+                  <div className="text-[11px] mt-0.5" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>Free plan</div>
+                </div>
+                {/* Nav items */}
+                {[
+                  { icon: Settings,  label: 'Settings',   path: '/profile' },
+                  { icon: BarChart3, label: 'Analytics',  path: '/dashboard' },
+                  { icon: Database,  label: 'AI Studio',  path: '/buckets' },
+                  ...(user?.isAdmin ? [{ icon: Shield, label: 'Admin', path: '/admin' }] : []),
+                ].map(({ icon: Icon, label, path }) => (
+                  <button
+                    key={path}
+                    onClick={() => { setShowAvatarMenu(false); navigate(path); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-all duration-100"
+                    style={{ color: darkMode ? '#A1A1AA' : '#71717A' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'; e.currentTarget.style.color = darkMode ? '#FAFAFA' : '#09090B'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = darkMode ? '#A1A1AA' : '#71717A'; }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                ))}
+                {/* Logout */}
+                <div
+                  className="mt-1 pt-1"
+                  style={{ borderTop: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}
+                >
+                  <button
+                    onClick={() => { setShowAvatarMenu(false); handleLogout(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 transition-all duration-100"
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Email (when expanded) */}
           {sidebarOpen && (
-            <div className="mt-2.5 flex items-center gap-0.5">
-              <button onClick={() => navigate('/dashboard')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Dashboard"><BarChart3 className="h-4 w-4" /></button>
-              {user?.isAdmin && (
-                <button onClick={() => navigate('/admin')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Admin">
-                  <Shield className="h-4 w-4" />
-                </button>
-              )}
-              <button onClick={() => navigate('/buckets')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Knowledge Buckets"><Database className="h-4 w-4" /></button>
-              <button onClick={() => navigate('/profile')} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Settings"><UserIcon className="h-4 w-4" /></button>
-              <button onClick={toggleDarkMode} className="p-2 text-gray-500 hover:text-gray-300 transition-colors" title="Theme">
-                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-              <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-400 transition-colors ml-auto" title="Logout">
-                <LogOut className="h-4 w-4" />
-              </button>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium truncate" style={{ color: darkMode ? '#A1A1AA' : '#71717A' }}>
+                {user?.email || 'User'}
+              </div>
             </div>
           )}
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="p-1.5 rounded-lg transition-all duration-150 flex-shrink-0 hover:scale-105"
+            style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+            onMouseEnter={e => { e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = darkMode ? '#A1A1AA' : '#71717A'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = darkMode ? '#52525B' : '#A1A1AA'; }}
+            title="Toggle theme"
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </div>
       </aside>
 
@@ -1456,65 +1574,196 @@ const ChatInterface: React.FC = () => {
          ══════════════════════════════════════════════════════════════════ */}
       <div className="flex-1 flex flex-col min-w-0 relative" style={{ background: darkMode ? theme.mainBgDark : theme.mainBg }}>
 
-        {/* Mobile hamburger — no visible header bar */}
-        <div className="md:hidden absolute top-3 left-4 z-20">
-          <button onClick={() => setMobileSidebar(true)} className="p-1.5" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
+        {/* ── Sticky chat header ─────────────────────────────────────────── */}
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-2.5 z-10"
+          style={{
+            borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}`,
+            background: darkMode ? `${theme.mainBgDark}ee` : `${theme.mainBg}ee`,
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          {/* Left: mobile hamburger */}
+          <button
+            onClick={() => setMobileSidebar(true)}
+            className="md:hidden p-1.5 rounded-lg transition-colors"
+            style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+          >
             <Menu className="h-5 w-5" />
           </button>
+          <div className="hidden md:block w-8" /> {/* spacer */}
+
+          {/* Center: model selector button */}
+          <div className="relative" data-model-selector>
+            <button
+              onClick={() => setShowModelSelector(prev => !prev)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: showModelSelector
+                  ? darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'
+                  : darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: `1px solid ${showModelSelector ? '#6366F1' : darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                color: darkMode ? '#D4D4D8' : '#3F3F46',
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-md flex items-center justify-center text-[11px]"
+                style={{ background: `${PROVIDER_META[providerFromModelId(selectedModel)]?.color ?? '#8B5CF6'}22`, color: PROVIDER_META[providerFromModelId(selectedModel)]?.color ?? '#8B5CF6' }}
+              >
+                {PROVIDER_META[providerFromModelId(selectedModel)]?.icon ?? '⚡'}
+              </div>
+              <span>{currentModel?.name || 'Auto'}</span>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showModelSelector ? 'rotate-180' : ''}`} style={{ color: darkMode ? '#52525B' : '#A1A1AA' }} />
+            </button>
+
+            {/* Dropdown */}
+            {showModelSelector && (
+              <div
+                className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-[360px] rounded-2xl overflow-hidden animate-scale-in"
+                style={{
+                  background: darkMode ? '#18181B' : '#FFFFFF',
+                  border: `1px solid ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                  boxShadow: darkMode ? '0 12px 48px rgba(0,0,0,0.6)' : '0 12px 48px rgba(0,0,0,0.12)',
+                }}
+              >
+                {(['Auto', 'OpenAI', 'Anthropic', 'Google'] as const).map(provider => {
+                  const providerModels = models.filter(m => providerFromModelId(m.id) === provider);
+                  if (providerModels.length === 0) return null;
+                  const meta = PROVIDER_META[provider];
+                  return (
+                    <div key={provider}>
+                      <div
+                        className="flex items-center gap-2 px-4 py-2"
+                        style={{ borderBottom: `1px solid ${darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}` }}
+                      >
+                        <span className="text-sm" style={{ color: meta.color }}>{meta.icon}</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <div className="p-2 grid grid-cols-2 gap-1">
+                        {providerModels.map(m => {
+                          const isActive = normalizeModelId(selectedModel) === normalizeModelId(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => { setSelectedModel(m.id); localStorage.setItem('selected-model', m.id); setShowModelSelector(false); }}
+                              className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-100"
+                              style={{
+                                background: isActive ? `${meta.color}15` : 'transparent',
+                                border: `1px solid ${isActive ? meta.color : 'transparent'}`,
+                              }}
+                              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'; }}
+                              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                              <div
+                                className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5"
+                                style={{ background: `${meta.color}22`, color: meta.color }}
+                              >
+                                {meta.icon}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-[12px] font-semibold leading-tight" style={{ color: isActive ? meta.color : darkMode ? '#FAFAFA' : '#09090B' }}>
+                                  {m.name}
+                                </div>
+                                {m.description && (
+                                  <div className="text-[10px] leading-tight mt-0.5 line-clamp-2" style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}>
+                                    {m.description}
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right: cost display */}
+          <div className="text-[10px] flex flex-col items-end gap-0.5 opacity-40 hover:opacity-100 transition-opacity" style={{ color: darkMode ? '#71717A' : '#A1A1AA' }}>
+            {currentConversationId && currentChatCost > 0 && (
+              <span className="tabular-nums">Chat ${formatCurrency(currentChatCost)}</span>
+            )}
+            {todayCost > 0 && (
+              <span className="tabular-nums">Today ${formatCurrency(todayCost)}</span>
+            )}
+          </div>
         </div>
 
         {/* ── Messages / Welcome ────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-2 pb-48 scrollbar-thin relative">
-          {/* Model name — top center, like ChatGPT */}
-          <div className="pt-2 pb-1 text-center relative">
-            <span className="text-sm font-medium inline-block" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
-              {currentModel?.name || 'Own AI'}
-            </span>
-            
-            {/* Cost display — top right absolute */}
-            <div className="absolute right-0 top-2 text-[10px] opacity-40 hover:opacity-100 transition-opacity flex flex-col items-end gap-0.5" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
-              {currentConversationId && (
-                <span>Chat: ${formatCurrency(currentChatCost)}</span>
-              )}
-              {todayCost > 0 && (
-                <span>Today: ${formatCurrency(todayCost)}</span>
-              )}
-            </div>
-          </div>
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-4 pb-48 scrollbar-thin relative">
 
           {messages.length === 0 ? (
-            <div className="max-w-2xl mx-auto flex flex-col items-center justify-center min-h-full py-12">
-              {/* Provider icon */}
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center mb-6"
-                style={{ background: darkMode ? theme.aiIconBgDark : theme.aiIconBg }}
-              >
-                <span style={{ color: darkMode ? theme.aiIconColorDark : theme.aiIconColor, fontSize: '28px', lineHeight: 1 }}>
-                  {theme.aiIcon}
-                </span>
+            <div className="max-w-2xl mx-auto flex flex-col items-center justify-center min-h-full py-10 animate-fade-in">
+
+              {/* ── Logo mark (animated breathe) ──────────────────────── */}
+              <div className="relative mb-8 animate-breathe">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%)', boxShadow: '0 4px 24px rgba(99,102,241,0.4)' }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="11" stroke="white" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.6"/>
+                    <circle cx="14" cy="14" r="4.5" fill="white"/>
+                  </svg>
+                </div>
+                {/* Subtle glow ring */}
+                <div
+                  className="absolute inset-0 rounded-2xl"
+                  style={{ boxShadow: '0 0 0 8px rgba(99,102,241,0.08)', borderRadius: 16 }}
+                />
               </div>
-              <h2 className="text-3xl font-semibold mb-2" style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}>
-                What can I help with?
+
+              {/* ── Greeting ─────────────────────────────────────────────── */}
+              <h2
+                className="font-display font-bold text-3xl tracking-tight mb-1 text-center"
+                style={{ color: darkMode ? '#FAFAFA' : '#09090B' }}
+              >
+                {user?.email
+                  ? `Hello, ${user.email.split('@')[0].replace(/[._-]/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`
+                  : 'What can I help with?'}
               </h2>
-              <p className="text-sm mb-10" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }}>
-                {currentModel ? currentModel.name : 'Choose a model to get started'}
+              <p className="text-sm mb-10 text-center" style={{ color: darkMode ? '#71717A' : '#A1A1AA' }}>
+                Ask anything — I'll think it through with you.
               </p>
+
+
+              {/* ── Suggestion cards ─────────────────────────────────────── */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
                 {SUGGESTIONS.map((s, i) => (
                   <button
                     key={i}
-                    onClick={() => { setInput(s.text); inputRef.current?.focus(); }}
-                    className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm transition-all duration-200"
+                    onClick={() => { setInput(s.text); setShowModelSelector(false); inputRef.current?.focus(); }}
+                    className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm transition-all duration-200 animate-slide-up"
                     style={{
-                      background: darkMode ? theme.inputBgDark : theme.inputBg,
-                      border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
-                      color: darkMode ? theme.textPrimaryDark : theme.textSecondary,
+                      background: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
+                      border: `1px solid ${darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
+                      color: darkMode ? '#A1A1AA' : '#71717A',
+                      animationDelay: `${i * 60}ms`,
+                      animationFillMode: 'both',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = darkMode ? theme.textPrimaryDark : theme.textPrimary; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = darkMode ? theme.inputBorderDark : theme.inputBorder; e.currentTarget.style.color = darkMode ? theme.textPrimaryDark : theme.textSecondary; }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = theme.accent;
+                      e.currentTarget.style.background = darkMode ? `${theme.accent}10` : `${theme.accent}08`;
+                      e.currentTarget.style.color = darkMode ? '#FAFAFA' : '#09090B';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+                      e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)';
+                      e.currentTarget.style.color = darkMode ? '#A1A1AA' : '#71717A';
+                    }}
                   >
-                    <s.icon className="h-4 w-4 flex-shrink-0 transition-colors" style={{ color: darkMode ? theme.textSecondaryDark : theme.textSecondary }} />
-                    <span>{s.text}</span>
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                      style={{ background: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}
+                    >
+                      <s.icon className="h-4 w-4" style={{ color: theme.accent }} />
+                    </div>
+                    <span className="leading-snug">{s.text}</span>
                   </button>
                 ))}
               </div>
@@ -1803,11 +2052,11 @@ const ChatInterface: React.FC = () => {
 
             {/* ── Main input box ─────────────────────────────────────── */}
             <div
-              className="rounded-3xl transition-all duration-200"
+              className="input-brand rounded-3xl transition-all duration-200"
               style={{
                 background: darkMode ? theme.inputBgDark : theme.inputBg,
                 border: `1px solid ${darkMode ? theme.inputBorderDark : theme.inputBorder}`,
-                boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.3)' : '0 1px 8px rgba(0,0,0,0.06)',
+                boxShadow: darkMode ? '0 4px 24px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset' : '0 2px 16px rgba(0,0,0,0.07), 0 1px 0 rgba(255,255,255,0.9) inset',
               }}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
@@ -1824,11 +2073,13 @@ const ChatInterface: React.FC = () => {
               }}
             >
               {/* Textarea row */}
-              <div className="flex items-end gap-1 px-4 pt-3 pb-2">
+              <div className="flex items-end gap-1 px-4 pt-3.5 pb-2">
                 <button
                   onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5"
-                  style={{ color: pendingFiles.length > 0 ? theme.accent : darkMode ? '#666' : '#b0b0b0' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-150 hover:scale-110 mb-0.5"
+                  style={{ color: pendingFiles.length > 0 ? theme.accent : darkMode ? '#52525B' : '#A1A1AA' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   title="Attach files"
                 >
                   <Paperclip className="h-[18px] w-[18px]" />
@@ -1841,9 +2092,11 @@ const ChatInterface: React.FC = () => {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={uploading ? 'Uploading...' : deepSearch ? 'Search the web...' : theme.placeholder}
-                  className="flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-600"
-                  style={{ color: darkMode ? theme.textPrimaryDark : theme.textPrimary }}
+                  placeholder={uploading ? 'Uploading...' : deepSearch ? 'Search the web...' : 'Message Own AI...'}
+                  className="flex-1 resize-none bg-transparent px-2 py-1.5 text-[15px] focus:outline-none"
+                  style={{
+                    color: darkMode ? '#FAFAFA' : '#09090B',
+                  }}
                   rows={1}
                   maxLength={10000}
                   disabled={uploading}
@@ -1853,8 +2106,10 @@ const ChatInterface: React.FC = () => {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleMicToggle(); }}
                   disabled={isTranscribing}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5 ${isRecording ? 'animate-pulse' : ''}`}
-                  style={{ color: isRecording ? '#ef4444' : isTranscribing ? theme.accent : darkMode ? '#666' : '#b0b0b0' }}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-150 hover:scale-110 mb-0.5 ${isRecording ? 'animate-recording-pulse' : ''}`}
+                  style={{ color: isRecording ? '#ef4444' : isTranscribing ? theme.accent : darkMode ? '#52525B' : '#A1A1AA' }}
+                  onMouseEnter={e => { if (!isRecording) e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   title={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing...' : 'Voice input'}
                 >
                   {isTranscribing ? (
@@ -1869,18 +2124,29 @@ const ChatInterface: React.FC = () => {
                 {/* Real-time voice mode button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setVoiceModeActive(true); }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-black/5 dark:hover:bg-white/5 mb-0.5"
-                  style={{ color: darkMode ? '#666' : '#b0b0b0' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-150 hover:scale-110 mb-0.5"
+                  style={{ color: darkMode ? '#52525B' : '#A1A1AA' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   title="Real-time voice conversation"
                 >
                   <Waves className="h-[18px] w-[18px]" />
                 </button>
 
+                {/* Send button — gradient when active */}
                 <button
                   onClick={handleSend}
                   disabled={(!input.trim() && !pendingFiles.length) || loading || uploading}
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mb-0.5"
-                  style={{ background: (!input.trim() && !pendingFiles.length) || loading ? (darkMode ? '#444' : '#d9d9d9') : theme.accent, color: '#fff' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 mb-0.5 hover:scale-110 active:scale-95"
+                  style={{
+                    background: (!input.trim() && !pendingFiles.length) || loading
+                      ? darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+                      : 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+                    color: (!input.trim() && !pendingFiles.length) || loading ? (darkMode ? '#52525B' : '#A1A1AA') : '#fff',
+                    boxShadow: (!input.trim() && !pendingFiles.length) || loading ? 'none' : '0 2px 12px rgba(99,102,241,0.45)',
+                    opacity: (!input.trim() && !pendingFiles.length) || loading ? 0.5 : 1,
+                    cursor: (!input.trim() && !pendingFiles.length) || loading ? 'not-allowed' : 'pointer',
+                  }}
                 >
                   {uploading ? (
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

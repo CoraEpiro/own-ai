@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Own AI - Log In</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Sora:wght@600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#fbabff",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-container": "#4d0059",
+                        "surface": "#131313",
+                        "primary-container": "#8083ff",
+                        "inverse-primary": "#494bd6",
+                        "tertiary-fixed": "#ffd6fd",
+                        "surface-container": "#201f1f",
+                        "on-tertiary-fixed": "#36003e",
+                        "secondary-fixed": "#e9ddff",
+                        "background": "#131313",
+                        "surface-dim": "#131313",
+                        "on-secondary-container": "#c4abff",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-variant": "#353534",
+                        "on-tertiary": "#580065",
+                        "primary": "#c0c1ff",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "outline-variant": "#464554",
+                        "on-primary-fixed": "#07006c",
+                        "error-container": "#93000a",
+                        "on-secondary": "#3c0091",
+                        "secondary-container": "#571bc1",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary": "#d0bcff",
+                        "on-surface": "#e5e2e1",
+                        "on-error": "#690005",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "tertiary": "#fbabff",
+                        "on-primary": "#1000a9",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-tint": "#c0c1ff",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "on-surface-variant": "#c7c4d7",
+                        "on-secondary-fixed": "#23005c",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-container": "#e14ef6",
+                        "on-primary-container": "#0d0096",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#908fa0",
+                        "error": "#ffb4ab",
+                        "on-background": "#e5e2e1",
+                        "surface-container-highest": "#353534",
+                        "primary-fixed": "#e1e0ff",
+                        "secondary-fixed-dim": "#d0bcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>.brand-gradient {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%)
+    }
+.glass-panel {
+    background: rgba(53, 53, 52, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1)
+    }
+.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+.bg-noise {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuAbypkh_aTqmExGgo_Ty7rf1DjaFiqL7Zfoh3WAZIRb_XjwvTM29nM5H7wbAjqD6Fm6pzXDrfFPddg-DTlaXOtcdiasuyYsVpEYWZKSdIi70UjzZBtfjt3qw2f22arwyd59rqLop3YohuUg-p7jo_6P4Tof1RvhHz-M-RGJZC5DbvK2sLYIvj6hHfokXYHov0Q_AU68YQ4rcXrBX8PAMZ4STBYBPyiMY_MoUvYdoVdfuoVOgaD6Y9fi1RT2jdPQ-ZzxzIRHbMaqLDIH)
+    }</style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container/30">
+<!-- Main Container -->
+<main class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+<!-- Left Panel: Brand Experience (60%) -->
+<section class="hidden md:flex w-[60%] brand-gradient relative flex-col justify-between p-16 overflow-hidden">
+<!-- Noise Overlay for Texture -->
+<div class="absolute inset-0 bg-noise opacity-20 pointer-events-none"></div>
+<!-- Branding Top -->
+<div class="relative z-10">
+<span class="text-white font-headline font-bold text-2xl tracking-tighter">Own AI</span>
+</div>
+<!-- Central Content: Mockup & Copy -->
+<div class="relative z-10 flex flex-col items-start gap-12">
+<!-- Typography -->
+<div class="max-w-xl">
+<h1 class="font-headline text-white text-6xl font-extrabold tracking-tighter leading-[1.1] mb-6">
+                        All the AI.<br/>None of the waste.
+                    </h1>
+<div class="space-y-4">
+<div class="flex items-center gap-3 text-white/90">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-medium">All AI models in one</span>
+</div>
+<div class="flex items-center gap-3 text-white/90">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-medium">€2 free to start</span>
+</div>
+<div class="flex items-center gap-3 text-white/90">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-medium">Pay as you go</span>
+</div>
+</div>
+</div>
+<!-- Floating 3D Mockup Container -->
+<div class="relative w-full h-[400px]">
+<div class="absolute top-0 left-0 glass-panel p-6 rounded-2xl w-[480px] shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform duration-700 ease-out">
+<div class="flex items-center justify-between mb-6">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-white/20"></div>
+<div class="w-3 h-3 rounded-full bg-white/20"></div>
+<div class="w-3 h-3 rounded-full bg-white/20"></div>
+</div>
+<div class="px-3 py-1 bg-white/10 rounded-full text-[10px] font-label uppercase tracking-widest text-white/70">GPT-4o active</div>
+</div>
+<div class="space-y-4">
+<div class="bg-white/10 h-4 w-3/4 rounded-full"></div>
+<div class="bg-white/10 h-4 w-full rounded-full"></div>
+<div class="bg-white/20 h-4 w-1/2 rounded-full mt-8"></div>
+<div class="bg-white/5 h-24 w-full rounded-xl flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-white/30 text-4xl">auto_awesome</span>
+</div>
+</div>
+</div>
+<!-- Decorative Element Behind Mockup -->
+<div class="absolute -bottom-20 -right-20 w-80 h-80 bg-white/10 blur-[100px] rounded-full"></div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="relative z-10">
+<p class="font-label text-[10px] text-white/60 uppercase tracking-[0.2em]">
+                    © 2024 Own AI. High-performance intelligence.
+                </p>
+</div>
+</section>
+<!-- Right Panel: Login Form (40%) -->
+<section class="w-full md:w-[40%] bg-surface-container-lowest flex flex-col px-8 md:px-16 py-12">
+<!-- Mobile Header Only -->
+<div class="md:hidden flex items-center justify-center mb-12">
+<span class="font-headline font-bold text-3xl tracking-tighter bg-clip-text text-transparent brand-gradient">Own AI</span>
+</div>
+<div class="flex flex-col h-full max-w-md mx-auto w-full justify-center">
+<!-- Toggle Container -->
+<div class="flex justify-center mb-10">
+<div class="bg-surface-container p-1 rounded-full flex w-full max-w-[280px]">
+<button class="flex-1 py-2 text-sm font-semibold rounded-full bg-surface-bright text-on-surface shadow-sm transition-all">Log in</button>
+<button class="flex-1 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Sign up</button>
+</div>
+</div>
+<!-- Form Heading -->
+<div class="mb-8">
+<h2 class="text-3xl font-headline font-bold tracking-tight text-on-surface">Welcome back</h2>
+<p class="text-on-surface-variant mt-2">Enter your credentials to access your curator.</p>
+</div>
+<!-- Login Form -->
+<form class="space-y-5" onsubmit="return false;">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="text-xs font-label text-on-surface-variant uppercase tracking-widest ml-1" for="email">Email address</label>
+<div class="relative group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-xl group-focus-within:text-primary transition-colors">alternate_email</span>
+<input class="w-full h-14 bg-surface-container-high border-none rounded-xl pl-12 pr-4 text-on-surface placeholder:text-outline-variant focus:ring-1 focus:ring-primary/40 transition-all outline-none" id="email" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center ml-1">
+<label class="text-xs font-label text-on-surface-variant uppercase tracking-widest" for="password">Password</label>
+<a class="text-xs font-medium text-primary hover:text-white transition-colors" href="#">Forgot password?</a>
+</div>
+<div class="relative group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-xl group-focus-within:text-primary transition-colors">lock</span>
+<input class="w-full h-14 bg-surface-container-high border-none rounded-xl pl-12 pr-12 text-on-surface placeholder:text-outline-variant focus:ring-1 focus:ring-primary/40 transition-all outline-none" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant hover:text-on-surface transition-colors" type="button">visibility</button>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full h-14 brand-gradient text-white font-semibold rounded-xl mt-4 shadow-xl shadow-indigo-500/10 active:scale-[0.98] transition-transform hover:brightness-110">
+                        Log in
+                    </button>
+</form>
+<!-- Divider -->
+<div class="relative my-10">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/30"></div>
+</div>
+<div class="relative flex justify-center">
+<span class="bg-surface-container-lowest px-4 text-xs font-label text-outline-variant uppercase tracking-widest">or continue with</span>
+</div>
+</div>
+<!-- OAuth Buttons -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 h-12 bg-surface-container border border-outline-variant/10 rounded-xl hover:bg-surface-bright transition-colors active:scale-[0.98]">
+<img alt="Google" class="w-5 h-5" data-alt="minimalist official google logo with signature red blue yellow and green segments" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnrwq6N2Jpt7z_wCKKMJkoGZQFIsVziHIPzqEfiUpYQ_xqUjhAodA7RQJ1AuuMvUipEq8P7s2J3haaEQIMExHVnykBxFMXYNjQx_0cnnRYfEeci-7NTskYHdCQonXPyq1JmJZYIv76EUL4hmjIhE04jQ4vJ2BOjVz8Gq9ygVQzmbolEXNgbdjlnQjWE2b6c-meER6fjPG1UoddGltqjTPc7OV1QAkKazONiDgMKZRMLl728FWfXKwpiA-O8ZyEo4WBZZbbamU4y_yu"/>
+<span class="text-sm font-medium">Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 h-12 bg-surface-container border border-outline-variant/10 rounded-xl hover:bg-surface-bright transition-colors active:scale-[0.98]">
+<img alt="Apple" class="w-5 h-5 invert" data-alt="minimalist monochrome apple logo in white on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ1Dtq2SL82iAYt_JEksUHihVxq355ukJdS9ZqWsdb9NbsFaPfLazVeXnH9fN2H8nRI7nf_pwih5OIt03h4ZFuQhNugzT1pHWPRzhqvbyq9OPTH0Wb4PeX2D1XUJ4v9ZEir4HxOzWoUizG7cUHefba4kJwrZ4W6zxzab745wZSoDywN-ovi4Dd7TnR0jaweZxK3rehGmDfqT2AcIi7ALfhgwG8R4ggyvbgNKUS1kqDzrmm_Arh8Z-V2gu3-Ay-QMSze1_Il6ZaB21t"/>
+<span class="text-sm font-medium">Apple</span>
+</button>
+</div>
+<!-- Signup Link -->
+<div class="mt-auto pt-10 text-center">
+<p class="text-on-surface-variant text-sm">
+                        Don't have an account? 
+                        <a class="text-primary font-semibold hover:text-white transition-colors ml-1" href="#">Sign up</a>
+</p>
+</div>
+</div>
+</section>
+</main>
+</body></html>

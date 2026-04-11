@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffd6fd",
+                    "outline-variant": "#464554",
+                    "surface-dim": "#131313",
+                    "tertiary": "#fbabff",
+                    "background": "#131313",
+                    "on-tertiary": "#580065",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-bright": "#3a3939",
+                    "surface": "#131313",
+                    "secondary-fixed": "#e9ddff",
+                    "on-error": "#690005",
+                    "on-primary-fixed": "#07006c",
+                    "surface-container-high": "#2a2a2a",
+                    "on-primary-container": "#0d0096",
+                    "outline": "#908fa0",
+                    "tertiary-fixed-dim": "#fbabff",
+                    "surface-variant": "#353534",
+                    "tertiary-container": "#e14ef6",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "inverse-on-surface": "#313030",
+                    "on-surface-variant": "#c7c4d7",
+                    "on-secondary-fixed": "#23005c",
+                    "primary": "#c0c1ff",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-tint": "#c0c1ff",
+                    "on-secondary": "#3c0091",
+                    "on-tertiary-fixed": "#36003e",
+                    "secondary-container": "#571bc1",
+                    "surface-container": "#201f1f",
+                    "on-primary": "#1000a9",
+                    "on-background": "#e5e2e1",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-container": "#4d0059",
+                    "inverse-primary": "#494bd6",
+                    "secondary": "#d0bcff",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e1e0ff",
+                    "on-secondary-container": "#c4abff",
+                    "surface-container-highest": "#353534",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-container": "#8083ff",
+                    "error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#7c008e",
+                    "on-surface": "#e5e2e1",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#5516be"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Sora", "sans-serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"],
+                    "mono": ["JetBrains Mono", "monospace"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .brand-glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation (Shell Implementation) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-zinc-950/40 backdrop-blur-xl">
+<div class="text-xl font-bold bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent font-headline tracking-tight">
+            The Ethereal Intelligence
+        </div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-zinc-500 hover:text-indigo-400 transition-colors duration-300 cursor-pointer" data-icon="help_outline">help_outline</span>
+<span class="material-symbols-outlined text-zinc-500 hover:text-indigo-400 transition-colors duration-300 cursor-pointer" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<div class="flex flex-1 pt-16 h-full">
+<!-- Sidebar Navigation (Shell Implementation) -->
+<aside class="hidden lg:flex flex-col h-full w-64 bg-zinc-900 border-r border-zinc-800/50 p-4 gap-2 font-['Inter'] leading-relaxed">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold text-zinc-100">Setup Wizard</h2>
+<p class="text-xs text-zinc-500">Step 3 of 4</p>
+</div>
+<nav class="space-y-1">
+<div class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all rounded-lg cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="rocket_launch">rocket_launch</span>
+<span class="text-sm">Welcome</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all rounded-lg cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="Psychology">psychology</span>
+<span class="text-sm">Model Selection</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 bg-zinc-800 text-indigo-400 font-medium rounded-lg cursor-default">
+<span class="material-symbols-outlined text-sm" data-icon="edit_note">edit_note</span>
+<span class="text-sm">Instructions</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all rounded-lg cursor-pointer">
+<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-sm">Finalize</span>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center relative p-8 lg:p-12 overflow-y-auto">
+<!-- Progress Indicator (Mobile/Top) -->
+<div class="flex gap-2 mb-12">
+<div class="w-2 h-2 rounded-full bg-zinc-700"></div>
+<div class="w-2 h-2 rounded-full bg-zinc-700"></div>
+<div class="w-8 h-2 rounded-full brand-gradient"></div>
+<div class="w-2 h-2 rounded-full bg-zinc-700"></div>
+</div>
+<!-- Content Container -->
+<div class="max-w-3xl w-full space-y-12">
+<div class="space-y-4">
+<h1 class="text-4xl md:text-6xl font-headline font-bold tracking-tight text-on-surface leading-tight">
+                        Tell your AI <br/>
+<span class="bg-gradient-to-r from-indigo-400 to-fuchsia-400 bg-clip-text text-transparent">a little about you:</span>
+</h1>
+<p class="text-on-surface-variant text-lg max-w-xl leading-relaxed">
+                        Customize how the intelligence interacts with your workflow by selecting your primary preferences.
+                    </p>
+</div>
+<!-- Bento Grid Style Interactivity -->
+<div class="flex flex-wrap gap-4">
+<!-- Active State Chip -->
+<button class="flex items-center gap-3 px-6 py-4 rounded-xl brand-gradient brand-glow text-white font-medium transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="school" style="font-variation-settings: 'FILL' 1;">school</span>
+<span>I'm a student</span>
+</button>
+<!-- Default State Chip -->
+<button class="flex items-center gap-3 px-6 py-4 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 border border-white/5">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span>I write code</span>
+</button>
+<!-- Active State Chip -->
+<button class="flex items-center gap-3 px-6 py-4 rounded-xl brand-gradient brand-glow text-white font-medium transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="short_text" style="font-variation-settings: 'FILL' 1;">short_text</span>
+<span>I prefer concise answers</span>
+</button>
+<!-- Default State Chip -->
+<button class="flex items-center gap-3 px-6 py-4 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 border border-white/5">
+<span class="material-symbols-outlined" data-icon="functions">functions</span>
+<span>I use LaTeX for math</span>
+</button>
+<!-- Default State Chip -->
+<button class="flex items-center gap-3 px-6 py-4 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 border border-white/5">
+<span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+<span>I want step-by-step explanations</span>
+</button>
+<!-- Feature Highlight Card (Asymmetric Layout) -->
+<div class="w-full mt-4 p-6 glass-panel rounded-xl flex items-start gap-6 border border-white/5">
+<div class="p-3 rounded-lg bg-indigo-500/10 text-indigo-400">
+<span class="material-symbols-outlined" data-icon="tips_and_updates">tips_and_updates</span>
+</div>
+<div class="space-y-1">
+<p class="font-semibold text-zinc-100">Why this matters</p>
+<p class="text-sm text-zinc-400 leading-relaxed">Your selections help the model tune its tone and technical depth. You can change these instructions at any time from your profile settings.</p>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="pt-8 flex flex-col sm:flex-row items-center gap-6">
+<button class="w-full sm:w-auto px-10 py-4 brand-gradient text-white font-bold rounded-xl brand-glow hover:opacity-90 transition-all active:scale-95">
+                        Set up
+                    </button>
+<button class="w-full sm:w-auto px-10 py-4 text-on-surface-variant font-semibold hover:text-on-surface transition-colors border border-outline/20 rounded-xl hover:bg-white/5 transition-all">
+                        Skip
+                    </button>
+</div>
+</div>
+<!-- Background Decoration (Abstract AI Glow) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
+<div class="absolute bottom-0 right-0 w-[400px] h-[400px] bg-fuchsia-500/5 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
+</main>
+</div>
+<!-- Background Image Mockup for Context (Visual Layer) -->
+<div class="fixed top-0 left-0 w-full h-full -z-20 opacity-20 grayscale pointer-events-none">
+<img alt="minimalist dark abstract background with flowing silk textures and soft deep shadows" class="w-full h-full object-cover" data-alt="minimalist dark abstract background with flowing silk textures and soft deep shadows for high-end digital design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwjcu2PRdcUJx4Z8_JVc2qcEyRTQGtbisfhPknWp_I14NeuVKhqr2a2AihKAfuHquR5bUVQVWeW22umc8uA5M0LSWeEnJoXsJ0W4-S6iQ6HImdJOPvTo52ZGRFN9Svdby9fv8EzkIAQyOYyeVjn4iLlYJaz69Z1kHkL1u30nxjIO9Ikbt7sEFnKmee0qJbK7v9B6hwy0rx_5j-ttr3GKlUnies6CIctOkZWAfBjDs80FZz731PGNa4aLBSHgLfKRKaoMDZJOciuhBo"/>
+</div>
+</body></html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Own AI | All the AI. None of the waste.</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#5516be",
+                        "primary": "#c0c1ff",
+                        "surface": "#131313",
+                        "error": "#ffb4ab",
+                        "on-primary-container": "#0d0096",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "surface-bright": "#3a3939",
+                        "inverse-on-surface": "#313030",
+                        "secondary": "#d0bcff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-secondary-fixed": "#23005c",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "tertiary": "#fbabff",
+                        "on-surface": "#e5e2e1",
+                        "background": "#0A0A0A",
+                        "tertiary-fixed": "#ffd6fd",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "tertiary-container": "#e14ef6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-container": "#c4abff",
+                        "on-secondary": "#3c0091",
+                        "surface-variant": "#353534",
+                        "inverse-primary": "#494bd6",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "outline-variant": "#464554",
+                        "surface-container-highest": "#353534",
+                        "on-error": "#690005",
+                        "on-background": "#e5e2e1",
+                        "primary-container": "#8083ff",
+                        "surface-tint": "#c0c1ff",
+                        "on-tertiary-fixed": "#36003e",
+                        "surface-dim": "#131313",
+                        "primary-fixed": "#e1e0ff",
+                        "surface-container": "#201f1f",
+                        "on-tertiary": "#580065",
+                        "outline": "#908fa0",
+                        "on-surface-variant": "#c7c4d7",
+                        "secondary-fixed": "#e9ddff",
+                        "on-tertiary-container": "#4d0059",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "on-primary": "#1000a9",
+                        "on-primary-fixed": "#07006c",
+                        "secondary-container": "#571bc1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Sora", "Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .brand-gradient { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%); }
+        .text-brand-gradient { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: rgba(53, 53, 52, 0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .mesh-bg { position: absolute; inset: 0; z-index: -1; opacity: 0.15; background-image: radial-gradient(at 0% 0%, #6366F1 0, transparent 50%), radial-gradient(at 50% 0%, #8B5CF6 0, transparent 50%), radial-gradient(at 100% 0%, #D946EF 0, transparent 50%); }
+        .ghost-border { border: 1px solid rgba(192, 193, 255, 0.15); }
+        .hero-title { letter-spacing: -0.04em; line-height: 0.9; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container/30">
+<!-- TopNavBar Component -->
+<header class="fixed top-0 w-full z-50 bg-transparent backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+<nav class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold font-['Sora'] tracking-tighter text-zinc-100">Own AI</div>
+<div class="hidden md:flex items-center space-gap-8 gap-8 font-['Plus_Jakarta_Sans'] font-medium text-sm tracking-tight">
+<a class="text-indigo-400 border-b-2 border-indigo-500 pb-1 hover:text-white transition-colors duration-300" href="#">Features</a>
+<a class="text-zinc-400 hover:text-white transition-colors duration-300" href="#">Pricing</a>
+<a class="text-zinc-400 hover:text-white transition-colors duration-300" href="#">About</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-['Plus_Jakarta_Sans'] font-medium text-sm tracking-tight text-zinc-400 hover:text-white transition-colors duration-300">Log in</button>
+<button class="brand-gradient text-white px-5 py-2.5 rounded-full font-['Plus_Jakarta_Sans'] font-semibold text-sm tracking-tight scale-95 active:scale-90 transition-transform">Get started free</button>
+</div>
+</nav>
+</header>
+<main>
+<!-- Section 1: Hero -->
+<section class="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-20 overflow-hidden">
+<div class="mesh-bg"></div>
+<div class="max-w-5xl mx-auto text-center px-6 relative z-10">
+<h1 class="font-headline font-extrabold text-6xl md:text-8xl hero-title mb-8 text-on-surface">
+                    All the AI. <br/>
+<span class="text-brand-gradient">None of the waste.</span>
+</h1>
+<p class="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
+                    Access every major AI model in one app. Pay only for what you use — not $60/month in subscriptions you barely use.
+                </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+<button class="brand-gradient text-white px-8 py-4 rounded-full font-headline font-bold text-lg shadow-[0_10px_40px_rgba(99,102,241,0.3)] hover:scale-105 transition-transform">Start free — no card required</button>
+<button class="px-8 py-4 rounded-full font-headline font-bold text-lg ghost-border text-on-surface hover:bg-surface-container transition-colors">See how pricing works</button>
+</div>
+<!-- Hero Visual -->
+<div class="relative w-full max-w-4xl mx-auto mt-12 aspect-video group">
+<div class="absolute -inset-1 brand-gradient opacity-20 blur-2xl group-hover:opacity-30 transition-opacity"></div>
+<div class="relative bg-surface-container-low rounded-xl overflow-hidden shadow-2xl border border-outline-variant/20">
+<img alt="Own AI Dashboard" class="w-full h-full object-cover" data-alt="Modern dark UI interface showing a clean AI chat window with sidebar and floating glass elements in a sleek professional environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtBHokSjHjlmHonmBmrSgMLyIKelVWA_qzFGXCIwzbTujTRLph9sljaiUasSBs62_gJPZTH4w3VlEls0f8ZlND6uQl_p_ziuc0ySNtjbT7ThZUK55pdSqGgjy7aKvUUI4ysjuBh8SjIug2Vy1Is1JLRK892AnzPQLmlWJYTJYfUaWjFt79t0ARa4y1BGzVsvDz428z_zkl7eUfGPBgY32sa73Jq-Zgj8_vyBGEllVFGOvVJolZAFyXEwwnd5JR2v_PuXDfZy9PxUVR"/>
+<!-- Floating Glass Badges -->
+<div class="absolute top-12 -left-12 glass-card p-4 rounded-xl flex items-center gap-3 shadow-2xl animate-bounce" style="animation-duration: 4s;">
+<span class="w-8 h-8 rounded-full flex items-center justify-center text-amber-400 bg-amber-400/10">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</span>
+<div>
+<p class="text-xs font-label text-amber-500">Claude Sonnet</p>
+<p class="text-sm font-bold text-on-surface">$0.003</p>
+</div>
+</div>
+<div class="absolute bottom-12 -right-8 glass-card p-4 rounded-xl flex items-center gap-3 shadow-2xl animate-bounce" style="animation-duration: 5s;">
+<span class="w-8 h-8 rounded-full flex items-center justify-center text-emerald-400 bg-emerald-400/10">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</span>
+<div>
+<p class="text-xs font-label text-emerald-500">GPT-4o</p>
+<p class="text-sm font-bold text-on-surface">$0.015</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Comparison -->
+<section class="py-24 bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto px-6">
+<h2 class="font-headline font-bold text-3xl md:text-5xl text-center mb-16 tracking-tight">Stop paying for AI you don't use.</h2>
+<div class="grid md:grid-cols-2 gap-8 items-center">
+<!-- The Old Way -->
+<div class="p-10 rounded-2xl border border-error/10 bg-error/5 relative overflow-hidden group">
+<div class="absolute top-4 right-4 text-error opacity-20">
+<span class="material-symbols-outlined text-6xl">trending_down</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-6 text-error">The Old Way</h3>
+<ul class="space-y-4 mb-8">
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>ChatGPT Plus</span>
+<span class="font-bold">$20/mo</span>
+</li>
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>Claude Pro</span>
+<span class="font-bold">$20/mo</span>
+</li>
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>Gemini Advanced</span>
+<span class="font-bold">$20/mo</span>
+</li>
+</ul>
+<div class="border-t border-error/20 pt-4 flex justify-between items-center">
+<span class="text-lg font-bold">Total Monthly</span>
+<span class="text-3xl font-headline font-extrabold text-error">$60.00</span>
+</div>
+</div>
+<!-- The Own AI Way -->
+<div class="p-10 rounded-2xl border border-primary/20 bg-primary/5 relative overflow-hidden shadow-2xl">
+<div class="absolute top-4 right-4 text-primary opacity-20">
+<span class="material-symbols-outlined text-6xl">trending_up</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-6 text-primary">The Own AI Way</h3>
+<ul class="space-y-4 mb-8">
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>Access to all 3 models</span>
+<span class="font-label text-xs">Included</span>
+</li>
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>Usage (100k tokens)</span>
+<span class="font-bold">$1.20</span>
+</li>
+<li class="flex justify-between items-center text-on-surface-variant">
+<span>Platform Access</span>
+<span class="font-bold">$3.00</span>
+</li>
+</ul>
+<div class="border-t border-primary/20 pt-4 flex justify-between items-center">
+<span class="text-lg font-bold">Total Monthly</span>
+<div class="text-right">
+<span class="text-3xl font-headline font-extrabold text-brand-gradient">€4.20</span>
+<p class="text-xs text-primary font-medium">93% savings</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Feature Bento Grid -->
+<section class="py-24">
+<div class="max-w-7xl mx-auto px-6">
+<div class="mb-16">
+<h2 class="font-headline font-bold text-4xl mb-4">Master every AI capability.</h2>
+<p class="text-on-surface-variant">One dashboard, infinite possibilities.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-6 grid-rows-2 gap-4 h-full md:h-[600px]">
+<!-- Every AI Model -->
+<div class="md:col-span-3 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-2xl font-headline font-bold mb-2">Every AI Model</h3>
+<p class="text-on-surface-variant text-sm">GPT-4, Claude 3.5, Gemini 1.5 Pro, and Llama 3 available instantly.</p>
+</div>
+</div>
+<!-- Voice Mode -->
+<div class="md:col-span-3 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mic</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-2xl font-headline font-bold mb-2">Voice Mode</h3>
+<p class="text-on-surface-variant text-sm">Natural, low-latency conversations with any model you choose.</p>
+</div>
+</div>
+<!-- PDF to Audio -->
+<div class="md:col-span-2 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">audio_file</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-xl font-headline font-bold mb-2">PDF to Audio</h3>
+<p class="text-on-surface-variant text-xs">Turn long textbooks and research papers into podcasts.</p>
+</div>
+</div>
+<!-- Web Search -->
+<div class="md:col-span-2 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-primary-container/10 text-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">public</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-xl font-headline font-bold mb-2">Web Search</h3>
+<p class="text-on-surface-variant text-xs">Real-time information retrieval powered by live search indexing.</p>
+</div>
+</div>
+<!-- Knowledge Buckets -->
+<div class="md:col-span-1 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-error/10 text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-lg font-headline font-bold mb-2">Buckets</h3>
+<p class="text-on-surface-variant text-[10px]">Context management.</p>
+</div>
+</div>
+<!-- Auto Model Selection -->
+<div class="md:col-span-1 md:row-span-1 glass-card rounded-2xl p-8 flex flex-col justify-end group overflow-hidden relative">
+<div class="absolute top-8 left-8 p-3 rounded-full bg-emerald-500/10 text-emerald-500">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_mode</span>
+</div>
+<div class="relative z-10">
+<h3 class="text-lg font-headline font-bold mb-2">Auto</h3>
+<p class="text-on-surface-variant text-[10px]">Optimal cost routing.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Transparent Pricing -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-4xl mx-auto px-6">
+<div class="text-center mb-16">
+<h2 class="font-headline font-bold text-4xl mb-4">Transparent pricing. Always.</h2>
+<p class="text-on-surface-variant">We pass through the wholesale API costs with no markup on usage.</p>
+</div>
+<div class="glass-card rounded-2xl overflow-hidden">
+<table class="w-full text-left">
+<thead class="bg-surface-container-high border-b border-outline-variant/30">
+<tr>
+<th class="px-6 py-4 font-headline text-sm font-bold uppercase tracking-wider">Model</th>
+<th class="px-6 py-4 font-headline text-sm font-bold uppercase tracking-wider">Provider</th>
+<th class="px-6 py-4 font-headline text-sm font-bold uppercase tracking-wider text-right">Cost / 1M Tokens</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-5 font-medium">GPT-4o</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-label bg-emerald-500/15 text-emerald-400">OpenAI</span>
+</td>
+<td class="px-6 py-5 text-right font-label">$5.00</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-5 font-medium">Claude 3.5 Sonnet</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-label bg-amber-500/15 text-amber-400">Anthropic</span>
+</td>
+<td class="px-6 py-5 text-right font-label">$3.00</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-5 font-medium">Gemini 1.5 Flash</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-label bg-sky-500/15 text-sky-400">Google</span>
+</td>
+<td class="px-6 py-5 text-right font-label">$0.35</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-5 font-medium">Llama 3 70B</td>
+<td class="px-6 py-5">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-label bg-primary/15 text-primary">Open Source</span>
+</td>
+<td class="px-6 py-5 text-right font-label">$0.90</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Section 5: Student Testimonials -->
+<section class="py-24">
+<div class="max-w-7xl mx-auto px-6">
+<h2 class="font-headline font-bold text-3xl mb-12 text-center">Built for the next generation.</h2>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- Testimonial 1 -->
+<div class="glass-card p-8 rounded-2xl relative">
+<div class="absolute -top-4 -right-4 brand-gradient px-3 py-1 rounded-lg text-[10px] font-bold shadow-lg">SAVED $52/MO</div>
+<div class="flex items-center gap-4 mb-6">
+<img alt="Student" class="w-12 h-12 rounded-full object-cover border-2 border-primary/20" data-alt="Close-up portrait of a young male student in a library setting with soft warm bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-VKd2XiJFYgd3oEaYqBBchqHeGD8qoSUIAt1X7pzRGO4gVBQ2oLHR-r_3KGBeofAzcHEVayHKPaSODLQPRgeBE6UApwAkzKmodd8AP0vOXbmulK8IdoFpqMlxlHW0QPybjQaYTMfJ8qvHLXSizXtvLxrth-5-uo_jtO-sDK-jLSQrSeZu7Us6_2MdxX7kcKS-s041lUuTTehraWQhAQHk1rxQh8tfSiUQJdr576EVd88eS_F1nKVi0JSEpFRu3kbc5CdSMSdtcqbB"/>
+<div>
+<h4 class="font-bold text-sm">Marcus Chen</h4>
+<p class="text-xs text-on-surface-variant">CS Major @ Stanford</p>
+</div>
+</div>
+<p class="text-sm italic text-on-surface-variant leading-relaxed">"I used to juggle three different $20 subscriptions just to get the best coding and writing help. Now I pay like $5 a month total."</p>
+</div>
+<!-- Testimonial 2 -->
+<div class="glass-card p-8 rounded-2xl relative">
+<div class="absolute -top-4 -right-4 brand-gradient px-3 py-1 rounded-lg text-[10px] font-bold shadow-lg">SAVED $44/MO</div>
+<div class="flex items-center gap-4 mb-6">
+<img alt="Student" class="w-12 h-12 rounded-full object-cover border-2 border-primary/20" data-alt="Headshot of a smiling young woman in a creative studio space with colorful lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDDrM15e_NvGiuO_Xuxl8r4eaJTes-WXbL4vwSekdF0l_JjSjWQWoKZVMeeSvnrrcCUw9H2_lwdHK6kw4PEZnPaM3jt5h2abOUUPKUTV2FmkfXBnGgLeI54-bZbBJsIkmnSnBKx_0F7csAj6wdo21R4UlgI4snM9-hoN50p_Ad7haqnZO5Ktt_P8vsq_JiIC9oevPvBBo_zQy06wWpsMI-ifBKxzkfdyoWirjw4suUjOKiKrnx5Rr6xjQaJUg5egby0IbbSoo_4ExL"/>
+<div>
+<h4 class="font-bold text-sm">Elena Rodriguez</h4>
+<p class="text-xs text-on-surface-variant">Design @ RISD</p>
+</div>
+</div>
+<p class="text-sm italic text-on-surface-variant leading-relaxed">"The PDF to Audio feature is a lifesaver for my long readings. Switching between Claude for analysis and GPT for structure is seamless."</p>
+</div>
+<!-- Testimonial 3 -->
+<div class="glass-card p-8 rounded-2xl relative">
+<div class="absolute -top-4 -right-4 brand-gradient px-3 py-1 rounded-lg text-[10px] font-bold shadow-lg">SAVED $58/MO</div>
+<div class="flex items-center gap-4 mb-6">
+<img alt="Student" class="w-12 h-12 rounded-full object-cover border-2 border-primary/20" data-alt="Portrait of a young man with glasses in an urban outdoor setting at dusk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB11Ai-eE7xXu13uOjxjkVjS_kTvdzNrLe7NtYvMHGlIpn7JTvhXX3BF7hw1xIbi6WdlsQgyOEfbbUxlKA05Qefb4BkxhVMy04SzeNZGBroHGU-uLnTgtmSun7BQHQ5rOmGda5ByVAr6MHy84jhfvc--kkXkgZI61luZY6_YMZkDI-36C7lfi-SNFa4boOx2lzHZiu_kDhKmwkNMgFVgHaLGqaAh8izeZCJX1bdji5bsr_NFIgZB3v-UrW2yKbWQqdAognWKcFD_QUX"/>
+<div>
+<h4 class="font-bold text-sm">Jordan Smith</h4>
+<p class="text-xs text-on-surface-variant">Bio-Med @ Oxford</p>
+</div>
+</div>
+<p class="text-sm italic text-on-surface-variant leading-relaxed">"Own AI is the only tool that doesn't feel like it's trying to milk me for a subscription. Real pay-as-you-go is the future."</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 6: Final CTA -->
+<section class="py-24">
+<div class="max-w-5xl mx-auto px-6">
+<div class="brand-gradient rounded-3xl p-12 md:p-20 text-center relative overflow-hidden shadow-2xl">
+<div class="absolute inset-0 bg-black/10 backdrop-blur-[2px]"></div>
+<div class="relative z-10">
+<h2 class="font-headline font-extrabold text-4xl md:text-6xl mb-8 leading-tight">Ready to stop overpaying for AI?</h2>
+<p class="text-lg md:text-xl text-white/90 mb-12 max-w-xl mx-auto">Join 50,000+ students and professionals who are saving $500/year on their AI workflows.</p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<button class="bg-white text-indigo-600 px-10 py-5 rounded-full font-headline font-bold text-xl hover:bg-zinc-100 transition-colors shadow-xl">Start free today</button>
+<button class="px-10 py-5 rounded-full font-headline font-bold text-xl border border-white/30 text-white hover:bg-white/10 transition-colors">Book a demo</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="w-full border-t border-zinc-800/50 bg-[#0E0E0E]">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12 px-12 py-16 max-w-7xl mx-auto">
+<div class="col-span-2 md:col-span-1">
+<div class="text-lg font-bold font-['Sora'] text-zinc-200 mb-6">Own AI</div>
+<p class="font-['Plus_Jakarta_Sans'] text-xs leading-relaxed text-zinc-500">The first truly ethical AI platform built for the users, not the bottom line.</p>
+</div>
+<div>
+<h4 class="text-white font-semibold mb-6 text-sm">Product</h4>
+<ul class="space-y-4">
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Features</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Pricing</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Models</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-semibold mb-6 text-sm">Company</h4>
+<ul class="space-y-4">
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">About</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Blog</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Careers</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-semibold mb-6 text-sm">Legal</h4>
+<ul class="space-y-4">
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Privacy Policy</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Terms of Service</a></li>
+<li><a class="font-['Plus_Jakarta_Sans'] text-xs text-zinc-500 hover:text-indigo-400 transition-opacity duration-200" href="#">Cookie Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-12 py-8 border-t border-zinc-800/50">
+<p class="font-['Plus_Jakarta_Sans'] text-xs leading-relaxed text-zinc-500">© 2024 Own AI. Made for students.</p>
+</div>
+</footer>
+</body></html>

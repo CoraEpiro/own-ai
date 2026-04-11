@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ethereal AI Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Sora:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .brand-gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#201f1f",
+                        "surface-dim": "#131313",
+                        "surface-container-low": "#1c1b1b",
+                        "background": "#131313",
+                        "surface-container-highest": "#353534",
+                        "error": "#ffb4ab",
+                        "outline": "#908fa0",
+                        "surface": "#131313",
+                        "on-tertiary": "#580065",
+                        "outline-variant": "#464554",
+                        "on-surface-variant": "#c7c4d7",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#c4abff",
+                        "secondary-container": "#571bc1",
+                        "on-primary-container": "#0d0096",
+                        "tertiary-container": "#e14ef6",
+                        "inverse-on-surface": "#313030",
+                        "surface-variant": "#353534",
+                        "on-tertiary-container": "#4d0059",
+                        "on-primary-fixed": "#07006c",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "surface-tint": "#c0c1ff",
+                        "surface-container-high": "#2a2a2a",
+                        "on-background": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "on-secondary-fixed": "#23005c",
+                        "on-secondary": "#3c0091",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "tertiary": "#fbabff",
+                        "primary": "#c0c1ff",
+                        "secondary": "#d0bcff",
+                        "surface-container-lowest": "#0e0e0e",
+                        "primary-fixed": "#e1e0ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "secondary-fixed": "#e9ddff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-tertiary-fixed": "#36003e",
+                        "inverse-surface": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "inverse-primary": "#494bd6",
+                        "on-surface": "#e5e2e1",
+                        "tertiary-fixed": "#ffd6fd",
+                        "surface-bright": "#3a3939",
+                        "on-primary": "#1000a9",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#8083ff",
+                        "on-error": "#690005"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background selection:bg-primary/30 min-h-screen pb-24">
+<!-- Top Navigation Anchor -->
+<header class="w-full sticky top-0 z-50 bg-[#131313] px-6 py-4 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg brand-gradient-bg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">neurology</span>
+</div>
+<span class="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 font-headline">Ethereal AI</span>
+</div>
+<div class="flex items-center gap-4 text-zinc-400">
+<span class="material-symbols-outlined hover:text-white transition-colors duration-200">notifications</span>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant/30" data-alt="Close-up portrait of a professional woman in artistic neon studio lighting with soft violet hues" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU8CmZZO_-mL6gUgfuXIMwRv-4F_xU4nqShLA7n1P2koHTc2v1nad2EgAED09EpXpzVbQJIDwdMZ8dELz6acoRf_N6CjqxTZIsjRjd1IHwhrBCY1CXUeVBdZ18vygBtKZLDzRG9eIF1CoZ2gmhFO1u1ukbYBOnMLUE_l1aPBpWEvWSi8MWNTzXoLhQbHM5lA5fdH4Z_-lvkq9NPS7eDE2W8fI8kZvZdjJss0m-XbGCdSwciBs3y7NdBLEI8QNxmG_XUjXs3EA9J1ur"/>
+</div>
+</header>
+<main class="px-6 py-4">
+<!-- Hero Section -->
+<section class="mb-8">
+<h1 class="text-3xl font-bold font-headline tracking-tight text-on-surface mb-1">Analytics</h1>
+<p class="text-on-surface-variant font-body text-sm">Real-time performance metrics for The Curator.</p>
+</section>
+<!-- Stats Bento Grid (2x2 Stacked for Mobile) -->
+<section class="grid grid-cols-2 gap-4 mb-8">
+<div class="glass-card p-5 rounded-xl flex flex-col gap-1 ring-1 ring-white/5">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Total Inferences</span>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-headline font-bold">2.4M</span>
+<span class="text-[10px] text-emerald-400 font-label">+12%</span>
+</div>
+</div>
+<div class="glass-card p-5 rounded-xl flex flex-col gap-1 ring-1 ring-white/5">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Avg Latency</span>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-headline font-bold">84ms</span>
+<span class="text-[10px] text-primary font-label">-4ms</span>
+</div>
+</div>
+<div class="glass-card p-5 rounded-xl flex flex-col gap-1 ring-1 ring-white/5">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Active Models</span>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-headline font-bold">14</span>
+<span class="text-[10px] text-zinc-500 font-label">stable</span>
+</div>
+</div>
+<div class="glass-card p-5 rounded-xl flex flex-col gap-1 ring-1 ring-white/5">
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Error Rate</span>
+<div class="flex items-baseline gap-2">
+<span class="text-2xl font-headline font-bold">0.02%</span>
+<span class="text-[10px] text-emerald-400 font-label">↓ 0.01</span>
+</div>
+</div>
+</section>
+<!-- Vertical Charts -->
+<section class="flex flex-col gap-6 mb-8">
+<!-- Usage Over Time -->
+<div class="bg-surface-container-low rounded-xl p-6 ring-1 ring-white/5">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-headline font-semibold">Usage Volume</h3>
+<span class="text-xs font-label text-on-surface-variant bg-surface-container px-2 py-1 rounded">Last 24h</span>
+</div>
+<div class="h-40 flex items-end gap-1 px-2">
+<!-- Simple CSS Bar Mockup -->
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[40%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[55%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[45%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[70%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[85%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[60%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[40%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[50%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[90%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-primary-container rounded-t-sm h-[100%]"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[75%] transition-all hover:bg-primary-container"></div>
+<div class="flex-1 bg-zinc-800 rounded-t-sm h-[65%] transition-all hover:bg-primary-container"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-label text-zinc-500">
+<span>00:00</span>
+<span>12:00</span>
+<span>23:59</span>
+</div>
+</div>
+<!-- Model Distribution -->
+<div class="bg-surface-container-low rounded-xl p-6 ring-1 ring-white/5">
+<h3 class="text-lg font-headline font-semibold mb-6">Model Distribution</h3>
+<div class="space-y-4">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-zinc-200">GPT-4o</span>
+<span class="text-zinc-400">62%</span>
+</div>
+<div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full brand-gradient-bg" style="width: 62%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-zinc-200">Claude 3.5 Sonnet</span>
+<span class="text-zinc-400">28%</span>
+</div>
+<div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500/80" style="width: 28%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-zinc-200">Gemini Pro</span>
+<span class="text-zinc-400">10%</span>
+</div>
+<div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-sky-500/80" style="width: 10%;"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Usage Logs -->
+<section class="bg-surface-container-low rounded-xl ring-1 ring-white/5 overflow-hidden">
+<div class="px-6 py-5 border-b border-white/5 flex justify-between items-center">
+<h3 class="font-headline font-semibold">Usage Logs</h3>
+<span class="material-symbols-outlined text-zinc-400 text-sm">filter_list</span>
+</div>
+<div class="divide-y divide-white/5">
+<div class="px-6 py-4 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-zinc-100">text-embedding-3</span>
+<span class="text-[10px] font-label text-zinc-500">2 mins ago • User_842</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">0.002s</span>
+<span class="text-[10px] text-emerald-400/80 mt-1">Success</span>
+</div>
+</div>
+<div class="px-6 py-4 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-zinc-100">gpt-4o-vision</span>
+<span class="text-[10px] font-label text-zinc-500">12 mins ago • User_219</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">1.420s</span>
+<span class="text-[10px] text-emerald-400/80 mt-1">Success</span>
+</div>
+</div>
+<div class="px-6 py-4 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-zinc-100">claude-3-opus</span>
+<span class="text-[10px] font-label text-zinc-500">24 mins ago • User_101</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">3.102s</span>
+<span class="text-[10px] text-emerald-400/80 mt-1">Success</span>
+</div>
+</div>
+<div class="px-6 py-4 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-zinc-100">dall-e-3</span>
+<span class="text-[10px] font-label text-zinc-500">1h ago • System_Job</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-xs font-mono text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">--</span>
+<span class="text-[10px] text-error mt-1">Failed</span>
+</div>
+</div>
+</div>
+<button class="w-full py-4 text-xs font-semibold text-primary bg-primary/5 hover:bg-primary/10 transition-colors">
+                View All Activity
+            </button>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#1C1B1B]/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex justify-between items-center md:hidden">
+<a class="flex flex-col items-center gap-1 text-zinc-500 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-label">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-white font-semibold active:scale-95 duration-150 relative" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="text-[10px] font-label">Analytics</span>
+<div class="absolute -bottom-1.5 w-1 h-1 rounded-full brand-gradient-bg"></div>
+</a>
+<div class="relative -top-8">
+<button class="w-14 h-14 rounded-2xl brand-gradient-bg shadow-[0_8px_30px_rgb(99,102,241,0.4)] flex items-center justify-center text-white active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-zinc-500 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="text-[10px] font-label">Data</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-zinc-500 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-label">Admin</span>
+</a>
+</nav>
+</body></html>

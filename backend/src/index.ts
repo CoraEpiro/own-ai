@@ -51,11 +51,26 @@ app.use(cors({
 }));
 
 // Rate limiting
+const isDev = process.env.NODE_ENV !== 'production';
+
+// General limiter — generous in dev, tighter in prod
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: isDev ? 2000 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
 });
 app.use(limiter);
+
+// Auth-specific limiter — prevents brute-force in prod, relaxed in dev
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 200 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later.' },
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
@@ -87,7 +102,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);

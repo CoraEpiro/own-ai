@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffd6fd",
+                    "outline-variant": "#464554",
+                    "surface-dim": "#131313",
+                    "tertiary": "#fbabff",
+                    "background": "#131313",
+                    "on-tertiary": "#580065",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-bright": "#3a3939",
+                    "surface": "#131313",
+                    "secondary-fixed": "#e9ddff",
+                    "on-error": "#690005",
+                    "on-primary-fixed": "#07006c",
+                    "surface-container-high": "#2a2a2a",
+                    "on-primary-container": "#0d0096",
+                    "outline": "#908fa0",
+                    "tertiary-fixed-dim": "#fbabff",
+                    "surface-variant": "#353534",
+                    "tertiary-container": "#e14ef6",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "inverse-on-surface": "#313030",
+                    "on-surface-variant": "#c7c4d7",
+                    "on-secondary-fixed": "#23005c",
+                    "primary": "#c0c1ff",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-tint": "#c0c1ff",
+                    "on-secondary": "#3c0091",
+                    "on-tertiary-fixed": "#36003e",
+                    "secondary-container": "#571bc1",
+                    "surface-container": "#201f1f",
+                    "on-primary": "#1000a9",
+                    "on-background": "#e5e2e1",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-container": "#4d0059",
+                    "inverse-primary": "#494bd6",
+                    "secondary": "#d0bcff",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e1e0ff",
+                    "on-secondary-container": "#c4abff",
+                    "surface-container-highest": "#353534",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-container": "#8083ff",
+                    "error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#7c008e",
+                    "on-surface": "#e5e2e1",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#5516be"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Sora"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; color: #e5e2e1; }
+        .sora { font-family: 'Sora', sans-serif; }
+        .jetbrains { font-family: 'JetBrains Mono', monospace; }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .gradient-border-active {
+            position: relative;
+            background: #201f1f;
+        }
+        .gradient-border-active::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            padding: 2px;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .bg-brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest min-h-screen flex flex-col overflow-x-hidden">
+<!-- Shell Suppression: TopNavBar and SideNavBar are omitted as per "Destination Rule" for linear onboarding task -->
+<main class="flex-grow flex flex-col items-center justify-center px-6 py-12 lg:py-24 relative overflow-hidden">
+<!-- Abstract Background Glows -->
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/5 blur-[120px] rounded-full"></div>
+<!-- Progress Indicator -->
+<div class="flex items-center gap-3 mb-12">
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<div class="w-8 h-2 rounded-full bg-brand-gradient shadow-[0_0_12px_rgba(99,102,241,0.3)]"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+</div>
+<div class="max-w-6xl w-full flex flex-col items-center">
+<div class="text-center mb-16">
+<h1 class="sora text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-on-surface">
+                    Choose your starting AI model:
+                </h1>
+<p class="text-on-surface-variant body-md max-w-xl mx-auto leading-relaxed">
+                    Select the intelligence that best aligns with your current workflow. You can switch between models at any time within your workspace.
+                </p>
+</div>
+<!-- Bento-style Selectable Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full mb-16">
+<!-- Option 1: OpenAI -->
+<button class="glass-card group relative p-8 rounded-2xl text-left border border-outline-variant/10 hover:border-indigo-500/30 transition-all duration-300 flex flex-col items-start gap-6 cursor-pointer">
+<div class="w-12 h-12 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="sora text-xl font-bold text-on-surface">OpenAI</h3>
+<span class="jetbrains text-[10px] uppercase tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">GPT-4o</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Best for general tasks and complex logical reasoning.</p>
+</div>
+</button>
+<!-- Option 2: Claude -->
+<button class="glass-card group relative p-8 rounded-2xl text-left border border-outline-variant/10 hover:border-amber-500/30 transition-all duration-300 flex flex-col items-start gap-6 cursor-pointer">
+<div class="w-12 h-12 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">edit_square</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="sora text-xl font-bold text-on-surface">Claude</h3>
+<span class="jetbrains text-[10px] uppercase tracking-widest bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded">3.5 Sonnet</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Best for writing, creative analysis, and long context.</p>
+</div>
+</button>
+<!-- Option 3: Gemini (ACTIVE/SELECTED STATE) -->
+<button class="gradient-border-active shadow-[0_20px_40px_rgba(0,0,0,0.3)] group relative p-8 rounded-2xl text-left border border-transparent transition-all duration-300 flex flex-col items-start gap-6 cursor-pointer transform scale-[1.02]">
+<div class="w-12 h-12 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="sora text-xl font-bold text-on-surface">Gemini</h3>
+<span class="jetbrains text-[10px] uppercase tracking-widest bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded">1.5 Pro</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Best for research, multimodal tasks, and deep search.</p>
+</div>
+<div class="absolute top-4 right-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</button>
+<!-- Option 4: Auto -->
+<button class="glass-card group relative p-8 rounded-2xl text-left border border-outline-variant/10 hover:border-violet-500/30 transition-all duration-300 flex flex-col items-start gap-6 cursor-pointer">
+<div class="w-12 h-12 rounded-xl bg-violet-500/15 flex items-center justify-center text-violet-400">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="sora text-xl font-bold text-on-surface">Auto</h3>
+<span class="jetbrains text-[10px] uppercase tracking-widest bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded">SMART SWITCH</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Let us pick the best model for each specific prompt.</p>
+</div>
+</button>
+</div>
+<!-- Hint Section -->
+<div class="flex items-center gap-4 py-4 px-8 rounded-full bg-surface-container-low border border-outline-variant/10 mb-12">
+<span class="material-symbols-outlined text-indigo-400 text-lg">info</span>
+<p class="text-on-surface-variant text-sm">
+<span class="text-indigo-400 font-medium">I'll recommend:</span> Gemini 1.5 Pro is currently excelling at the technical research queries you mentioned in Step 1.
+                </p>
+</div>
+<!-- Footer Action -->
+<div class="w-full flex justify-between items-center max-w-6xl">
+<button class="text-on-surface-variant hover:text-on-surface flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-medium">Back</span>
+</button>
+<button class="bg-brand-gradient px-12 py-4 rounded-xl text-white font-bold sora hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 active:scale-95 flex items-center gap-3">
+                    Next
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Side Image Decorative Element -->
+<div class="fixed top-0 right-0 w-1/4 h-full pointer-events-none opacity-20 hidden 2xl:block">
+<img class="w-full h-full object-cover" data-alt="abstract fluid 3d render with iridescent colors and dark background representing futuristic artificial intelligence neural network" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmBYb5JEudkLP8u65bBAuIjLhl06S_SG8-lQhHxPZ9SdlD6emBkFfAk9GUt8pSdTQsujDj3U3xRpyVvboLczoAypUtl8alCmv7dzgf8sy4L_rx8TXZvEmpQbDbh21pFhIk45DykP4Asx8Xv_eXULl2QVKPC8EPbleXs_XNTd2z5YCIOjtZ6tGaVDeqDpPBlkxdPYKW5RPPjUmETfUQx_67P1i5HBA9kzwZB2n38GtzlJLdTTneTdyks-gVuWySsylwbnebYlKj8S-d"/>
+</div>
+</body></html>

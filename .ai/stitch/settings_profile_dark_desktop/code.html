@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Sora:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#201f1f",
+                    "on-tertiary": "#580065",
+                    "surface": "#131313",
+                    "tertiary-fixed": "#ffd6fd",
+                    "background": "#131313",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-primary": "#1000a9",
+                    "tertiary-fixed-dim": "#fbabff",
+                    "on-surface": "#e5e2e1",
+                    "on-tertiary-fixed-variant": "#7c008e",
+                    "inverse-on-surface": "#313030",
+                    "inverse-surface": "#e5e2e1",
+                    "outline": "#908fa0",
+                    "error": "#ffb4ab",
+                    "outline-variant": "#464554",
+                    "secondary-fixed": "#e9ddff",
+                    "surface-tint": "#c0c1ff",
+                    "on-surface-variant": "#c7c4d7",
+                    "surface-container-highest": "#353534",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "tertiary-container": "#e14ef6",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-bright": "#3a3939",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-container": "#4d0059",
+                    "on-tertiary-fixed": "#36003e",
+                    "primary": "#c0c1ff",
+                    "on-primary-container": "#0d0096",
+                    "on-secondary-fixed": "#23005c",
+                    "on-primary-fixed": "#07006c",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-container": "#c4abff",
+                    "error-container": "#93000a",
+                    "surface-variant": "#353534",
+                    "on-background": "#e5e2e1",
+                    "surface-dim": "#131313",
+                    "on-error": "#690005",
+                    "on-secondary": "#3c0091",
+                    "secondary-container": "#571bc1",
+                    "primary-container": "#8083ff",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "primary-fixed": "#e1e0ff",
+                    "surface-container-low": "#1c1b1b",
+                    "secondary": "#d0bcff",
+                    "tertiary": "#fbabff",
+                    "inverse-primary": "#494bd6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"],
+                    "sora": ["Sora"],
+                    "mono": ["JetBrains Mono"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(144, 143, 160, 0.15);
+        }
+        .tonal-layering {
+            background-color: #1c1b1b;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen flex overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="hidden md:flex h-screen w-64 border-r border-white/5 bg-zinc-900/40 backdrop-blur-xl dark:bg-zinc-950/40 flex-col py-6 px-4 shadow-2xl shadow-indigo-500/10">
+<div class="mb-8 px-2">
+<h1 class="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500">The Ethereal Intelligence</h1>
+<p class="text-xs text-zinc-500 mt-1 font-label">AI Assistant</p>
+</div>
+<button class="mb-8 w-full py-3 px-4 brand-gradient text-white font-semibold rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>New Chat</span>
+</button>
+<nav class="flex-1 space-y-1">
+<p class="px-2 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Workspace</p>
+<!-- Active Tab: Profile -->
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface font-semibold bg-white/5 rounded-lg transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-indigo-500">person</span>
+<span class="text-sm">Profile</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-300" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-sm">Billing &amp; Usage</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-300" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="text-sm">Security</span>
+</a>
+<div class="pt-8 space-y-1">
+<p class="px-2 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">History</p>
+<div class="space-y-0.5">
+<div class="px-3 py-2 text-xs text-zinc-400 font-mono truncate hover:bg-white/5 rounded-lg cursor-pointer">quantum_physics_intro.md</div>
+<div class="px-3 py-2 text-xs text-zinc-400 font-mono truncate hover:bg-white/5 rounded-lg cursor-pointer">ui_design_tokens.json</div>
+<div class="px-3 py-2 text-xs text-zinc-400 font-mono truncate hover:bg-white/5 rounded-lg cursor-pointer">neural_network_summary</div>
+</div>
+</div>
+</nav>
+<div class="mt-auto pt-6 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">search</span>
+<span class="text-sm">Search</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">dark_mode</span>
+<span class="text-sm">Theme</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 h-screen overflow-y-auto bg-surface relative">
+<!-- TopAppBar Component -->
+<header class="flex items-center justify-between px-8 w-full sticky top-0 z-50 bg-zinc-950/20 backdrop-blur-md h-16 border-b border-white/5">
+<div class="flex items-center gap-8">
+<span class="text-indigo-400 font-sora font-bold text-xl tracking-tight">Settings</span>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-sm font-medium text-indigo-400 border-b-2 border-indigo-500 h-16 flex items-center" href="#">Profile</a>
+<a class="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors h-16 flex items-center" href="#">Billing</a>
+<a class="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors h-16 flex items-center" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-zinc-400 hover:text-zinc-100 cursor-pointer p-2 transition-colors">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-surface"></span>
+</div>
+<span class="material-symbols-outlined text-zinc-400 hover:text-zinc-100 cursor-pointer p-2 transition-colors">help</span>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-white/10 ml-2">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Close-up portrait of a creative professional man with artistic lighting and shallow depth of field" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbubgfTEx2-6-p2Iu6SfSTO6Z8VJpvcs8ruqrvUprfj3SvdNsziXhTP991CtFdlCbXNSY9uXLkseyQc47cfNlWKmOh7Zc6VqG3XbMxxFA0ZgJ-Qe12Ez4aac1UJlVfLKfe-E7_11TVaupiL6_iZ0fsmham4aas7-MXlXxuwNVx48OB9Uhnz7_BkdmzJWpuYi_l-KYBb7F15pec2KLwVNNAgmtr7_5utlP4Txlg8xY57aKoDNn4cHJGDq38hl3ZJypZSQVCrx5JThiu"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="max-w-4xl mx-auto px-8 py-12">
+<!-- Header Section with Asymmetry -->
+<div class="mb-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
+<div>
+<h2 class="text-5xl font-sora font-bold tracking-tight text-on-surface mb-4">Personal Details</h2>
+<p class="text-on-surface-variant max-w-md leading-relaxed">
+                        Manage your digital identity and account preferences. Changes here will reflect across all AI interactions and generated artifacts.
+                    </p>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 glass-card ghost-border rounded-full">
+<span class="flex h-2 w-2 rounded-full brand-gradient"></span>
+<span class="text-xs font-mono font-medium text-on-surface">Tier: PRO</span>
+<span class="px-2 py-0.5 rounded-full brand-gradient text-[10px] font-bold text-white tracking-widest">ACTIVE</span>
+</div>
+</div>
+<!-- Profile Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Avatar Card -->
+<div class="md:col-span-1 glass-card ghost-border rounded-xl p-8 flex flex-col items-center justify-center text-center">
+<div class="relative group cursor-pointer">
+<div class="w-20 h-20 rounded-full overflow-hidden border-2 border-indigo-500/30 p-1">
+<img alt="User Profile Avatar" class="w-full h-full object-cover rounded-full" data-alt="Professional studio portrait of a man with minimalist dark background and dramatic cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2jFg6dS8HZHMFKr376YQ-Gh_-6bA5gsU9craPAtSTzW0YJc9ZPE0skjXMnKbHXBmxhfEUrY_Rj4zWhPK8lEpgWQrOR1qd9L8TDSx7uOw0bVnGL0wufuUK7AVQlBgO5qqBxNDIBLtx2u85OFl8IGAPMMDTtUwW-anohNXAYBlk8j_D-_43LhoJQc-GjbmWTs6v5tpjdjKZcM8esiFuaXCNr7rzWAjC5il4JLMecx_tPLvHjJWDqcCkUxpuye65WVaykxP1K5-a5Z6E"/>
+</div>
+<div class="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white">photo_camera</span>
+</div>
+</div>
+<div class="mt-6">
+<h3 class="font-sora font-semibold text-on-surface">Alex Chen</h3>
+<p class="text-xs font-mono text-zinc-500 mt-1">ID: ETH_9921_X</p>
+</div>
+<button class="mt-6 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest">Update Photo</button>
+</div>
+<!-- Basic Info Card -->
+<div class="md:col-span-2 glass-card ghost-border rounded-xl p-8 space-y-8">
+<div class="space-y-2">
+<label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Display Name</label>
+<div class="flex items-center gap-4">
+<input class="bg-surface-container-highest border-none rounded-lg w-full text-on-surface font-medium focus:ring-1 focus:ring-indigo-500 transition-all px-4 py-3" type="text" value="Alex Chen"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Email Address</label>
+<span class="text-[10px] font-mono text-fuchsia-400">Primary</span>
+</div>
+<input class="bg-surface-container-low border-none rounded-lg w-full text-zinc-500 font-medium px-4 py-3 cursor-not-allowed opacity-60" disabled="" type="email" value="alex.chen@ethereal.ai"/>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">info</span>
+                            Email cannot be changed while an active subscription is linked.
+                        </p>
+</div>
+</div>
+<!-- Password Section (Collapsible Logic Visualized) -->
+<div class="md:col-span-3 glass-card ghost-border rounded-xl overflow-hidden">
+<div class="p-6 flex items-center justify-between border-b border-white/5">
+<div class="flex items-center gap-4">
+<div class="p-2 bg-indigo-500/10 rounded-lg">
+<span class="material-symbols-outlined text-indigo-400">lock</span>
+</div>
+<div>
+<h4 class="font-sora font-semibold text-sm">Security &amp; Password</h4>
+<p class="text-xs text-zinc-500">Update your credentials to keep your account secure.</p>
+</div>
+</div>
+<button class="p-2 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+<!-- Form Content (Expanded state) -->
+<div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/[0.02]">
+<div class="space-y-2">
+<label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Current Password</label>
+<input class="bg-surface-container-highest border-none rounded-lg w-full text-on-surface px-4 py-3 focus:ring-1 focus:ring-indigo-500" type="password" value="••••••••••••"/>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">New Password</label>
+<input class="bg-surface-container-highest border-none rounded-lg w-full text-on-surface px-4 py-3 focus:ring-1 focus:ring-indigo-500" placeholder="Min. 12 characters" type="password"/>
+</div>
+<div class="md:col-span-2 flex justify-end gap-4 mt-2">
+<button class="px-6 py-2.5 rounded-lg text-sm font-semibold text-zinc-400 hover:text-white transition-colors">Cancel</button>
+<button class="px-6 py-2.5 rounded-lg text-sm font-semibold bg-white/10 hover:bg-white/20 transition-all">Update Password</button>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="md:col-span-3 mt-8 p-8 rounded-xl border border-error/10 bg-error-container/5">
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+<div class="space-y-1">
+<h4 class="font-sora font-bold text-error">Danger Zone</h4>
+<p class="text-sm text-zinc-500">Once you delete your account, there is no going back. Please be certain.</p>
+</div>
+<button class="px-6 py-3 rounded-lg bg-error-container text-error text-sm font-bold hover:bg-red-900/40 transition-colors active:scale-95">
+                            Delete Account
+                        </button>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<footer class="mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+<p class="text-xs text-zinc-600 font-mono">Last login: Oct 24, 2023 · 14:22 PM from San Francisco, CA</p>
+<div class="flex items-center gap-6">
+<a class="text-xs text-zinc-500 hover:text-indigo-400 transition-colors" href="#">Privacy Policy</a>
+<a class="text-xs text-zinc-500 hover:text-indigo-400 transition-colors" href="#">Terms of Service</a>
+</div>
+</footer>
+</div>
+</main>
+</body></html>

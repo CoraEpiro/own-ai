@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffd6fd",
+                    "outline-variant": "#464554",
+                    "surface-dim": "#131313",
+                    "tertiary": "#fbabff",
+                    "background": "#131313",
+                    "on-tertiary": "#580065",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-bright": "#3a3939",
+                    "surface": "#131313",
+                    "secondary-fixed": "#e9ddff",
+                    "on-error": "#690005",
+                    "on-primary-fixed": "#07006c",
+                    "surface-container-high": "#2a2a2a",
+                    "on-primary-container": "#0d0096",
+                    "outline": "#908fa0",
+                    "tertiary-fixed-dim": "#fbabff",
+                    "surface-variant": "#353534",
+                    "tertiary-container": "#e14ef6",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "inverse-on-surface": "#313030",
+                    "on-surface-variant": "#c7c4d7",
+                    "on-secondary-fixed": "#23005c",
+                    "primary": "#c0c1ff",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-tint": "#c0c1ff",
+                    "on-secondary": "#3c0091",
+                    "on-tertiary-fixed": "#36003e",
+                    "secondary-container": "#571bc1",
+                    "surface-container": "#201f1f",
+                    "on-primary": "#1000a9",
+                    "on-background": "#e5e2e1",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "on-tertiary-container": "#4d0059",
+                    "inverse-primary": "#494bd6",
+                    "secondary": "#d0bcff",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e1e0ff",
+                    "on-secondary-container": "#c4abff",
+                    "surface-container-highest": "#353534",
+                    "surface-container-lowest": "#0e0e0e",
+                    "primary-container": "#8083ff",
+                    "error-container": "#93000a",
+                    "on-tertiary-fixed-variant": "#7c008e",
+                    "on-surface": "#e5e2e1",
+                    "error": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#5516be"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.75rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Sora"],
+                    "body": ["Inter"],
+                    "label": ["JetBrains Mono"]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .mesh-gradient {
+            background-color: #131313;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.15) 0px, transparent 50%);
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen flex flex-col overflow-hidden mesh-gradient">
+<!-- Top Navigation / Progress Shell (Suppressed Nav as per Transactional Rule) -->
+<header class="fixed top-0 w-full z-50 px-8 h-20 flex items-center justify-center">
+<div class="flex gap-2.5">
+<div class="h-1.5 w-8 rounded-full brand-gradient"></div>
+<div class="h-1.5 w-2 rounded-full bg-surface-container-highest"></div>
+<div class="h-1.5 w-2 rounded-full bg-surface-container-highest"></div>
+<div class="h-1.5 w-2 rounded-full bg-surface-container-highest"></div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 relative">
+<!-- Background Ambient Glow -->
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] brand-gradient opacity-10 blur-[120px] rounded-full"></div>
+<div class="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-fuchsia-500 opacity-10 blur-[120px] rounded-full"></div>
+</div>
+<!-- Identity Section -->
+<div class="w-full max-w-sm flex flex-col items-center text-center space-y-12">
+<!-- Logo Aspect -->
+<div class="relative group">
+<div class="absolute inset-0 brand-gradient blur-2xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
+<div class="relative flex items-center justify-center w-24 h-24 rounded-3xl bg-surface-container-lowest border border-white/5 shadow-2xl">
+<span class="material-symbols-outlined text-5xl brand-gradient bg-clip-text text-transparent" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+</div>
+<!-- Content Hierarchy -->
+<div class="space-y-4">
+<h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface">
+                    Welcome to <span class="brand-gradient bg-clip-text text-transparent">Own AI</span>, Denis!
+                </h1>
+<p class="text-on-surface-variant text-lg leading-relaxed max-w-[280px] mx-auto">
+                    Your portal to ethereal intelligence is ready for activation.
+                </p>
+</div>
+<!-- Credit Badge (Glassmorphism) -->
+<div class="glass-panel px-6 py-4 rounded-xl flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-indigo-400">account_balance_wallet</span>
+</div>
+<div class="text-left">
+<p class="text-[10px] font-label uppercase tracking-widest text-indigo-300/60">Balance Applied</p>
+<p class="text-xl font-bold font-headline text-on-surface">€2.00 <span class="text-sm font-medium text-on-surface-variant/60">Free Credits</span></p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<footer class="p-8 pb-12 w-full max-w-lg mx-auto">
+<div class="space-y-6">
+<!-- Feature Pills (Asymmetric Editorial Layout) -->
+<div class="flex flex-wrap justify-center gap-2 mb-8">
+<span class="px-3 py-1.5 rounded-full bg-surface-container-high text-[11px] font-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">verified</span> GPT-4o Ready
+                </span>
+<span class="px-3 py-1.5 rounded-full bg-surface-container-high text-[11px] font-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">security</span> Privacy First
+                </span>
+<span class="px-3 py-1.5 rounded-full bg-surface-container-high text-[11px] font-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">bolt</span> Instant Response
+                </span>
+</div>
+<button class="w-full brand-gradient py-5 rounded-2xl text-on-primary font-bold text-lg shadow-[0_0_40px_rgba(99,102,241,0.25)] hover:shadow-[0_0_60px_rgba(99,102,241,0.4)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                Next
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-center text-xs text-on-surface-variant/40 font-label">
+                Step 1 of 4 • Set up your workspace
+            </p>
+</div>
+</footer>
+<!-- SideNav Hidden (Transactional Page Rule) -->
+<aside class="hidden lg:flex flex-col h-screen p-4 gap-2 bg-zinc-900 border-r border-zinc-800/50 fixed left-0 top-0 w-64 translate-x-[-100%] transition-transform">
+<div class="flex items-center gap-3 px-4 py-6">
+<span class="text-lg font-bold text-zinc-100">Setup Wizard</span>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="bg-zinc-800 text-indigo-400 font-medium rounded-lg flex items-center gap-3 px-4 py-3">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span class="font-['Inter'] leading-relaxed">Welcome</span>
+</div>
+<div class="text-zinc-500 hover:text-zinc-300 flex items-center gap-3 px-4 py-3">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-['Inter'] leading-relaxed">Model Selection</span>
+</div>
+</nav>
+</aside>
+</body></html>

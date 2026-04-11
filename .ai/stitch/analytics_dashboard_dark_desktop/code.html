@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Analytics Dashboard | Ethereal AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;family=Sora:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container": "#201f1f",
+                      "surface-dim": "#131313",
+                      "surface-container-low": "#1c1b1b",
+                      "background": "#131313",
+                      "surface-container-highest": "#353534",
+                      "error": "#ffb4ab",
+                      "outline": "#908fa0",
+                      "surface": "#131313",
+                      "on-tertiary": "#580065",
+                      "outline-variant": "#464554",
+                      "on-surface-variant": "#c7c4d7",
+                      "error-container": "#93000a",
+                      "on-secondary-container": "#c4abff",
+                      "secondary-container": "#571bc1",
+                      "on-primary-container": "#0d0096",
+                      "tertiary-container": "#e14ef6",
+                      "inverse-on-surface": "#313030",
+                      "surface-variant": "#353534",
+                      "on-tertiary-container": "#4d0059",
+                      "on-primary-fixed": "#07006c",
+                      "secondary-fixed-dim": "#d0bcff",
+                      "surface-tint": "#c0c1ff",
+                      "surface-container-high": "#2a2a2a",
+                      "on-background": "#e5e2e1",
+                      "on-secondary-fixed-variant": "#5516be",
+                      "on-secondary-fixed": "#23005c",
+                      "on-secondary": "#3c0091",
+                      "tertiary-fixed-dim": "#fbabff",
+                      "tertiary": "#fbabff",
+                      "primary": "#c0c1ff",
+                      "secondary": "#d0bcff",
+                      "surface-container-lowest": "#0e0e0e",
+                      "primary-fixed": "#e1e0ff",
+                      "primary-fixed-dim": "#c0c1ff",
+                      "secondary-fixed": "#e9ddff",
+                      "on-primary-fixed-variant": "#2f2ebe",
+                      "on-tertiary-fixed": "#36003e",
+                      "inverse-surface": "#e5e2e1",
+                      "on-tertiary-fixed-variant": "#7c008e",
+                      "inverse-primary": "#494bd6",
+                      "on-surface": "#e5e2e1",
+                      "tertiary-fixed": "#ffd6fd",
+                      "surface-bright": "#3a3939",
+                      "on-primary": "#1000a9",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#8083ff",
+                      "on-error": "#690005"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.75rem",
+                      "lg": "1rem",
+                      "xl": "1.25rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Sora", "sans-serif"],
+                      "body": ["Inter", "sans-serif"],
+                      "label": ["JetBrains Mono", "monospace"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex flex-col py-8 px-4 z-50 shadow-[40px_0_40px_rgba(192,193,255,0.08)]">
+<div class="flex items-center gap-3 px-2 mb-10">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">neurology</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-zinc-100 font-headline leading-none">The Curator</h1>
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">v2.4.0-pro</p>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white font-bold border-r-2 border-indigo-500 bg-zinc-800/30 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">neurology</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Models</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Datasets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Billing</span>
+</a>
+</nav>
+<div class="mt-auto pt-8 border-t border-zinc-800/50 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-200 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Documentation</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="w-full sticky top-0 z-40 bg-[#131313] flex justify-between items-center px-8 py-4 font-['Plus_Jakarta_Sans'] text-sm leading-relaxed">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500">
+                    Ethereal AI
+                </h2>
+<div class="h-4 w-[1px] bg-zinc-800 mx-2"></div>
+<span class="text-white font-semibold">Analytics Overview</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="material-symbols-outlined text-zinc-400 hover:text-white cursor-pointer transition-colors duration-200 active:scale-95">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-fuchsia-500 rounded-full border-2 border-[#131313]"></span>
+</div>
+<span class="material-symbols-outlined text-zinc-400 hover:text-white cursor-pointer transition-colors duration-200 active:scale-95">settings</span>
+<div class="flex items-center gap-3 bg-[#1C1B1B] py-1.5 pl-1.5 pr-4 rounded-full border border-zinc-800/50">
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover" data-alt="Close-up portrait of a professional man with sharp features and thoughtful expression in soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA50Di57US2jlzAKxgS4o5tl4cQUl_Xsv9L6HkQhsvGtT52U2RjiZzd3ehECt8yLy6n3T9e5dRwjsfdIcWSlbL8Lzc911ewGT4Vtt6_f6OVrUEFDeCpyLiz4IAnyUa_eIaQT2LqlFTveJErzkrb9Iws_XYAelipBSjxP3rhK6w5bWV13lgIgtJ7vYEiFZeg0FL_DbqQWSv_w6n120b8lubC1vFRQ9Nm7OptOcNUYuok4OPySSFgYh6GII_z2jLYSr7BIYxkFeI8xEWW"/>
+<span class="text-zinc-200 font-medium">Alex Rivera</span>
+</div>
+</div>
+</header>
+<div class="p-8 max-w-[1600px] mx-auto space-y-8">
+<!-- Hero Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h1 class="text-4xl font-extrabold font-headline tracking-tight text-white mb-2">Platform Intelligence</h1>
+<p class="text-on-surface-variant max-w-md leading-relaxed">Advanced usage metrics and performance tracking across your LLM infrastructure.</p>
+</div>
+<button class="bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined text-sm">download</span>
+                    Export CSV
+                </button>
+</div>
+<!-- Top Row: Stat Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+<div class="glass-card p-6 rounded-2xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-indigo-400 bg-indigo-400/10 p-2 rounded-lg">token</span>
+<span class="text-emerald-400 text-xs font-bold">+12.4%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Total Tokens</p>
+<h3 class="text-2xl font-bold text-white font-headline">4,892,104</h3>
+</div>
+<div class="glass-card p-6 rounded-2xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-fuchsia-400 bg-fuchsia-400/10 p-2 rounded-lg">payments</span>
+<span class="text-emerald-400 text-xs font-bold">+5.2%</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Total Cost</p>
+<h3 class="text-2xl font-bold text-white font-headline">€84.20</h3>
+</div>
+<div class="glass-card p-6 rounded-2xl">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-violet-400 bg-violet-400/10 p-2 rounded-lg">forum</span>
+<span class="text-on-surface-variant text-xs font-bold">Stable</span>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Total Messages</p>
+<h3 class="text-2xl font-bold text-white font-headline">1.2k</h3>
+</div>
+<div class="glass-card p-6 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-transparent">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">star</span>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-[#10B981]/20 border border-[#10B981]/40 flex items-center justify-center text-[10px] text-[#10B981]">O</div>
+<div class="w-6 h-6 rounded-full bg-[#F59E0B]/20 border border-[#F59E0B]/40 flex items-center justify-center text-[10px] text-[#F59E0B]">A</div>
+</div>
+</div>
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-semibold mb-1">Favorite Model</p>
+<h3 class="text-lg font-bold text-white font-headline leading-tight">Claude 3.5 Sonnet</h3>
+</div>
+</div>
+<!-- Middle Section: Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Large Line Chart -->
+<div class="lg:col-span-8 bg-surface-container-low p-8 rounded-2xl space-y-6">
+<div class="flex justify-between items-center">
+<div>
+<h4 class="text-xl font-bold text-white font-headline">Daily Usage</h4>
+<p class="text-sm text-on-surface-variant">Token consumption trends for the current period</p>
+</div>
+<select class="bg-surface-container-highest border-none text-xs rounded-lg px-4 py-2 text-zinc-300 focus:ring-1 focus:ring-primary">
+<option>Last 30 Days</option>
+<option>Last 7 Days</option>
+</select>
+</div>
+<!-- Chart Visualization Placeholder -->
+<div class="h-[300px] w-full relative flex items-end justify-between gap-1 group">
+<!-- Background Grid -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="border-t border-zinc-800 w-full h-px"></div>
+<div class="border-t border-zinc-800 w-full h-px"></div>
+<div class="border-t border-zinc-800 w-full h-px"></div>
+<div class="border-t border-zinc-800 w-full h-px"></div>
+</div>
+<!-- SVG Line Representation -->
+<svg class="absolute inset-0 w-full h-full overflow-visible" preserveaspectratio="none">
+<defs>
+<lineargradient id="indigoGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#6366F1" stop-opacity="0.4"></stop>
+<stop offset="100%" stop-color="#6366F1" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path class="w-full" d="M0 250 Q 50 200, 100 220 T 200 150 T 300 180 T 400 80 T 500 120 T 600 50 T 700 100 T 800 60" fill="none" stroke="#6366F1" stroke-linecap="round" stroke-width="3"></path>
+<path d="M0 250 Q 50 200, 100 220 T 200 150 T 300 180 T 400 80 T 500 120 T 600 50 T 700 100 T 800 60 V 300 H 0 Z" fill="url(#indigoGradient)"></path>
+</svg>
+<!-- Labels -->
+<div class="absolute bottom-0 left-0 right-0 flex justify-between px-2 pt-4 text-[10px] text-zinc-500 font-label">
+<span>01 OCT</span>
+<span>07 OCT</span>
+<span>14 OCT</span>
+<span>21 OCT</span>
+<span>28 OCT</span>
+</div>
+</div>
+</div>
+<!-- Right Side: Mini Charts Stack -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Donut Chart -->
+<div class="bg-surface-container-low p-6 rounded-2xl">
+<h4 class="text-lg font-bold text-white font-headline mb-6">Cost by Provider</h4>
+<div class="flex items-center gap-8">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle cx="64" cy="64" fill="transparent" r="50" stroke="#10B981" stroke-dasharray="314" stroke-dashoffset="100" stroke-width="12"></circle>
+<circle cx="64" cy="64" fill="transparent" r="50" stroke="#F59E0B" stroke-dasharray="314" stroke-dashoffset="200" stroke-width="12"></circle>
+<circle cx="64" cy="64" fill="transparent" r="50" stroke="#0EA5E9" stroke-dasharray="314" stroke-dashoffset="280" stroke-width="12"></circle>
+</svg>
+<div class="absolute text-center">
+<span class="block text-xs text-zinc-500 font-label">TOTAL</span>
+<span class="block font-bold text-white">€84.20</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#10B981]"></div>
+<span class="text-xs text-zinc-400">OpenAI</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#F59E0B]"></div>
+<span class="text-xs text-zinc-400">Anthropic</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#0EA5E9]"></div>
+<span class="text-xs text-zinc-400">Google</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Horizontal Bar Chart -->
+<div class="bg-surface-container-low p-6 rounded-2xl">
+<h4 class="text-lg font-bold text-white font-headline mb-6">Model Breakdown</h4>
+<div class="space-y-5">
+<div class="space-y-2">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-zinc-300">Claude 3.5 Sonnet</span>
+<span class="text-zinc-500 font-label">42%</span>
+</div>
+<div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-indigo-500 h-full w-[42%] rounded-full"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-zinc-300">GPT-4o</span>
+<span class="text-zinc-500 font-label">35%</span>
+</div>
+<div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-violet-500 h-full w-[35%] rounded-full"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-zinc-300">Gemini Pro 1.5</span>
+<span class="text-zinc-500 font-label">23%</span>
+</div>
+<div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-fuchsia-500 h-full w-[23%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Detailed Table -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden border border-zinc-800/30">
+<div class="p-6 flex justify-between items-center bg-surface-container-low">
+<h4 class="text-lg font-bold text-white font-headline">Usage Logs</h4>
+<div class="flex gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+<input class="bg-surface-container-highest border-none text-xs rounded-xl pl-10 pr-4 py-2 text-zinc-300 focus:ring-1 focus:ring-primary w-64" placeholder="Filter models..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-highest text-zinc-300 rounded-xl text-xs font-medium hover:bg-zinc-700 transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                            Filters
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-zinc-500 text-[10px] uppercase tracking-[0.1em] font-bold border-b border-zinc-800/50">
+<th class="px-8 py-5">Model</th>
+<th class="px-8 py-5">Provider</th>
+<th class="px-8 py-5">Messages</th>
+<th class="px-8 py-5">Input Tokens</th>
+<th class="px-8 py-5">Output Tokens</th>
+<th class="px-8 py-5 text-right">Cost</th>
+</tr>
+</thead>
+<tbody class="text-sm divide-y divide-zinc-800/30">
+<tr class="hover:bg-zinc-800/20 transition-colors">
+<td class="px-8 py-5 font-medium text-white">Claude 3.5 Sonnet</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F59E0B]/10 text-[#F59E0B]">Anthropic</span>
+</td>
+<td class="px-8 py-5 font-label text-zinc-400">482</td>
+<td class="px-8 py-5 font-label text-zinc-400">1.2M</td>
+<td class="px-8 py-5 font-label text-zinc-400">840k</td>
+<td class="px-8 py-5 text-right font-bold text-white">€34.12</td>
+</tr>
+<tr class="hover:bg-zinc-800/20 transition-colors">
+<td class="px-8 py-5 font-medium text-white">GPT-4o</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#10B981]/10 text-[#10B981]">OpenAI</span>
+</td>
+<td class="px-8 py-5 font-label text-zinc-400">324</td>
+<td class="px-8 py-5 font-label text-zinc-400">950k</td>
+<td class="px-8 py-5 font-label text-zinc-400">1.1M</td>
+<td class="px-8 py-5 text-right font-bold text-white">€28.45</td>
+</tr>
+<tr class="hover:bg-zinc-800/20 transition-colors">
+<td class="px-8 py-5 font-medium text-white">Gemini 1.5 Pro</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0EA5E9]/10 text-[#0EA5E9]">Google Cloud</span>
+</td>
+<td class="px-8 py-5 font-label text-zinc-400">215</td>
+<td class="px-8 py-5 font-label text-zinc-400">450k</td>
+<td class="px-8 py-5 font-label text-zinc-400">310k</td>
+<td class="px-8 py-5 text-right font-bold text-white">€12.80</td>
+</tr>
+<tr class="hover:bg-zinc-800/20 transition-colors">
+<td class="px-8 py-5 font-medium text-white">Llama 3 70B</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-400/10 text-zinc-400">Groq</span>
+</td>
+<td class="px-8 py-5 font-label text-zinc-400">189</td>
+<td class="px-8 py-5 font-label text-zinc-400">3.2M</td>
+<td class="px-8 py-5 font-label text-zinc-400">1.2M</td>
+<td class="px-8 py-5 text-right font-bold text-white">€8.83</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</body></html>

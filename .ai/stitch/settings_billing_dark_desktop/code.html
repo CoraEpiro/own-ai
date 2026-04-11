@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=Sora:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#201f1f",
+                        "on-tertiary": "#580065",
+                        "surface": "#131313",
+                        "tertiary-fixed": "#ffd6fd",
+                        "background": "#131313",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary": "#1000a9",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "on-surface": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "inverse-on-surface": "#313030",
+                        "inverse-surface": "#e5e2e1",
+                        "outline": "#908fa0",
+                        "error": "#ffb4ab",
+                        "outline-variant": "#464554",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-tint": "#c0c1ff",
+                        "on-surface-variant": "#c7c4d7",
+                        "surface-container-highest": "#353534",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "tertiary-container": "#e14ef6",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-tertiary-container": "#4d0059",
+                        "on-tertiary-fixed": "#36003e",
+                        "primary": "#c0c1ff",
+                        "on-primary-container": "#0d0096",
+                        "on-secondary-fixed": "#23005c",
+                        "on-primary-fixed": "#07006c",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-container": "#c4abff",
+                        "error-container": "#93000a",
+                        "surface-variant": "#353534",
+                        "on-background": "#e5e2e1",
+                        "surface-dim": "#131313",
+                        "on-error": "#690005",
+                        "on-secondary": "#3c0091",
+                        "secondary-container": "#571bc1",
+                        "primary-container": "#8083ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "primary-fixed": "#e1e0ff",
+                        "surface-container-low": "#1c1b1b",
+                        "secondary": "#d0bcff",
+                        "tertiary": "#fbabff",
+                        "inverse-primary": "#494bd6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "plus-jakarta": ["Plus Jakarta Sans", "sans-serif"],
+                        "sora": ["Sora", "sans-serif"],
+                        "inter": ["Inter", "sans-serif"],
+                        "jetbrains": ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tonal-layering {
+            background-color: #131313;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-inter antialiased overflow-hidden">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar Shared Component -->
+<aside class="flex flex-col h-full py-6 px-4 bg-zinc-900/40 backdrop-blur-xl dark:bg-zinc-950/40 h-screen w-64 border-r border-white/5 shadow-2xl shadow-indigo-500/10 font-plus-jakarta text-sm leading-relaxed">
+<div class="mb-8 px-2">
+<h1 class="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500">The Ethereal Intelligence</h1>
+<p class="text-zinc-500 text-xs mt-1">AI Assistant</p>
+</div>
+<div class="space-y-1 flex-1">
+<div class="mb-4">
+<button class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl brand-gradient text-white font-bold transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95">
+<span class="material-symbols-outlined text-sm">add</span>
+                        New Chat
+                    </button>
+</div>
+<nav class="space-y-1">
+<!-- Tab: Profile (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-all duration-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Profile</span>
+</a>
+<!-- Tab: Billing & Usage (Active) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface font-semibold bg-white/5 scale-95 active:opacity-80 transition-transform" href="#">
+<span class="material-symbols-outlined text-indigo-500" data-icon="payments">payments</span>
+<span>Billing &amp; Usage</span>
+</a>
+<!-- Tab: Security (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-all duration-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span>Security</span>
+</a>
+</nav>
+</div>
+<div class="pt-6 mt-6 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">search</span>
+<span>Search</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">dark_mode</span>
+<span>Theme</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="mt-8 flex items-center gap-3 px-2">
+<img alt="User Profile Avatar" class="w-8 h-8 rounded-full object-cover grayscale opacity-80" data-alt="Close-up portrait of a thoughtful person in soft studio lighting with a clean minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmJt1fCE5k8z3P8-nkJmRX7Y6zl8lPvuvML0mbz0SEQxbh5BQ-OAigoHSdiq4eedG7ZyqiIAaYwpyUL5bKXFaEfxZrIjmEidnTupJPF7jHvUAnH5tbk0bN0jAD87WO4z5tV5pi3u0cH3dfC97nElX-_x3H4ZTRsCK9DQmUSdap7nup0bBgEWg5aApLI_3gVNfdt-6QdG-jYxxYLjjl6PJllVPRYCFQhk_ggzCNj9GI9aFqOqXK2Clxx1gaL56A5veQjGpyZ3pcmatg"/>
+<div class="flex-1 overflow-hidden">
+<p class="text-xs font-semibold truncate">Alex Sterling</p>
+<p class="text-[10px] text-zinc-500 truncate">alex.ster@ethereal.ai</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto bg-surface relative">
+<!-- TopAppBar Shared Component -->
+<header class="flex items-center justify-between px-8 w-full sticky top-0 z-50 bg-zinc-950/20 backdrop-blur-md h-16 border-b border-white/5 font-sora tracking-tight">
+<div class="flex items-center gap-4">
+<span class="text-on-surface font-bold text-xl tracking-tighter">Settings</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors py-5" href="#">Profile</a>
+<a class="text-indigo-400 border-b-2 border-indigo-500 py-5" href="#">Billing</a>
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors py-5" href="#">Security</a>
+</nav>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-zinc-400">
+<button class="material-symbols-outlined hover:text-white transition-colors">help</button>
+<button class="material-symbols-outlined hover:text-white transition-colors relative">
+                            notifications
+                            <span class="absolute top-0 right-0 w-1.5 h-1.5 bg-fuchsia-500 rounded-full"></span>
+</button>
+</div>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-white/10" data-alt="Professional profile headshot of a creative individual with soft shadows and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD91ZH4UNgF35SKGS8hf4DRBvdZuDj5bW9rd7QfDGgZBWu-XGJB_SAyLI12tnlPQa8hkkbo82g10RmPu86A5-zPQnJ4Zz5To8dvZi_0iZX7OPErLBJKMURxi1yeB_7ouPVjNzK_TBt9zG4pyKRe9mBBbw5y9f73kKIpBTEYO9YmyqPhkMKcjgCfECnsGweCcEieq7teh2Pk8Fd0sYHltfRzAJpGz6SGRC_wwcgYKEHwVwk7ns1-MU3YBAlNaxDW8zh3hgF5duAtEdV6"/>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-10 max-w-7xl mx-auto w-full">
+<!-- Header Asymmetry -->
+<div class="mb-12">
+<h2 class="text-5xl font-sora font-extrabold tracking-tighter text-on-surface mb-2">Billing &amp; Usage</h2>
+<p class="text-on-surface-variant text-lg font-light max-w-xl leading-relaxed">
+                        Manage your tokens, subscription plans, and review your latest computational transactions.
+                    </p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-8 items-start">
+<!-- Account Balance (Large Feature Card) -->
+<div class="col-span-12 lg:col-span-8 glass-card rounded-2xl p-8 flex flex-col justify-between min-h-[320px]">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-on-surface-variant text-sm font-medium mb-1">Available Credits</p>
+<h3 class="text-7xl font-sora font-extrabold tracking-tight text-on-surface">€1.84</h3>
+</div>
+<button class="brand-gradient px-6 py-3 rounded-xl font-bold text-sm text-white shadow-lg shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all">
+                                Top Up
+                            </button>
+</div>
+<div class="space-y-6 mt-12">
+<div>
+<div class="flex justify-between text-xs font-jetbrains text-on-surface-variant mb-2">
+<span>MONTHLY LIMIT</span>
+<span>72% CONSUMED</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full brand-gradient w-[72%] rounded-full shadow-[0_0_12px_rgba(139,92,246,0.5)]"></div>
+</div>
+</div>
+<div class="flex gap-12 border-t border-white/5 pt-6">
+<div>
+<p class="text-xs text-on-surface-variant mb-1 uppercase tracking-widest font-semibold">Current Usage</p>
+<p class="text-xl font-sora text-on-surface">€4.16 / <span class="text-zinc-600">€6.00</span></p>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant mb-1 uppercase tracking-widest font-semibold">Tokens Used</p>
+<p class="text-xl font-sora text-on-surface">1.2M <span class="text-xs font-jetbrains text-indigo-400">GPT-4o</span></p>
+</div>
+</div>
+</div>
+</div>
+<!-- Subscription Details (Secondary Layer) -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Active Plan -->
+<div class="bg-surface-container-low rounded-2xl p-6 border-l-4 border-fuchsia-500">
+<p class="text-xs font-jetbrains text-fuchsia-400 mb-2">CURRENT PLAN</p>
+<h4 class="text-2xl font-sora font-bold text-on-surface mb-1">Pro Access</h4>
+<p class="text-on-surface-variant text-sm mb-6">Active (€2/month)</p>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-zinc-500">Next Billing</span>
+<span class="text-on-surface font-medium">Oct 24, 2024</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-zinc-500">Payment Interval</span>
+<span class="text-on-surface font-medium">Monthly</span>
+</div>
+</div>
+<button class="w-full mt-8 py-2.5 text-sm font-semibold text-on-surface border border-white/10 rounded-xl hover:bg-white/5 transition-colors">
+                                Manage Subscription
+                            </button>
+</div>
+<!-- Payment Method -->
+<div class="bg-surface-container rounded-2xl p-6">
+<h4 class="text-sm font-bold text-on-surface mb-4">Payment Method</h4>
+<div class="flex items-center justify-between p-3 bg-surface-container-highest rounded-xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 bg-zinc-800 rounded flex items-center justify-center border border-white/10">
+<span class="text-[8px] font-bold text-white italic">VISA</span>
+</div>
+<p class="text-sm font-jetbrains text-on-surface">•••• 4242</p>
+</div>
+<button class="text-indigo-400 text-xs font-semibold hover:underline">Edit</button>
+</div>
+</div>
+</div>
+<!-- Transactions List -->
+<div class="col-span-12 bg-surface-container-low/50 rounded-2xl overflow-hidden mt-4">
+<div class="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+<h4 class="text-xl font-sora font-bold">Recent Transactions</h4>
+<button class="text-sm text-indigo-400 font-medium hover:text-indigo-300">Download History</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="text-xs text-zinc-500 uppercase tracking-widest bg-zinc-950/20">
+<tr>
+<th class="px-8 py-4 font-semibold">Description</th>
+<th class="px-8 py-4 font-semibold">Date</th>
+<th class="px-8 py-4 font-semibold">Model ID</th>
+<th class="px-8 py-4 font-semibold">Amount</th>
+<th class="px-8 py-4 font-semibold text-right">Receipt</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-fuchsia-400 bg-fuchsia-400/10 p-1.5 rounded-lg text-sm">electric_bolt</span>
+<span class="font-medium">Credit Top-up</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">Oct 12, 2024</td>
+<td class="px-8 py-5 text-xs font-jetbrains text-indigo-300/70">—</td>
+<td class="px-8 py-5 font-semibold">+ €10.00</td>
+<td class="px-8 py-5 text-right"><span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white">description</span></td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-indigo-400 bg-indigo-400/10 p-1.5 rounded-lg text-sm">smart_toy</span>
+<span class="font-medium">Inference Usage</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">Oct 10, 2024</td>
+<td class="px-8 py-5 text-xs font-jetbrains text-indigo-300/70">gpt-4o-2024-08-06</td>
+<td class="px-8 py-5 font-semibold text-error">- €0.42</td>
+<td class="px-8 py-5 text-right"><span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white">description</span></td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-emerald-400 bg-emerald-400/10 p-1.5 rounded-lg text-sm">auto_awesome</span>
+<span class="font-medium">Subscription: Pro Access</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">Sep 24, 2024</td>
+<td class="px-8 py-5 text-xs font-jetbrains text-indigo-300/70">tier-pro-v2</td>
+<td class="px-8 py-5 font-semibold">- €2.00</td>
+<td class="px-8 py-5 text-right"><span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white">description</span></td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-amber-400 bg-amber-400/10 p-1.5 rounded-lg text-sm">token</span>
+<span class="font-medium">Token Allocation</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">Sep 18, 2024</td>
+<td class="px-8 py-5 text-xs font-jetbrains text-indigo-300/70">claude-3-sonnet</td>
+<td class="px-8 py-5 font-semibold text-error">- €1.14</td>
+<td class="px-8 py-5 text-right"><span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white">description</span></td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-indigo-400 bg-indigo-400/10 p-1.5 rounded-lg text-sm">smart_toy</span>
+<span class="font-medium">Inference Usage</span>
+</div>
+</td>
+<td class="px-8 py-5 text-sm text-on-surface-variant">Sep 15, 2024</td>
+<td class="px-8 py-5 text-xs font-jetbrains text-indigo-300/70">gpt-4-turbo</td>
+<td class="px-8 py-5 font-semibold text-error">- €0.88</td>
+<td class="px-8 py-5 text-right"><span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white">description</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Subtle Decorative Background Glows -->
+<div class="fixed top-1/4 right-0 w-96 h-96 bg-indigo-500/10 blur-[120px] -z-10 pointer-events-none"></div>
+<div class="fixed bottom-0 left-1/4 w-[600px] h-[600px] bg-fuchsia-500/5 blur-[160px] -z-10 pointer-events-none"></div>
+</div>
+</main>
+</div>
+</body></html>

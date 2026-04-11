@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Own AI - Chat</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Sora:wght@700;800&amp;family=JetBrains+Mono&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "outline": "#908fa0",
+                        "on-primary-container": "#0d0096",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a3939",
+                        "background": "#131313",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed": "#e1e0ff",
+                        "tertiary-container": "#e14ef6",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "on-primary": "#1000a9",
+                        "surface-dim": "#131313",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "primary-container": "#8083ff",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-container": "#571bc1",
+                        "on-background": "#e5e2e1",
+                        "inverse-primary": "#494bd6",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "surface-variant": "#353534",
+                        "on-secondary-fixed": "#23005c",
+                        "surface-container-low": "#1c1b1b",
+                        "on-tertiary-container": "#4d0059",
+                        "on-surface-variant": "#c7c4d7",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "primary": "#c0c1ff",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary": "#580065",
+                        "tertiary-fixed": "#ffd6fd",
+                        "surface": "#131313",
+                        "secondary-fixed": "#e9ddff",
+                        "inverse-on-surface": "#313030",
+                        "on-tertiary-fixed": "#36003e",
+                        "on-secondary": "#3c0091",
+                        "on-primary-fixed": "#07006c",
+                        "surface-container-highest": "#353534",
+                        "on-error": "#690005",
+                        "tertiary": "#fbabff",
+                        "surface-tint": "#c0c1ff",
+                        "outline-variant": "#464554",
+                        "on-surface": "#e5e2e1",
+                        "secondary": "#d0bcff",
+                        "on-secondary-container": "#c4abff",
+                        "surface-container": "#201f1f"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Sora"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #131313; color: #e5e2e1; font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(53, 53, 52, 0.4); backdrop-filter: blur(20px); }
+        .brand-gradient { background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF); }
+        .brand-text { background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<!-- Sidebar / SideNavBar -->
+<aside class="bg-[#1C1B1B] dark:bg-[#1C1B1B] shadow-2xl shadow-indigo-500/10 h-screen w-80 flex flex-col border-r border-transparent py-6 px-4 font-['Plus_Jakarta_Sans'] font-['Sora'] antialiased tracking-tight">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500">Own AI</h1>
+<p class="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">AI Assistant</p>
+</div>
+</div>
+<button class="mb-8 w-full py-3 px-4 rounded-xl brand-gradient text-white font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.98] duration-150">
+<span class="material-symbols-outlined text-[20px]">add</span>
+            New Chat
+        </button>
+<nav class="flex-1 space-y-1 overflow-y-auto">
+<div class="px-2 pb-2">
+<span class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Recent Chats</span>
+</div>
+<a class="flex items-center gap-3 px-3 py-2.5 text-indigo-400 font-semibold bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] text-indigo-500">history</span>
+<span class="truncate">Thermodynamics Study Guide</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>Today</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>Yesterday</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>This Week</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>Older</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-zinc-800/50 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dark_mode</span>
+<span>Theme Toggle</span>
+</a>
+<div class="flex items-center gap-3 px-3 py-4 mt-2">
+<img alt="User Profile" class="w-8 h-8 rounded-full bg-zinc-800" data-alt="close up headshot of a professional user with a neutral expression and soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADRbjpSVr0ryR_BWXz_T0x-PqOxRwTTB0Z86-36hxMqy7Vu-2y1D9iy__7VL24aprlmOO8L7e08AU2J1pchdyAWYvxEDqeC-VvGNC74F9KevDwEuHhr-wTHh6vdU0ORJ_7chpMI1ouIyQ93-JdiXn6A-lxuHlKFwxGQhKQX7frWZn2tyTdYLO9IS4CMLc0aGGYff0SlRIlwjqwhmx0YnR7mn-Q7iYZrWbsYuCIHu5hgZxx1bUSn-ENG9AGbDTBPEZYoVdS3o0lfymL"/>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-zinc-200">Alex Rivers</span>
+<span class="text-[10px] text-zinc-500">Pro Plan</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Chat Window -->
+<main class="flex-1 flex flex-col relative bg-surface-dim">
+<!-- TopNavBar -->
+<header class="bg-zinc-950/80 backdrop-blur-xl docked full-width top-0 z-40 flex justify-between items-center w-full px-8 h-16 shadow-sm shadow-indigo-500/5">
+<div class="flex items-center gap-8">
+<h2 class="font-['Sora'] font-bold text-lg text-zinc-100">Own AI</h2>
+<nav class="hidden md:flex gap-6 font-['Inter'] font-medium text-sm text-zinc-400">
+<a class="text-indigo-400 border-b-2 border-indigo-500 py-1 transition-all" href="#">Models</a>
+<a class="hover:text-zinc-100 transition-all py-1" href="#">Knowledge</a>
+<a class="hover:text-zinc-100 transition-all py-1" href="#">API</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<input class="bg-zinc-900/50 text-xs py-1.5 pl-8 pr-4 rounded-full border-none focus:ring-1 focus:ring-indigo-500 w-64 text-zinc-300" placeholder="Search knowledge..." type="text"/>
+<span class="material-symbols-outlined absolute left-2.5 top-1.5 text-[18px] text-zinc-500">search</span>
+</div>
+<div class="flex items-center gap-4 text-zinc-400">
+<span class="material-symbols-outlined cursor-pointer hover:text-zinc-100">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-zinc-100">help</span>
+<button class="bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-indigo-500/20 transition-colors">Upgrade</button>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-zinc-800" data-alt="minimalist avatar circle with abstract soft purple and blue patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAR0R75rI9OoI_L5moIpa7A7We3jlZ4bI5qOI-G71PQWs8zAr5s0350A4fqdroZ46AS7zKej58mIdfXBl9OhVVGAaArVWYFB-HVj-kd65qDX0kaFrtuL1JNbEsGbDvzpHrn1Jq5PR1ogbUfhrHE3IjPd9JqvmCArBvTI3jWrh7vAdGKImxUw8ApXMQSgIG1LD6timrT90-v1cfhndxP2sO_D9Zux8GMfJqGHwq0WfycWqNQtDLSixvnXqMYvPBv8V1AHcsfdOYBj_AJ"/>
+</div>
+</div>
+</header>
+<!-- Message List Area -->
+<div class="flex-1 overflow-y-auto scroll-smooth">
+<div class="max-w-4xl mx-auto py-12 px-6 space-y-10">
+<!-- User Message -->
+<div class="flex flex-col items-end gap-2">
+<div class="bg-[#27272A] p-4 rounded-[16px] rounded-br-[4px] max-w-[80%] text-on-surface shadow-lg shadow-black/20">
+<p class="text-[0.875rem] leading-[1.6]">Can you help me calculate the efficiency of a Carnot engine operating between 500K and 300K? Also, write a small Python snippet to automate this for different temperatures.</p>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono px-2">10:42 AM</span>
+</div>
+<!-- AI Message -->
+<div class="flex flex-col gap-4 w-full bg-surface border-y border-zinc-900/50 -mx-6 px-6 py-10">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="bg-[#F59E0B]/15 text-[#F59E0B] px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-tight">Claude 3.5 Sonnet</span>
+<span class="text-[10px] text-zinc-500 font-mono">2.4s latency</span>
+</div>
+<div class="flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+<!-- Placeholder for hover actions -->
+</div>
+</div>
+<div class="prose prose-invert max-w-none text-[0.875rem] leading-[1.6] space-y-4">
+<p>The efficiency (\(\eta\)) of a Carnot engine is determined solely by the temperatures of the hot (\(T_H\)) and cold (\(T_C\)) reservoirs. The formula is:</p>
+<div class="font-mono bg-zinc-900/50 p-3 rounded-lg text-indigo-300 w-fit">
+                            η = 1 - (T_C / T_H)
+                        </div>
+<p>For your specific values: <br/>
+                        \(T_H = 500K\) and \(T_C = 300K\)<br/>
+                        \(\eta = 1 - (300 / 500) = 1 - 0.6 = 0.4\) (or 40%).</p>
+<p>Here is a Python function to calculate this efficiently for any set of temperatures:</p>
+<!-- Code Block -->
+<div class="rounded-xl overflow-hidden bg-[#0A0A14] border border-zinc-800 my-6">
+<div class="flex justify-between items-center bg-zinc-900/80 px-4 py-2 border-b border-zinc-800">
+<span class="text-[11px] font-mono text-zinc-400">python</span>
+<button class="flex items-center gap-1.5 text-[11px] text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+                                    Copy code
+                                </button>
+</div>
+<div class="p-4 font-mono text-[13px] leading-relaxed flex">
+<div class="pr-4 text-zinc-600 text-right select-none border-r border-zinc-800/50 mr-4">
+                                    1<br/>2<br/>3<br/>4<br/>5<br/>6<br/>7
+                                </div>
+<pre class="text-zinc-300"><code><span class="text-fuchsia-400">def</span> <span class="text-indigo-400">carnot_efficiency</span>(t_hot, t_cold):
+    <span class="text-zinc-500">"""Returns efficiency as a decimal."""</span>
+    <span class="text-fuchsia-400">if</span> t_hot &lt;= <span class="text-amber-400">0</span>:
+        <span class="text-fuchsia-400">return</span> <span class="text-amber-400">0</span>
+    <span class="text-fuchsia-400">return</span> <span class="text-amber-400">1</span> - (t_cold / t_hot)
+
+<span class="text-zinc-400">print</span>(<span class="text-indigo-400">f</span><span class="text-emerald-400">"Efficiency: {carnot_efficiency(500, 300):.2%}"</span>)</code></pre>
+</div>
+</div>
+<p>Let me know if you want to explore how entropy changes during these cycles!<span class="inline-block w-1.5 h-4 bg-indigo-500 ml-1 animate-pulse"></span></p>
+</div>
+<!-- Action Bar -->
+<div class="flex items-center justify-between mt-6 pt-6 border-t border-zinc-900/30">
+<div class="flex items-center gap-4 text-zinc-500">
+<button class="hover:text-zinc-200 transition-colors"><span class="material-symbols-outlined text-[20px]">content_copy</span></button>
+<button class="hover:text-zinc-200 transition-colors"><span class="material-symbols-outlined text-[20px]">refresh</span></button>
+<button class="hover:text-zinc-200 transition-colors"><span class="material-symbols-outlined text-[20px]">reply</span></button>
+<button class="hover:text-zinc-200 transition-colors"><span class="material-symbols-outlined text-[20px]">thumb_up</span></button>
+</div>
+<div class="bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800/50 flex items-center gap-2">
+<span class="text-[10px] font-mono text-zinc-500">~€0.003 · 847 tokens</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Input Area -->
+<div class="p-6 relative">
+<div class="max-w-4xl mx-auto">
+<!-- Attachment Thumbnail -->
+<div class="mb-3 flex gap-3">
+<div class="glass-card p-2 rounded-lg border border-white/5 flex items-center gap-3 pr-4 group cursor-default">
+<div class="w-10 h-10 rounded bg-red-500/20 flex items-center justify-center text-red-400">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[11px] font-medium text-zinc-200">notes.pdf</span>
+<span class="text-[9px] text-zinc-500 uppercase">1.2 MB</span>
+</div>
+<button class="ml-2 text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Input Box -->
+<div class="glass-card rounded-[20px] border border-white/10 shadow-2xl p-2 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+<div class="flex items-end gap-2">
+<button class="p-3 text-zinc-400 hover:text-zinc-200 transition-colors">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-zinc-200 py-3 resize-none scroll-hidden" placeholder="Ask anything about Thermodynamics..." rows="1" style="min-height: 48px;"></textarea>
+<button class="p-3 text-zinc-400 hover:text-zinc-200 transition-colors">
+<span class="material-symbols-outlined">language</span>
+</button>
+<button class="w-10 h-10 rounded-xl brand-gradient flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<p class="text-center text-[10px] text-zinc-600 mt-3 font-medium">Own AI can make mistakes. Check important info.</p>
+</div>
+</div>
+</main>
+<!-- Right Utility Panel (Hidden by default or slim) -->
+<aside class="hidden xl:flex w-[320px] flex-col border-l border-zinc-800/50 bg-zinc-950 px-6 py-8">
+<h3 class="font-['Sora'] font-bold text-sm mb-6 text-zinc-400 tracking-tight">Context Insights</h3>
+<div class="space-y-6">
+<section>
+<h4 class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">Model Parameters</h4>
+<div class="bg-zinc-900/30 rounded-xl p-4 space-y-3">
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-zinc-500">Temperature</span>
+<span class="text-indigo-400 font-mono">0.7</span>
+</div>
+<div class="w-full h-1 bg-zinc-800 rounded-full">
+<div class="h-full w-[70%] brand-gradient rounded-full"></div>
+</div>
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-zinc-500">Top P</span>
+<span class="text-indigo-400 font-mono">0.9</span>
+</div>
+</div>
+</section>
+<section>
+<h4 class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">Linked Resources</h4>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2.5 rounded-lg border border-zinc-800 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-amber-500 text-[18px]">menu_book</span>
+<span class="text-xs text-zinc-300">Physics Laws 2024</span>
+</div>
+<div class="flex items-center gap-3 p-2.5 rounded-lg border border-zinc-800 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-blue-500 text-[18px]">dataset</span>
+<span class="text-xs text-zinc-300">Python Scientific Libs</span>
+</div>
+</div>
+</section>
+<div class="mt-auto p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+<p class="text-[11px] text-indigo-300 leading-relaxed">
+<strong>Tip:</strong> You can reference the attached PDF by typing <code class="bg-indigo-500/20 px-1 rounded">@notes.pdf</code> in your prompt.
+                </p>
+</div>
+</div>
+</aside>
+</body></html>

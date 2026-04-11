@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#571bc1",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "on-tertiary-container": "#4d0059",
+                        "on-primary-fixed": "#07006c",
+                        "on-primary": "#1000a9",
+                        "secondary-fixed": "#e9ddff",
+                        "outline": "#908fa0",
+                        "on-surface-variant": "#c7c4d7",
+                        "surface-container": "#201f1f",
+                        "on-tertiary": "#580065",
+                        "primary-fixed": "#e1e0ff",
+                        "surface-dim": "#131313",
+                        "primary-container": "#8083ff",
+                        "surface-tint": "#c0c1ff",
+                        "on-tertiary-fixed": "#36003e",
+                        "surface-container-highest": "#353534",
+                        "on-error": "#690005",
+                        "on-background": "#e5e2e1",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "outline-variant": "#464554",
+                        "surface-variant": "#353534",
+                        "on-secondary-container": "#c4abff",
+                        "on-secondary": "#3c0091",
+                        "inverse-primary": "#494bd6",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "tertiary-container": "#e14ef6",
+                        "tertiary-fixed": "#ffd6fd",
+                        "background": "#131313",
+                        "tertiary": "#fbabff",
+                        "on-surface": "#e5e2e1",
+                        "secondary": "#d0bcff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "on-secondary-fixed": "#23005c",
+                        "inverse-on-surface": "#313030",
+                        "surface-bright": "#3a3939",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "inverse-surface": "#e5e2e1",
+                        "on-primary-container": "#0d0096",
+                        "primary": "#c0c1ff",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "surface": "#131313",
+                        "error": "#ffb4ab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tonal-layering {
+            background-color: #1c1b1b;
+        }
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .brand-text-gradient {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .ghost-border {
+            border: 1px solid rgba(70, 69, 84, 0.15);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #353534; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary/30 antialiased">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col h-screen w-64 border-r border-zinc-800/20 bg-zinc-900/50 backdrop-blur-xl font-['Plus_Jakarta_Sans'] tracking-tight shadow-[40px_0_80px_-20px_rgba(99,102,241,0.08)] z-50">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-10">
+<div class="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">auto_awesome</span>
+</div>
+<div>
+<h1 class="text-xl font-bold bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">AI Studio</h1>
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">The Luminescent Curator</p>
+</div>
+</div>
+<nav class="space-y-1">
+<!-- Nav Item: Instructions -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit_note">edit_note</span>
+<span class="text-sm font-medium">Instructions</span>
+</a>
+<!-- Nav Item: Memory -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="psychology">psychology</span>
+<span class="text-sm font-medium">Memory</span>
+</a>
+<!-- Nav Item: Knowledge Buckets (ACTIVE) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500/10 to-transparent text-indigo-400 border-r-2 border-indigo-500 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="database" style="font-variation-settings: 'FILL' 1;">database</span>
+<span class="text-sm font-medium">Knowledge Buckets</span>
+</a>
+<!-- Nav Item: Voice Settings -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="record_voice_over">record_voice_over</span>
+<span class="text-sm font-medium">Voice Settings</span>
+</a>
+</nav>
+<div class="mt-8 px-4">
+<button class="w-full py-2.5 rounded-lg brand-gradient text-white text-xs font-bold hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-300 active:scale-95">
+                    New Experiment
+                </button>
+</div>
+</div>
+<div class="mt-auto p-6 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<div class="flex items-center gap-3 px-4 py-4 mt-4 border-t border-zinc-800/50">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="User avatar of a sophisticated professional with dramatic lighting in a modern architectural setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiCUY54HltehZILcY9o69I5VtNNeEHgcHbLcMcFxtHkgkpdtvkjtXo4OT-GKdlba2u63ljrxcqtuKOn5M1mE9HFAc_wRocIgC-jTgQP2FJhSDd7spERc4_w2OIlqkQtx4HRieYzWPbgvvODGpfB5QzYG3XLKvHnuiEIjwl_iqcq0L9NhvP1AOOKm8tSttNxkdj_q67XovLLuFVjoBiKQle2XGEm_qkeKBi9bdKicIymC6KGQWX6VWzR1vqR7voDF5M6XvrUj53tXaa"/>
+<div class="overflow-hidden">
+<p class="text-xs font-bold text-on-surface truncate">Alex Sterling</p>
+<p class="text-[10px] text-zinc-500 truncate">Pro Curator</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar (Shared Component) -->
+<header class="flex items-center justify-between px-8 ml-64 w-[calc(100%-16rem)] w-full h-16 bg-zinc-950/40 backdrop-blur-md font-['Plus_Jakarta_Sans'] text-sm font-medium fixed top-0 z-40">
+<div class="flex items-center gap-8">
+<span class="text-indigo-400 font-bold tracking-tight">Studio Dashboard</span>
+<nav class="flex items-center gap-6">
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Models</a>
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Datasets</a>
+<a class="text-zinc-400 hover:text-zinc-100 transition-colors" href="#">Deployments</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute inset-y-0 left-3 flex items-center text-zinc-500">
+<span class="material-symbols-outlined text-sm">search</span>
+</span>
+<input class="bg-zinc-900/50 border-none rounded-full py-1.5 pl-10 pr-4 text-xs w-64 focus:ring-1 focus:ring-indigo-500/50 transition-all" placeholder="Search resources..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-zinc-400">
+<button class="hover:text-fuchsia-400 transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:text-fuchsia-400 transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen flex">
+<!-- Content Area -->
+<div class="flex-1 p-10 max-w-5xl mx-auto">
+<!-- Editorial Header Section -->
+<header class="mb-12">
+<h2 class="font-headline text-display-lg text-5xl font-bold tracking-tighter text-on-surface mb-2 leading-tight">
+                    Your AI's reference <span class="brand-text-gradient">library</span>
+</h2>
+<p class="text-on-surface-variant max-w-xl text-lg font-light leading-relaxed">
+                    Manage and organize domain-specific knowledge to enhance model precision and context awareness.
+                </p>
+</header>
+<!-- Action Bar -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-3">
+<div class="px-3 py-1 bg-surface-container rounded-full ghost-border">
+<span class="text-xs font-label text-primary font-medium tracking-wide">6 Buckets Active</span>
+</div>
+<div class="w-1 h-1 rounded-full bg-zinc-700"></div>
+<span class="text-xs text-zinc-500 font-label">Last sync: 2 mins ago</span>
+</div>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-full brand-gradient text-white text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Bucket
+                </button>
+</div>
+<!-- Bento Grid of Knowledge Buckets -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Bucket Card 1 -->
+<div class="group relative glass-card p-6 rounded-2xl transition-all duration-500 hover:translate-y-[-4px]">
+<!-- Hover Glow Effect -->
+<div class="absolute -inset-[1px] brand-gradient rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 -z-10"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="p-3 bg-indigo-500/10 rounded-xl">
+<span class="material-symbols-outlined text-indigo-400 text-3xl" data-icon="database" style="font-variation-settings: 'FILL' 1;">database</span>
+</div>
+<button class="text-zinc-500 hover:text-zinc-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-2 tracking-tight">Legal Precedents 2024</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6 line-clamp-2">
+                        Comprehensive collection of appellate court rulings and statutory interpretations for the current fiscal year.
+                    </p>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Entries</p>
+<p class="font-label text-sm text-on-surface font-semibold">1,240 Docs</p>
+</div>
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Updated</p>
+<p class="font-label text-sm text-on-surface font-semibold">4h ago</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-zinc-800/30">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-zinc-900 object-cover" data-alt="Close-up of a diverse professional person's face" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAw08cb5ZxrfN-Yv_2x_nAARgpco7Akd-k1u0ePUaijKQZcphc1-AQz4rUT7ZbZMAIfChu9rTaT-aek_okuQBUjSYCHLbPOpIkQTyfEZLdBa7Euo99DqPYhzZf0Cb5s4m-WzFWbBvhgXgTGI78cbZhTXPGVze_qngZ8DU1VwbHfvWfDIa2pQjMBa4lSdXDm5nq3cZiH7ifEB7p8mUUx7oZTy4-RnPMVuej2k_iuEO2C97u0MRIC50Gu_S9JDxXOL7uAFUE6dLW1kmOJ"/>
+<img class="w-6 h-6 rounded-full border-2 border-zinc-900 object-cover" data-alt="Profile photo of a woman in minimalist office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGMNS02Nz3ppemyRr3T-01yZmGww6H9sklRpx_iimCdiIbeU7C_ZVfZi2Ulu8S6-WbbuDjblj5nx5wHNiLLT7lz-cM83su3DB_usYjmrA_-66-wtNeFWbznxsaa0yT9zppYUo5YvattDEajIQB-VZAdJkNfNTflX2EThE5KpBzjIVGuxNFMgGfjmbyoAqQQwgKYW8jWP33mS60kTwilOKELqLzAmeh9lMPxBtFbCSVHBc_2wvt1bR9xAdmvNqGHNyHoIgEFAZrCRYY"/>
+</div>
+<button class="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 group/btn">
+                            Open Library
+                            <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+<!-- Bucket Card 2 -->
+<div class="group relative glass-card p-6 rounded-2xl transition-all duration-500 hover:translate-y-[-4px]">
+<div class="absolute -inset-[1px] brand-gradient rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 -z-10"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="p-3 bg-fuchsia-500/10 rounded-xl">
+<span class="material-symbols-outlined text-fuchsia-400 text-3xl" data-icon="database" style="font-variation-settings: 'FILL' 1;">database</span>
+</div>
+<button class="text-zinc-500 hover:text-zinc-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-2 tracking-tight">Technical Specs: Project Neo</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6 line-clamp-2">
+                        Internal hardware schematics and proprietary firmware documentation for the upcoming Neo-series rollout.
+                    </p>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Entries</p>
+<p class="font-label text-sm text-on-surface font-semibold">452 Files</p>
+</div>
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Updated</p>
+<p class="font-label text-sm text-on-surface font-semibold">Yesterday</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-zinc-800/30">
+<div class="px-2 py-0.5 bg-amber-500/15 text-amber-500 rounded text-[10px] font-bold uppercase tracking-wide">High Security</div>
+<button class="text-xs font-bold text-fuchsia-400 hover:text-fuchsia-300 flex items-center gap-1 group/btn">
+                            Open Library
+                            <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+<!-- Bucket Card 3 -->
+<div class="group relative glass-card p-6 rounded-2xl transition-all duration-500 hover:translate-y-[-4px]">
+<div class="absolute -inset-[1px] brand-gradient rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 -z-10"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="p-3 bg-indigo-500/10 rounded-xl">
+<span class="material-symbols-outlined text-indigo-400 text-3xl" data-icon="database" style="font-variation-settings: 'FILL' 1;">database</span>
+</div>
+<button class="text-zinc-500 hover:text-zinc-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-2 tracking-tight">Market Analysis: Q3 Global</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6 line-clamp-2">
+                        Synthetic datasets representing consumer behavior patterns across 14 emerging markets for seasonal forecasting.
+                    </p>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Entries</p>
+<p class="font-label text-sm text-on-surface font-semibold">8.4GB Data</p>
+</div>
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Updated</p>
+<p class="font-label text-sm text-on-surface font-semibold">12h ago</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-zinc-800/30">
+<div class="px-2 py-0.5 bg-emerald-500/15 text-emerald-500 rounded text-[10px] font-bold uppercase tracking-wide">Public Data</div>
+<button class="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 group/btn">
+                            Open Library
+                            <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+<!-- Bucket Card 4 -->
+<div class="group relative glass-card p-6 rounded-2xl transition-all duration-500 hover:translate-y-[-4px]">
+<div class="absolute -inset-[1px] brand-gradient rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 -z-10"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="p-3 bg-violet-500/10 rounded-xl">
+<span class="material-symbols-outlined text-violet-400 text-3xl" data-icon="database" style="font-variation-settings: 'FILL' 1;">database</span>
+</div>
+<button class="text-zinc-500 hover:text-zinc-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-2 tracking-tight">Clinical Research Phase II</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6 line-clamp-2">
+                        Anonymized patient data and trial outcomes for the recent neurological drug study conducted in Zurich.
+                    </p>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Entries</p>
+<p class="font-label text-sm text-on-surface font-semibold">12,305 Records</p>
+</div>
+<div class="p-3 bg-zinc-900/40 rounded-lg">
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Updated</p>
+<p class="font-label text-sm text-on-surface font-semibold">2d ago</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-zinc-800/30">
+<div class="px-2 py-0.5 bg-sky-500/15 text-sky-500 rounded text-[10px] font-bold uppercase tracking-wide">HIPAA Verified</div>
+<button class="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1 group/btn">
+                            Open Library
+                            <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Conversation History -->
+<aside class="w-72 border-l border-zinc-800/20 bg-zinc-950/20 flex flex-col sticky top-16 h-[calc(100vh-64px)] overflow-hidden">
+<div class="p-6 border-b border-zinc-800/40 flex items-center justify-between">
+<h4 class="text-xs font-bold uppercase tracking-widest text-zinc-500">History</h4>
+<button class="text-zinc-500 hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-zinc-600 px-2 mb-2 uppercase tracking-tighter">Today</p>
+<a class="block p-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all group" href="#">
+<p class="text-xs font-medium text-on-surface mb-1 group-hover:text-indigo-400">Legal Summary Protocol</p>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">timer</span> 2h ago
+                        </p>
+</a>
+<a class="block p-3 rounded-xl hover:bg-surface-container transition-all group" href="#">
+<p class="text-xs font-medium text-on-surface mb-1 group-hover:text-indigo-400">Project Neo Specs Import</p>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">timer</span> 5h ago
+                        </p>
+</a>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-zinc-600 px-2 mb-2 uppercase tracking-tighter">Yesterday</p>
+<a class="block p-3 rounded-xl hover:bg-surface-container transition-all group" href="#">
+<p class="text-xs font-medium text-on-surface mb-1 group-hover:text-indigo-400">Market Data Validation</p>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">timer</span> 22h ago
+                        </p>
+</a>
+<a class="block p-3 rounded-xl hover:bg-surface-container transition-all group" href="#">
+<p class="text-xs font-medium text-on-surface mb-1 group-hover:text-indigo-400">Clinical Phase II Sync</p>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">timer</span> 1d ago
+                        </p>
+</a>
+<a class="block p-3 rounded-xl hover:bg-surface-container transition-all group" href="#">
+<p class="text-xs font-medium text-on-surface mb-1 group-hover:text-indigo-400">Initial Setup Prompt</p>
+<p class="text-[10px] text-zinc-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">timer</span> 1d ago
+                        </p>
+</a>
+</div>
+</div>
+<div class="p-6 bg-gradient-to-t from-zinc-950 to-transparent">
+<div class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+<p class="text-[10px] font-bold text-indigo-400 mb-1 uppercase tracking-widest">Upgrade to Ultra</p>
+<p class="text-[11px] text-zinc-400 mb-3">Unlock unlimited buckets and real-time live-web syncing.</p>
+<button class="w-full py-2 bg-indigo-500 text-white rounded-lg text-[11px] font-bold hover:bg-indigo-600 transition-colors">
+                        View Pricing
+                    </button>
+</div>
+</div>
+</aside>
+</main>
+</body></html>

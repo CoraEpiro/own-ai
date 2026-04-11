@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "tertiary-fixed": "#ffd6fd",
+                  "outline-variant": "#464554",
+                  "surface-dim": "#131313",
+                  "tertiary": "#fbabff",
+                  "background": "#131313",
+                  "on-tertiary": "#580065",
+                  "on-primary-fixed-variant": "#2f2ebe",
+                  "inverse-surface": "#e5e2e1",
+                  "surface-bright": "#3a3939",
+                  "surface": "#131313",
+                  "secondary-fixed": "#e9ddff",
+                  "on-error": "#690005",
+                  "on-primary-fixed": "#07006c",
+                  "surface-container-high": "#2a2a2a",
+                  "on-primary-container": "#0d0096",
+                  "outline": "#908fa0",
+                  "tertiary-fixed-dim": "#fbabff",
+                  "surface-variant": "#353534",
+                  "tertiary-container": "#e14ef6",
+                  "secondary-fixed-dim": "#d0bcff",
+                  "inverse-on-surface": "#313030",
+                  "on-surface-variant": "#c7c4d7",
+                  "on-secondary-fixed": "#23005c",
+                  "primary": "#c0c1ff",
+                  "surface-container-low": "#1c1b1b",
+                  "surface-tint": "#c0c1ff",
+                  "on-secondary": "#3c0091",
+                  "on-tertiary-fixed": "#36003e",
+                  "secondary-container": "#571bc1",
+                  "surface-container": "#201f1f",
+                  "on-primary": "#1000a9",
+                  "on-background": "#e5e2e1",
+                  "primary-fixed-dim": "#c0c1ff",
+                  "on-tertiary-container": "#4d0059",
+                  "inverse-primary": "#494bd6",
+                  "secondary": "#d0bcff",
+                  "on-error-container": "#ffdad6",
+                  "primary-fixed": "#e1e0ff",
+                  "on-secondary-container": "#c4abff",
+                  "surface-container-highest": "#353534",
+                  "surface-container-lowest": "#0e0e0e",
+                  "primary-container": "#8083ff",
+                  "error-container": "#93000a",
+                  "on-tertiary-fixed-variant": "#7c008e",
+                  "on-surface": "#e5e2e1",
+                  "error": "#ffb4ab",
+                  "on-secondary-fixed-variant": "#5516be"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "fontFamily": {
+                  "headline": ["Sora"],
+                  "body": ["Inter"],
+                  "label": ["Inter"],
+                  "mono": ["JetBrains Mono"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .brand-gradient {
+      background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+    }
+    .brand-text-gradient {
+      background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .glass-effect {
+      background: rgba(53, 53, 52, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animated-bg {
+      background-size: 200% 200%;
+      animation: gradient-shift 15s ease infinite;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary/30 min-h-screen flex flex-col overflow-hidden">
+<!-- Suppression Check: Navigation hidden for Linear Onboarding Flow -->
+<main class="relative flex-grow flex flex-col items-center justify-center animated-bg brand-gradient p-6">
+<!-- Ambient Overlay for Tonal Depth -->
+<div class="absolute inset-0 bg-surface-container-lowest/40 pointer-events-none"></div>
+<!-- Step Indicator (Floating Top) -->
+<div class="absolute top-12 left-0 w-full flex justify-center px-8">
+<div class="flex items-center gap-3 glass-effect px-5 py-2.5 rounded-full shadow-2xl">
+<div class="w-2.5 h-2.5 rounded-full brand-gradient shadow-[0_0_12px_rgba(99,102,241,0.6)]"></div>
+<div class="w-2 h-2 rounded-full bg-on-surface/20"></div>
+<div class="w-2 h-2 rounded-full bg-on-surface/20"></div>
+<div class="w-2 h-2 rounded-full bg-on-surface/20"></div>
+<span class="ml-2 font-mono text-[10px] tracking-widest text-on-surface/60 uppercase">Step 1 of 4</span>
+</div>
+</div>
+<!-- Content Canvas -->
+<div class="relative z-10 flex flex-col items-center max-w-2xl w-full text-center">
+<!-- Center Branding Anchor -->
+<div class="mb-12 group cursor-default">
+<div class="relative">
+<div class="absolute inset-0 blur-3xl opacity-30 brand-gradient rounded-full scale-150"></div>
+<div class="relative bg-surface-container-lowest/80 p-8 rounded-[2rem] border border-white/10 shadow-2xl backdrop-blur-md">
+<span class="material-symbols-outlined text-7xl brand-text-gradient" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+</div>
+<div class="mt-8">
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-4">
+            Own AI
+          </h1>
+</div>
+</div>
+<!-- Welcome Message -->
+<div class="space-y-6">
+<h2 class="font-headline text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+          Welcome to Own AI, Denis!
+        </h2>
+<p class="text-lg md:text-xl text-white/80 font-body leading-relaxed max-w-md mx-auto">
+          You have <span class="text-white font-semibold">€2.00</span> in free credits. Let's get you set up in 30 seconds.
+        </p>
+</div>
+<!-- Free Credit Badge -->
+<div class="mt-8 flex items-center justify-center">
+<div class="glass-effect px-4 py-2 rounded-xl border border-white/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm">auto_awesome</span>
+<span class="font-mono text-xs text-on-surface-variant tracking-wider uppercase">Promotional Balance Active</span>
+</div>
+</div>
+</div>
+<!-- Actions Footer -->
+<div class="absolute bottom-12 left-0 w-full flex justify-center px-6">
+<button class="w-full max-w-xs group relative flex items-center justify-center gap-3 px-8 py-5 rounded-2xl brand-gradient text-white font-headline font-bold text-lg shadow-[0_10px_40px_-10px_rgba(99,102,241,0.5)] transition-all duration-300 hover:scale-[1.02] active:scale-95 overflow-hidden">
+<!-- Shine Effect -->
+<div class="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:left-full transition-all duration-700 ease-in-out"></div>
+<span>Next</span>
+<span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+</div>
+<!-- Decorative Elements (Asymmetric) -->
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full"></div>
+<div class="absolute -bottom-24 -right-24 w-96 h-96 bg-fuchsia-500/10 blur-[120px] rounded-full"></div>
+</main>
+<!-- SideNavBar Reference from JSON (Hidden during Welcome state as per Suppression Logic) -->
+<aside aria-hidden="true" class="hidden">
+<!-- 
+      Shared Component Structure: 
+      tab_labels: ["Welcome", "Model Selection", "Instructions", "Finalize"]
+      tab_icons: ["rocket_launch", "Psychology", "edit_note", "auto_awesome"]
+    -->
+</aside>
+</body></html>

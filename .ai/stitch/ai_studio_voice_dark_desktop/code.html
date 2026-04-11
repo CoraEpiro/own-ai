@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Studio - Voice &amp; Audio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Sora:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#571bc1",
+                    "tertiary-fixed-dim": "#fbabff",
+                    "on-tertiary-container": "#4d0059",
+                    "on-primary-fixed": "#07006c",
+                    "on-primary": "#1000a9",
+                    "secondary-fixed": "#e9ddff",
+                    "outline": "#908fa0",
+                    "on-surface-variant": "#c7c4d7",
+                    "surface-container": "#201f1f",
+                    "on-tertiary": "#580065",
+                    "primary-fixed": "#e1e0ff",
+                    "surface-dim": "#131313",
+                    "primary-container": "#8083ff",
+                    "surface-tint": "#c0c1ff",
+                    "on-tertiary-fixed": "#36003e",
+                    "surface-container-highest": "#353534",
+                    "on-error": "#690005",
+                    "on-background": "#e5e2e1",
+                    "on-primary-fixed-variant": "#2f2ebe",
+                    "outline-variant": "#464554",
+                    "surface-variant": "#353534",
+                    "on-secondary-container": "#c4abff",
+                    "on-secondary": "#3c0091",
+                    "inverse-primary": "#494bd6",
+                    "error-container": "#93000a",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary-fixed-variant": "#7c008e",
+                    "tertiary-container": "#e14ef6",
+                    "tertiary-fixed": "#ffd6fd",
+                    "background": "#131313",
+                    "tertiary": "#fbabff",
+                    "on-surface": "#e5e2e1",
+                    "secondary": "#d0bcff",
+                    "primary-fixed-dim": "#c0c1ff",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-fixed": "#23005c",
+                    "inverse-on-surface": "#313030",
+                    "surface-bright": "#3a3939",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "inverse-surface": "#e5e2e1",
+                    "on-primary-container": "#0d0096",
+                    "primary": "#c0c1ff",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "surface": "#131313",
+                    "error": "#ffb4ab"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "16px",
+                    "xl": "24px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Sora", "Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["JetBrains Mono"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF);
+        }
+        .brand-text-gradient {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #D946EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tonal-layering {
+            background: #1c1b1b;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container/30">
+<!-- Sidebar (Shared Component: SideNavBar) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col bg-zinc-900/50 backdrop-blur-xl h-screen w-64 border-r border-zinc-800/20 shadow-[40px_0_80px_-20px_rgba(99,102,241,0.08)] z-50">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl brand-gradient flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">electric_bolt</span>
+</div>
+<div>
+<h1 class="text-xl font-bold bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent font-headline tracking-tight">AI Studio</h1>
+<p class="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">The Luminescent Curator</p>
+</div>
+</div>
+<nav class="flex-1 px-4 py-6 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 rounded-lg active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Instructions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 rounded-lg active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Memory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 rounded-lg active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Knowledge Buckets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-indigo-500/10 to-transparent text-indigo-400 border-r-2 border-indigo-500 transition-all duration-300 rounded-lg active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">record_voice_over</span>
+<span class="font-['Plus_Jakarta_Sans'] tracking-tight">Voice Settings</span>
+</a>
+</nav>
+<div class="px-4 mb-6">
+<button class="w-full py-3 brand-gradient text-white font-semibold rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/20 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="text-sm">New Experiment</span>
+</button>
+</div>
+<div class="px-4 py-6 border-t border-zinc-800/20 space-y-2">
+<div class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-['Plus_Jakarta_Sans']">Settings</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-300 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">help</span>
+<span class="text-sm font-['Plus_Jakarta_Sans']">Support</span>
+</div>
+</div>
+</aside>
+<!-- Header (Shared Component: TopNavBar) -->
+<header class="fixed left-64 top-0 right-0 h-16 bg-zinc-950/40 backdrop-blur-md flex items-center justify-between px-8 z-40 border-b border-zinc-800/10">
+<div class="flex items-center gap-8">
+<span class="font-headline text-lg font-bold text-indigo-400">Studio Dashboard</span>
+<nav class="flex items-center gap-6">
+<a class="text-zinc-400 hover:text-fuchsia-400 transition-colors font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">Models</a>
+<a class="text-zinc-400 hover:text-fuchsia-400 transition-colors font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">Datasets</a>
+<a class="text-zinc-400 hover:text-fuchsia-400 transition-colors font-['Plus_Jakarta_Sans'] text-sm font-medium" href="#">Deployments</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-500 text-sm">search</span>
+<input class="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-1.5 text-xs w-64 focus:ring-1 focus:ring-indigo-500 text-on-surface" placeholder="Search experiments..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-zinc-400 hover:text-on-surface transition-colors">notifications</button>
+<div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a stylish creative professional man with short dark hair and a thoughtful expression in studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDN_HArqP5HQl6hshU3JGFsUjTvXI6Gt1U-ivT_Ps_VpDxJ97TvwMwubsaJ-HmtcMRmSgwotrhNYCpdKGf14_GMdcCcZKh9fnukHaCtyf9t0ooqDslR3RWudev9G33ns3Su92NQ_SAbjWQJQdmrCzB9g5esZLYZ5cuXE2cLeJG8JpPS6-mj15E0v9lFnAKWIOtQcj1AFHfd7KWP-OvCNN3lgYRCa96fBMjOnFLWHnd8K4zdpyLen8IUhVzfO7ZZBrkQQZJAtMYh-ia-"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-64 pt-24 pb-12 px-12 min-h-screen">
+<div class="max-w-6xl mx-auto grid grid-cols-12 gap-8">
+<!-- Left Column: Content -->
+<div class="col-span-8 space-y-10">
+<header>
+<h2 class="text-[3.5rem] font-headline font-bold tracking-tighter text-on-surface leading-tight">Voice mode settings</h2>
+<p class="text-on-surface-variant max-w-lg mt-4 text-lg">Fine-tune your AI's vocal personality. Select from our high-fidelity synthetic voices or switch between specialized audio models.</p>
+</header>
+<!-- Voice Selection Section -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-headline font-semibold text-indigo-400 flex items-center gap-2">
+<span class="material-symbols-outlined">waves</span>
+                            Voice Selection
+                        </h3>
+<span class="text-xs font-label text-zinc-500">6 Voices Available</span>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<!-- Voice Card: Alloy -->
+<div class="glass-card p-5 rounded-lg border-primary-container ring-1 ring-primary-container shadow-2xl shadow-primary-container/10 relative group cursor-pointer transition-all hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+<div class="w-6 h-6 rounded-full brand-gradient flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[14px]">check</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1">Alloy</h4>
+<p class="text-xs text-on-surface-variant mb-4">Balanced &amp; versatile</p>
+<button class="w-full py-2 bg-zinc-800/80 hover:bg-zinc-700/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+<!-- Voice Card: Ash -->
+<div class="glass-card p-5 rounded-lg border-zinc-800/50 hover:border-indigo-500/50 transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 group-hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1 text-zinc-300">Ash</h4>
+<p class="text-xs text-on-surface-variant mb-4">Cool &amp; measured</p>
+<button class="w-full py-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+<!-- Voice Card: Nova -->
+<div class="glass-card p-5 rounded-lg border-zinc-800/50 hover:border-indigo-500/50 transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 group-hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1 text-zinc-300">Nova</h4>
+<p class="text-xs text-on-surface-variant mb-4">Energetic &amp; bright</p>
+<button class="w-full py-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+<!-- Voice Card: Shimmer -->
+<div class="glass-card p-5 rounded-lg border-zinc-800/50 hover:border-indigo-500/50 transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 group-hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1 text-zinc-300">Shimmer</h4>
+<p class="text-xs text-on-surface-variant mb-4">Smooth &amp; depth-rich</p>
+<button class="w-full py-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+<!-- Voice Card: Echo -->
+<div class="glass-card p-5 rounded-lg border-zinc-800/50 hover:border-indigo-500/50 transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 group-hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1 text-zinc-300">Echo</h4>
+<p class="text-xs text-on-surface-variant mb-4">Professional &amp; clear</p>
+<button class="w-full py-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+<!-- Voice Card: Fable -->
+<div class="glass-card p-5 rounded-lg border-zinc-800/50 hover:border-indigo-500/50 transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 group-hover:text-indigo-400 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_play</span>
+</div>
+</div>
+<h4 class="text-lg font-bold font-headline mb-1 text-zinc-300">Fable</h4>
+<p class="text-xs text-on-surface-variant mb-4">Narrative &amp; expressive</p>
+<button class="w-full py-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-on-surface text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                                Preview
+                            </button>
+</div>
+</div>
+</section>
+<!-- Voice Model Section -->
+<section class="space-y-6">
+<h3 class="text-xl font-headline font-semibold text-indigo-400 flex items-center gap-2">
+<span class="material-symbols-outlined">settings_input_component</span>
+                        Audio Processing Model
+                    </h3>
+<div class="grid grid-cols-3 gap-4">
+<label class="relative cursor-pointer">
+<input class="peer sr-only" name="model" type="radio"/>
+<div class="glass-card p-5 rounded-lg border border-zinc-800/50 peer-checked:border-indigo-500 peer-checked:bg-indigo-500/5 transition-all">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] text-zinc-400 uppercase tracking-widest">Realtime</span>
+<span class="w-4 h-4 border-2 border-zinc-700 rounded-full flex items-center justify-center peer-checked:border-indigo-500">
+<span class="w-2 h-2 rounded-full bg-indigo-500 hidden peer-checked:block"></span>
+</span>
+</div>
+<div class="font-bold mb-1">GPT Realtime Mini</div>
+<p class="text-[11px] text-zinc-500 leading-tight">Lowest latency, optimized for quick chats.</p>
+</div>
+</label>
+<label class="relative cursor-pointer">
+<input checked="" class="peer sr-only" name="model" type="radio"/>
+<div class="glass-card p-5 rounded-lg border border-indigo-500 bg-indigo-500/5 transition-all">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] text-indigo-400 uppercase tracking-widest">Balanced</span>
+<span class="w-4 h-4 border-2 border-indigo-500 rounded-full flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+</span>
+</div>
+<div class="font-bold mb-1">Audio 1.5</div>
+<p class="text-[11px] text-zinc-500 leading-tight">High fidelity audio with natural cadence.</p>
+</div>
+</label>
+<label class="relative cursor-pointer">
+<input class="peer sr-only" name="model" type="radio"/>
+<div class="glass-card p-5 rounded-lg border border-zinc-800/50 peer-checked:border-indigo-500 peer-checked:bg-indigo-500/5 transition-all">
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] text-zinc-400 uppercase tracking-widest">Production</span>
+<span class="w-4 h-4 border-2 border-zinc-700 rounded-full flex items-center justify-center">
+<span class="w-2 h-2 rounded-full bg-indigo-500 hidden"></span>
+</span>
+</div>
+<div class="font-bold mb-1">Audio Pro</div>
+<p class="text-[11px] text-zinc-500 leading-tight">Lossless quality for studio output.</p>
+</div>
+</label>
+</div>
+</section>
+<!-- PDF to Audio Configuration -->
+<section class="space-y-6">
+<h3 class="text-xl font-headline font-semibold text-indigo-400 flex items-center gap-2">
+<span class="material-symbols-outlined">description</span>
+                        PDF to Audio Output Defaults
+                    </h3>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-2 rounded-full brand-gradient text-white text-sm font-semibold shadow-lg shadow-indigo-500/20">Summary</button>
+<button class="px-6 py-2 rounded-full bg-zinc-800/80 text-zinc-400 text-sm font-medium hover:bg-zinc-700/80 transition-colors">Narration</button>
+<button class="px-6 py-2 rounded-full bg-zinc-800/80 text-zinc-400 text-sm font-medium hover:bg-zinc-700/80 transition-colors">Podcast</button>
+</div>
+</section>
+<!-- Save Action -->
+<div class="pt-8 flex items-center gap-4">
+<button class="px-10 py-4 brand-gradient rounded-xl font-bold text-white shadow-2xl shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all">
+                        Save voice settings
+                    </button>
+<button class="px-8 py-4 bg-transparent text-zinc-500 font-medium hover:text-zinc-300 transition-colors">
+                        Reset to default
+                    </button>
+</div>
+</div>
+<!-- Right Column: Sidebar / History -->
+<div class="col-span-4 space-y-8">
+<div class="glass-card rounded-xl p-6 h-fit sticky top-24">
+<div class="flex items-center justify-between mb-8">
+<h4 class="font-headline font-bold text-lg">Voice History</h4>
+<span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-indigo-400 transition-colors">more_vert</span>
+</div>
+<div class="space-y-6">
+<div class="group cursor-pointer">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex-shrink-0 flex items-center justify-center text-indigo-400">
+<span class="material-symbols-outlined text-sm">mic</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="text-sm font-bold text-zinc-200">Financial Report 2024</h5>
+<span class="text-[10px] font-label text-zinc-600">2h ago</span>
+</div>
+<p class="text-xs text-zinc-500 line-clamp-1">Narrated with Alloy • 12:45 duration</p>
+</div>
+</div>
+<div class="ml-14 mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300">Play</button>
+<button class="text-[10px] font-bold text-zinc-600 hover:text-zinc-400">Download</button>
+</div>
+</div>
+<div class="group cursor-pointer">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 rounded-lg bg-zinc-900/50 flex-shrink-0 flex items-center justify-center text-zinc-600">
+<span class="material-symbols-outlined text-sm">description</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="text-sm font-bold text-zinc-400">Podcast Script: AI ethics</h5>
+<span class="text-[10px] font-label text-zinc-600">Yesterday</span>
+</div>
+<p class="text-xs text-zinc-600 line-clamp-1">Narrated with Nova • 05:22 duration</p>
+</div>
+</div>
+</div>
+<div class="group cursor-pointer">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 rounded-lg bg-zinc-900/50 flex-shrink-0 flex items-center justify-center text-zinc-600">
+<span class="material-symbols-outlined text-sm">history_edu</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="text-sm font-bold text-zinc-400">Q3 Product Demo</h5>
+<span class="text-[10px] font-label text-zinc-600">Oct 14</span>
+</div>
+<p class="text-xs text-zinc-600 line-clamp-1">Narrated with Shimmer • 02:10 duration</p>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-10 py-3 border border-zinc-800/50 rounded-lg text-xs font-semibold text-zinc-500 hover:bg-zinc-800/30 transition-all flex items-center justify-center gap-2">
+                        View full archive
+                        <span class="material-symbols-outlined text-[16px]">arrow_right_alt</span>
+</button>
+</div>
+<!-- Model Stats -->
+<div class="glass-card rounded-xl p-6 space-y-4">
+<h4 class="font-headline font-bold text-sm text-zinc-400 uppercase tracking-widest">System Usage</h4>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-[11px] mb-1.5">
+<span class="text-zinc-500">Audio Tokens</span>
+<span class="text-zinc-300">8.4k / 50k</span>
+</div>
+<div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+<div class="w-[16.8%] h-full brand-gradient"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[11px] mb-1.5">
+<span class="text-zinc-500">Storage</span>
+<span class="text-zinc-300">1.2 GB</span>
+</div>
+<div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+<div class="w-[45%] h-full bg-zinc-700"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

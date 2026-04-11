@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#fbabff",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-container": "#4d0059",
+                        "surface": "#131313",
+                        "primary-container": "#8083ff",
+                        "inverse-primary": "#494bd6",
+                        "tertiary-fixed": "#ffd6fd",
+                        "surface-container": "#201f1f",
+                        "on-tertiary-fixed": "#36003e",
+                        "secondary-fixed": "#e9ddff",
+                        "background": "#0A0A0A",
+                        "surface-dim": "#131313",
+                        "on-secondary-container": "#c4abff",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-variant": "#353534",
+                        "on-tertiary": "#580065",
+                        "primary": "#c0c1ff",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "outline-variant": "#464554",
+                        "on-primary-fixed": "#07006c",
+                        "error-container": "#93000a",
+                        "on-secondary": "#3c0091",
+                        "secondary-container": "#571bc1",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary": "#d0bcff",
+                        "on-surface": "#e5e2e1",
+                        "on-error": "#690005",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "tertiary": "#fbabff",
+                        "on-primary": "#1000a9",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-tint": "#c0c1ff",
+                        "on-tertiary-fixed-variant": "#7c008e",
+                        "on-surface-variant": "#c7c4d7",
+                        "on-secondary-fixed": "#23005c",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-container": "#e14ef6",
+                        "on-primary-container": "#0d0096",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#908fa0",
+                        "error": "#ffb4ab",
+                        "on-background": "#e5e2e1",
+                        "surface-container-highest": "#353534",
+                        "primary-fixed": "#e1e0ff",
+                        "secondary-fixed-dim": "#d0bcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Sora", "Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .brand-gradient-text {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-gradient-bg {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #D946EF 100%);
+        }
+        .glass-card {
+            background: rgba(53, 53, 52, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen flex flex-col items-center selection:bg-primary/30">
+<!-- Top Navigation Anchor (Suppressing shell links per "Destination Rule") -->
+<header class="fixed top-0 w-full z-50 flex justify-center items-center px-8 py-8 w-full bg-transparent">
+<div class="text-2xl font-bold tracking-tighter brand-gradient-text font-headline">Own AI</div>
+</header>
+<main class="w-full max-w-md px-6 pt-32 pb-12 flex flex-col items-center">
+<!-- Hero Branding Section -->
+<div class="text-center mb-10">
+<h1 class="text-3xl font-headline font-bold text-on-surface tracking-tight mb-2">Welcome back</h1>
+<p class="text-on-surface-variant font-body text-sm">All the AI. None of the waste.</p>
+</div>
+<!-- Auth Toggle -->
+<div class="w-full p-1 bg-surface-container-low rounded-full flex mb-8">
+<button class="flex-1 py-2.5 text-sm font-medium rounded-full bg-surface-container-high text-on-surface shadow-sm transition-all duration-200">Log in</button>
+<button class="flex-1 py-2.5 text-sm font-medium rounded-full text-on-surface-variant hover:text-on-surface transition-all duration-200">Sign up</button>
+</div>
+<!-- Login Form -->
+<form class="w-full space-y-4">
+<div class="space-y-1.5">
+<label class="block text-[10px] uppercase tracking-widest font-mono text-outline font-medium px-1" for="email">Email Address</label>
+<input class="w-full px-4 py-3.5 bg-surface-container-highest border-none rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-primary transition-all duration-200" id="email" placeholder="name@company.com" type="email"/>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between items-center px-1">
+<label class="block text-[10px] uppercase tracking-widest font-mono text-outline font-medium" for="password">Password</label>
+<a class="text-[10px] uppercase tracking-widest font-mono text-primary hover:text-primary-container transition-colors" href="#">Forgot?</a>
+</div>
+<input class="w-full px-4 py-3.5 bg-surface-container-highest border-none rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-primary transition-all duration-200" id="password" placeholder="••••••••" type="password"/>
+</div>
+<button class="w-full py-4 mt-4 brand-gradient-bg text-white font-headline font-bold rounded-xl shadow-lg shadow-indigo-500/20 active:scale-95 transition-transform duration-200" type="submit">
+                Continue
+            </button>
+</form>
+<!-- Divider -->
+<div class="w-full flex items-center gap-4 my-8">
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+<span class="text-[10px] font-mono uppercase tracking-widest text-outline">OR CONTINUE WITH</span>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+</div>
+<!-- OAuth Options -->
+<div class="w-full grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 py-3.5 px-4 bg-surface-container rounded-xl hover:bg-surface-container-high active:scale-95 transition-all duration-200 border border-outline-variant/10">
+<img alt="Google" class="w-5 h-5 grayscale opacity-80" data-alt="clean geometric google logo icon on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5WZFfw57HZoxuSy9H4H1Z0KT0dEuJ0ZTBiznSa2KmJKosEmENjwtVOy_hNKs0IEPr-QG9__IWWi344yh-1ZJH9jzjZj2eaKWTXpIVe_ZWoh8p9tbbjytYydMki1lhT3ETHjoR3aYPcuGK--xCxV3O386M3Mfary1-y0ZTPm8te8-xwCuPbDtA_Bjii3EwfzfDHs3CFshFWJk841gFPB8rpukYMtK_6Vzulm6V3fGiIPt9LfTlb-5c79_Zz45Cv6hZ_sJaWnUb-cq_"/>
+<span class="text-sm font-medium">Google</span>
+</button>
+<button class="flex items-center justify-center gap-3 py-3.5 px-4 bg-surface-container rounded-xl hover:bg-surface-container-high active:scale-95 transition-all duration-200 border border-outline-variant/10">
+<span class="material-symbols-outlined text-xl" data-icon="terminal">terminal</span>
+<span class="text-sm font-medium">Github</span>
+</button>
+</div>
+<!-- Featured Decorative Element (Luminescent Curator aesthetic) -->
+<div class="mt-16 w-full glass-card p-6 rounded-2xl relative overflow-hidden">
+<div class="absolute -top-12 -right-12 w-32 h-32 brand-gradient-bg opacity-10 blur-3xl rounded-full"></div>
+<div class="flex items-start gap-4">
+<div class="p-2 bg-primary/10 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h4 class="text-sm font-headline font-bold text-on-surface mb-1">Enterprise Grade Security</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Your data is never used for training. Private models, public performance.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Anchor -->
+<footer class="mt-auto w-full flex justify-between items-center px-8 py-8 bg-transparent">
+<div class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">© 2024 Own AI</div>
+<div class="flex gap-4">
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-600 hover:text-indigo-400 transition-colors" href="#">Privacy</a>
+<a class="font-mono text-[10px] uppercase tracking-widest text-zinc-600 hover:text-indigo-400 transition-colors" href="#">Support</a>
+</div>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+<div class="absolute top-[10%] left-[10%] w-[40%] h-[40%] brand-gradient-bg opacity-[0.03] blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[5%] right-[5%] w-[30%] h-[30%] brand-gradient-bg opacity-[0.02] blur-[100px] rounded-full"></div>
+</div>
+</body></html>
