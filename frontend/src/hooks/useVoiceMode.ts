@@ -149,7 +149,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     const boundaryLooksWordJoin = /[A-Za-z0-9]/.test(prevLast) && /[A-Za-z0-9]/.test(deltaFirst);
     const needsSpace = boundaryLooksWordJoin && !/\s/.test(prevLast) && !/\s/.test(deltaFirst);
     return needsSpace ? `${prev} ${delta}` : `${prev}${delta}`;
-  }, []);
+  }, [cleanVoiceText]);
 
   // ── Audio Playback ──────────────────────────────────────
 
@@ -435,7 +435,7 @@ export function useVoiceMode(): UseVoiceModeReturn {
     } catch {
       // Non-JSON message, ignore
     }
-  }, [playAudioChunk, saveTurn, interruptPlayback, mergeTranscriptDelta, normalizeVoiceFinalText]);
+  }, [playAudioChunk, saveTurn, interruptPlayback, mergeTranscriptDelta, normalizeVoiceFinalText, state]);
 
   // ── Connect ─────────────────────────────────────────────
 

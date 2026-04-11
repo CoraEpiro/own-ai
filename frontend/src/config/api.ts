@@ -1,24 +1,23 @@
 // API configuration for different environments
-// Check if we're in development mode
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isDevelopment = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
-// Base URL for API calls
-// In development: use local backend
-// In production: use deployed backend URL
-export const API_BASE_URL = isDevelopment 
-  ? 'http://localhost:3001/api'  // Local backend
-  : 'https://own-ai-production.up.railway.app/api'; // Deployed backend
+const developmentBackendOrigin = `${window.location.protocol}//${window.location.hostname}:3001`;
+
+// In development, keep the backend host aligned with the current frontend hostname
+// so local testing works for both localhost and 127.0.0.1 flows.
+export const API_BASE_URL = isDevelopment
+  ? `${developmentBackendOrigin}/api`
+  : 'https://own-ai-production.up.railway.app/api';
 
 // Helper function to get full API URL
 export const getApiUrl = (endpoint: string) => {
   return `${API_BASE_URL}${endpoint}`;
 };
 
-// WebSocket URL helper for real-time features
 export const getWsUrl = (path: string): string => {
   if (isDevelopment) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}${path}`;
+    return `${protocol}//${window.location.hostname}:3001${path}`;
   }
   return `wss://own-ai-production.up.railway.app${path}`;
-}; 
+};

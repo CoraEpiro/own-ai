@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
 import DashboardPage from './pages/DashboardPage';
@@ -57,13 +58,14 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const AppRoutes: React.FC = () => (
   <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
     <Routes>
+      <Route path="/"          element={<PublicRoute><LandingPage /></PublicRoute>} />
       <Route path="/auth"      element={<PublicRoute><AuthPage /></PublicRoute>} />
       <Route path="/chat"      element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/profile"   element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/buckets"   element={<ProtectedRoute><BucketsPage /></ProtectedRoute>} />
       <Route path="/admin"     element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-      <Route path="*"          element={<Navigate to="/chat" replace />} />
+      <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   </div>
 );

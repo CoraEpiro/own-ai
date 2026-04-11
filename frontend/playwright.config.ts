@@ -1,4 +1,9 @@
 import { defineConfig } from '@playwright/test';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const frontendDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(frontendDir, '..');
 
 export default defineConfig({
   testDir: './tests',
@@ -15,12 +20,22 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
-    url: 'http://127.0.0.1:4173/auth',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'npm run dev',
+      cwd: path.join(repoRoot, 'backend'),
+      url: 'http://127.0.0.1:3001/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: 'npm run dev -- --host 127.0.0.1 --port 4173',
+      cwd: frontendDir,
+      url: 'http://127.0.0.1:4173/auth',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
   projects: [
     {
       name: 'desktop',

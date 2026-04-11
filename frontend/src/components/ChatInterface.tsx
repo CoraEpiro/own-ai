@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Send, Bot, Moon, Sun, LogOut, BarChart3,
-  User as UserIcon, Plus, Trash2, ChevronDown, ChevronRight, MessageSquare,
-  Sparkles, Zap, Menu, X, Settings, Brain, Code2, PenLine, GraduationCap, Search,
+  Plus, Trash2, ChevronDown, ChevronRight, MessageSquare,
+  Sparkles, Zap, Menu, X, Settings, PenLine, Search,
   Paperclip, FileText, Image as ImageIcon, FileSpreadsheet, FileCode,
   Upload, File, Mic, MicOff, Globe, Waves,
   FolderPlus, Folder as FolderIcon, FolderOpen, MoreHorizontal, Database, CornerUpLeft,
@@ -25,16 +25,6 @@ const SUGGESTIONS = [
   { icon: Zap, text: 'Write a Python function to sort a list' },
   { icon: MessageSquare, text: 'Brainstorm startup ideas for 2025' },
   { icon: Bot, text: 'Help me plan a weekend trip to Baku' },
-];
-
-// ── Persona presets ──────────────────────────────────────────────────────
-const PERSONAS = [
-  { id: 'default', name: 'Default', icon: Bot, prompt: '', description: 'No custom instructions' },
-  { id: 'coder', name: 'Code Expert', icon: Code2, prompt: 'You are an expert software engineer. Write clean, efficient, well-documented code. Explain your reasoning step by step. Use best practices and modern patterns.', description: 'Clean code & best practices' },
-  { id: 'writer', name: 'Writing Assistant', icon: PenLine, prompt: 'You are a professional writing assistant. Help with grammar, style, tone, and structure. Be constructive and specific in your feedback. Offer alternatives when suggesting changes.', description: 'Grammar, style & structure' },
-  { id: 'math', name: 'Math Tutor', icon: GraduationCap, prompt: 'You are a patient math tutor. Explain concepts step by step using clear notation. Use LaTeX for formulas (e.g. $x^2$, $$\\int_0^1 f(x) dx$$). Provide examples and check understanding.', description: 'Step-by-step math explanations' },
-  { id: 'analyst', name: 'Research Analyst', icon: Search, prompt: 'You are a thorough research analyst. Provide detailed, well-structured analysis. Consider multiple perspectives and cite sources when possible. Be objective and data-driven.', description: 'In-depth analysis & research' },
-  { id: 'brain', name: 'Reasoning Mode', icon: Brain, prompt: 'You are an advanced reasoning assistant. Think step by step through every problem. Break complex questions into sub-problems. Show your chain of thought explicitly before giving final answers.', description: 'Chain-of-thought reasoning' },
 ];
 
 // ── File type helpers ─────────────────────────────────────────────────────
@@ -226,16 +216,17 @@ const ChatInterface: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState(() => normalizeModelId(localStorage.getItem('selected-model') || 'auto'));
   const [models, setModels] = useState<LLMModel[]>([]);
-  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  const [darkMode, setDarkMode] = useState(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme) return storedTheme === 'dark';
+    return document.documentElement.classList.contains('dark');
+  });
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showSidebarModelSelector, setShowSidebarModelSelector] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
-  const [modelLoadError, setModelLoadError] = useState<string | null>(null);
   const [systemPrompt, setSystemPrompt] = useState('');
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState('default');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -254,7 +245,6 @@ const ChatInterface: React.FC = () => {
   const [pdfAudioJobs, setPdfAudioJobs] = useState<PdfAudioJob[]>([]);
   const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
   const [showPdfConfirm, setShowPdfConfirm] = useState(false);
-  const [ttsVoice, setTtsVoice] = useState(() => localStorage.getItem('tts-voice') || 'nova');
   // Search Modes
   const [searchMode, setSearchMode] = useState<'auto' | 'human' | 'pre_ai' | 'custom'>('auto');
   const [showSearchOptions, setShowSearchOptions] = useState(false);
@@ -361,7 +351,6 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        setModelLoadError(null);
         const { data } = await axios.get(getApiUrl('/models'));
         setModels(data.models);
         if (data.models.length > 0) {
@@ -373,11 +362,10 @@ const ChatInterface: React.FC = () => {
           }
         }
       } catch {
-        setModelLoadError('Failed to load models.');
         setModels([]);
       }
     })();
-  }, []);
+  }, [selectedModel]);
 
   // ── Load conversations, folders, buckets ────────────────────────────────
   useEffect(() => {
@@ -393,7 +381,7 @@ const ChatInterface: React.FC = () => {
         setAvailableBuckets(bucketRes.data);
       } catch { /* silent */ }
     })();
-  }, []);
+  }, [authHeaders]);
 
   // ── Load today's cost ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -411,7 +399,7 @@ const ChatInterface: React.FC = () => {
       } catch { /* silent */ }
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [authHeaders]);
 
   // ── Load conversation cost ─────────────────────────────────────────────────
   useEffect(() => {
@@ -425,7 +413,7 @@ const ChatInterface: React.FC = () => {
         setCurrentChatCost(data.cost || 0);
       } catch { /* silent */ }
     })();
-  }, [currentConversationId]);
+  }, [authHeaders, currentConversationId]);
 
   // ── Get model recommendation as user types ────────────────────────────────
   useEffect(() => {
@@ -451,7 +439,7 @@ const ChatInterface: React.FC = () => {
     }, 800); // Debounce 800ms
 
     return () => clearTimeout(timer);
-  }, [input, pendingFiles, messages, selectedModel]);
+  }, [authHeaders, input, messages, pendingFiles, selectedModel]);
 
   useEffect(() => {
     localStorage.setItem('selected-model', normalizeModelId(selectedModel));
@@ -727,7 +715,12 @@ const ChatInterface: React.FC = () => {
 
       if (!response.ok) {
         let errMsg = `Server error (${response.status})`;
-        try { const errBody = await response.json(); errMsg = errBody.error || errMsg; } catch {}
+        try {
+          const errBody = await response.json();
+          errMsg = errBody.error || errMsg;
+        } catch {
+          // Some failed responses do not include a JSON body.
+        }
         throw new Error(errMsg);
       }
       if (!response.body) throw new Error('No response body');
@@ -777,7 +770,9 @@ const ChatInterface: React.FC = () => {
               fullText += content;
               scheduleTypewriter(assistantId, content);
             }
-          } catch {}
+          } catch {
+            // Ignore partial SSE frames until the next chunk completes them.
+          }
         }
       }
 
@@ -813,7 +808,9 @@ const ChatInterface: React.FC = () => {
           const { data: convCostData } = await axios.get(getApiUrl(`/dashboard/conversation-cost/${convId}`), { headers: authHeaders });
           setCurrentChatCost(convCostData.cost || 0);
         }
-      } catch {}
+      } catch {
+        // Refreshing sidebar metadata should not interrupt the active chat flow.
+      }
     } catch (error: any) {
       if (typingRafRef.current[assistantId]) {
         cancelAnimationFrame(typingRafRef.current[assistantId]);
@@ -989,8 +986,12 @@ const ChatInterface: React.FC = () => {
   }, [conversations, folders]);
 
   const toggleDarkMode = () => {
-    setDarkMode(d => !d);
-    document.documentElement.classList.toggle('dark');
+    setDarkMode((current) => {
+      const next = !current;
+      document.documentElement.classList.toggle('dark', next);
+      localStorage.setItem('theme', next ? 'dark' : 'light');
+      return next;
+    });
   };
 
   /** Shared conversation item renderer for sidebar (used in both folder and unfiled sections) */
@@ -1044,7 +1045,7 @@ const ChatInterface: React.FC = () => {
 
   const newChat = () => {
     setMessages([]); setInput(''); setCurrentConversationId(null); setMobileSidebar(false);
-    setSystemPrompt(''); setSelectedPersona('default');
+    setSystemPrompt('');
     setPendingFiles([]); setPendingPreviews([]);
     setAttachedBucketIds(new Set());
     setReplyToMessage(null);

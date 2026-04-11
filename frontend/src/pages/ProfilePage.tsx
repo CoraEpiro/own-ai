@@ -1,17 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import { Brain, Check, FileText, Loader2, Mic, Save, Shield, Sparkles, Trash2, User, X } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../config/api';
-import { Save, User, ArrowLeft, Check, Loader2, FileText, Mic, Brain, X, Trash2 } from 'lucide-react';
 import { VOICE_OPTIONS, VoiceId, REALTIME_MODELS, RealtimeModelId } from '../hooks/useVoiceMode';
 import { Memory } from '../types';
+import AppShell from '../components/layout/AppShell';
+import SurfaceCard from '../components/ui/SurfaceCard';
 
 const MAX_BIO_LENGTH = 2000;
 
+const prettifyEmailName = (email?: string | null) => {
+  const localPart = email?.split('@')[0] || 'Own AI user';
+  const cleaned = localPart.replace(/\d+$/, '').trim();
+  const source = cleaned || localPart;
+
+  return source
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
+
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [bio, setBio] = useState('');
   const [originalBio, setOriginalBio] = useState('');
@@ -24,14 +37,16 @@ const ProfilePage: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<RealtimeModelId>(
     () => (localStorage.getItem('voiceMode_model') as RealtimeModelId) || 'gpt-realtime-1.5'
   );
-  // Memories
   const [memories, setMemories] = useState<Memory[]>([]);
   const [memoriesLoading, setMemoriesLoading] = useState(true);
   const [deletingMemoryId, setDeletingMemoryId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
-  const authHeaders = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+  const authHeaders = useMemo(
+    () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` }),
+    []
+  );
 
-  // Fetch bio + memories on mount
   useEffect(() => {
     (async () => {
       try {
@@ -39,17 +54,18 @@ const ProfilePage: React.FC = () => {
           axios.get(getApiUrl('/user/bio'), { headers: authHeaders }).catch(() => ({ data: { bio: '' } })),
           axios.get(getApiUrl('/memories'), { headers: authHeaders }).catch(() => ({ data: [] })),
         ]);
+
         setBio(bioRes.data.bio || '');
         setOriginalBio(bioRes.data.bio || '');
         setMemories(memRes.data || []);
       } catch {
-        // fallback
+        toast.error('Failed to load your settings');
       } finally {
         setLoading(false);
         setMemoriesLoading(false);
       }
     })();
-  }, []);
+  }, [authHeaders]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -57,76 +73,158 @@ const ProfilePage: React.FC = () => {
       await axios.put(
         getApiUrl('/user/bio'),
         { bio: bio.trim() },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: authHeaders }
       );
       setOriginalBio(bio.trim());
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success('Settings saved');
+      window.setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to save');
+      toast.error(err?.response?.data?.error || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-  };
-
   const hasChanges = bio.trim() !== originalBio;
+  const displayName = useMemo(() => prettifyEmailName(user?.email), [user?.email]);
+  const initials = useMemo(
+    () =>
+      displayName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('') || 'OA',
+    [displayName]
+  );
+  const profileSegments = ['Profile', 'Billing & Usage', 'Security'];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/chat')}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Settings</h1>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+    <AppShell
+      eyebrow="Personal controls"
+      title="Settings"
+      description="Manage your identity, reusable instructions, memory, and voice defaults across the Own AI workspace."
+      contentWidth="wide"
+      contentClassName="space-y-6 lg:space-y-8"
+    >
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="settings-segment w-fit flex-wrap">
+          {profileSegments.map((segment, index) => (
+            <span
+              key={segment}
+              className={`settings-segment-chip ${index === 0 ? 'settings-segment-chip-active' : ''}`}
             >
-              Logout
-            </button>
-          </div>
+              {segment}
+            </span>
+          ))}
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          Synced across web, desktop, and voice sessions
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        {/* User Info */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            <h2 className="text-base font-medium text-gray-900 dark:text-white">Account</h2>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Email</label>
-            <p className="text-sm text-gray-900 dark:text-gray-100">{user?.email || '—'}</p>
-          </div>
-        </div>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <SurfaceCard className="xl:col-span-8 overflow-hidden !p-0">
+          <div className="relative overflow-hidden rounded-[inherit]">
+            <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.3),_transparent_60%),radial-gradient(circle_at_top_right,_rgba(217,70,239,0.22),_transparent_55%)]" />
+            <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[auto,1fr] lg:items-center">
+              <div className="flex flex-col items-start gap-4">
+                <div className="flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-brand-gradient text-2xl font-bold text-white shadow-glow-sm">
+                  {initials}
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(99,102,241,0.18)] bg-[rgba(99,102,241,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-primary)]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Active workspace profile
+                </div>
+              </div>
 
-        {/* Custom Instructions */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <div className="flex items-center space-x-3 mb-1">
-            <FileText className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            <h2 className="text-base font-medium text-gray-900 dark:text-white">Custom Instructions</h2>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 ml-8">
-            This information is shared with all your chats to personalize responses.
-          </p>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+                    Profile overview
+                  </p>
+                  <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+                    {displayName}
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                    This identity powers your instructions, memory, and voice defaults across the Own AI workspace.
+                  </p>
+                </div>
 
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Email
+                    </p>
+                    <p className="mt-2 truncate text-sm font-medium text-[var(--text-primary)]">{user?.email || '—'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Memory Budget
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{memories.length} / 100 saved items</p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Voice Default
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{selectedVoice}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard
+          className="xl:col-span-4"
+          title="Workspace Status"
+          description="A compact snapshot inspired by the stitched account status cards."
+          icon={<Shield className="h-4 w-4" />}
+        >
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Plan</p>
+                  <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">Pro Workspace</p>
+                </div>
+                <span className="inline-flex items-center rounded-full bg-brand-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                  Active
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                Your preferences apply across chats, analytics, buckets, and voice sessions.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Instruction State</p>
+                <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{hasChanges ? 'Unsaved edits' : 'Synced and current'}</p>
+              </div>
+              <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Realtime Model</p>
+                <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
+                  {REALTIME_MODELS.find((model) => model.id === selectedModel)?.label || selectedModel}
+                </p>
+              </div>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard
+          className="xl:col-span-7"
+          title="Custom Instructions"
+          description="Shared context that shapes tone, formatting, and the way Own AI should respond to you."
+          icon={<FileText className="h-4 w-4" />}
+          actions={<span className="text-xs tabular-nums text-[var(--text-muted)]">{bio.length} / {MAX_BIO_LENGTH}</span>}
+        >
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--text-secondary)]" />
             </div>
           ) : (
             <>
@@ -137,21 +235,21 @@ const ProfilePage: React.FC = () => {
                     setBio(e.target.value);
                   }
                 }}
-                placeholder={`Tell the AI about yourself — your name, role, preferences, how you'd like responses formatted, or anything else you want it to always know...\n\nExamples:\n• My name is Alex, I'm a software engineer\n• I prefer concise, technical answers\n• Always respond in English`}
-                className="w-full h-44 px-4 py-3 rounded-lg border border-gray-200 dark:border-zinc-600 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:ring-blue-400/30 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
+                placeholder={`Tell the AI about yourself — your role, preferred response style, formatting expectations, or anything it should always remember.\n\nExamples:\n• I'm a founder and prefer concise strategic answers\n• Use bullets before long prose\n• Call out risks and tradeoffs clearly`}
+                className="shell-input shell-textarea h-56 text-sm"
               />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                  {bio.length} / {MAX_BIO_LENGTH}
-                </span>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="max-w-xl text-sm leading-6 text-[var(--text-secondary)]">
+                  Changes here will shape replies across all new chats and carry into desktop and voice workflows.
+                </p>
                 <button
                   onClick={handleSave}
                   disabled={!hasChanges || saving}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={
                     hasChanges && !saving
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                      : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  }`}
+                      ? 'btn-gradient justify-center'
+                      : 'inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-[var(--border-default)] bg-[var(--surface-3)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]'
+                  }
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -160,64 +258,92 @@ const ProfilePage: React.FC = () => {
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {saving ? 'Saving...' : saved ? 'Saved!' : 'Save'}
+                  {saving ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}
                 </button>
               </div>
             </>
           )}
-        </div>
-        {/* Memory */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-3">
-              <Brain className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-base font-medium text-gray-900 dark:text-white">Memory</h2>
-            </div>
-            {memories.length > 0 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
-                {memories.length} / 100
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 ml-8">
-            Facts the AI has learned about you from conversations. These are included in every chat.
-          </p>
+        </SurfaceCard>
 
+        <SurfaceCard
+          className="xl:col-span-5"
+          title="Account & Security"
+          description="Your login identity and a lightweight security summary."
+          icon={<User className="h-4 w-4" />}
+        >
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Display Name</p>
+              <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{displayName}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Email</p>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--brand-indigo)]">Primary</span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">{user?.email || '—'}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Password</p>
+                <span className="text-xs font-medium text-[var(--text-secondary)]">Managed through auth</span>
+              </div>
+              <p className="mt-2 font-mono text-sm tracking-[0.3em] text-[var(--text-primary)]">••••••••••••</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+                Password reset and deeper security controls are the next settings slice after this profile pass.
+              </p>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard
+          className="xl:col-span-7"
+          title="Memory"
+          description="Facts the assistant has learned from your conversations and can reuse across future chats."
+          icon={<Brain className="h-4 w-4" />}
+          actions={
+            memories.length > 0 ? (
+              <span className="text-xs tabular-nums text-[var(--text-muted)]">{memories.length} / 100</span>
+            ) : undefined
+          }
+        >
           {memoriesLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--text-secondary)]" />
             </div>
           ) : memories.length === 0 ? (
-            <div className="text-center py-8">
-              <Brain className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                No memories yet. Chat with the AI and it will automatically learn about you.
+            <div className="rounded-3xl border border-dashed border-[var(--border-default)] bg-[var(--surface-1)] py-10 text-center">
+              <Brain className="mx-auto mb-3 h-8 w-8 text-[var(--text-muted)]" />
+              <p className="text-sm text-[var(--text-secondary)]">
+                No memories yet. Chat naturally and Own AI will start collecting reusable context.
               </p>
             </div>
           ) : (
-            <div className="space-y-1.5 max-h-80 overflow-y-auto scrollbar-thin">
+            <div className="max-h-96 space-y-2 overflow-y-auto scrollbar-thin pr-1">
               {memories.map((mem) => (
                 <div
                   key={mem.id}
-                  className="flex items-start gap-2 group px-3 py-2 rounded-lg bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700"
+                  className="group flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface-1)] px-4 py-3"
                 >
-                  <p className="flex-1 text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                    {mem.content}
-                  </p>
+                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-[rgba(99,102,241,0.12)] text-[var(--brand-indigo)]">
+                    <Brain className="h-4 w-4" />
+                  </div>
+                  <p className="flex-1 text-sm leading-6 text-[var(--text-secondary)]">{mem.content}</p>
                   <button
                     onClick={async () => {
                       setDeletingMemoryId(mem.id);
                       try {
                         await axios.delete(getApiUrl(`/memories/${mem.id}`), { headers: authHeaders });
-                        setMemories(prev => prev.filter(m => m.id !== mem.id));
+                        setMemories((prev) => prev.filter((item) => item.id !== mem.id));
+                        toast.success('Memory deleted');
                       } catch {
-                        // ignore
+                        toast.error('Failed to delete memory');
                       } finally {
                         setDeletingMemoryId(null);
                       }
                     }}
                     disabled={deletingMemoryId === mem.id}
-                    className="flex-shrink-0 p-1 rounded text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    className="flex-shrink-0 rounded p-1 text-[var(--text-muted)] opacity-0 transition-all hover:text-red-400 group-hover:opacity-100"
                     title="Delete memory"
                   >
                     {deletingMemoryId === mem.id ? (
@@ -231,68 +357,92 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {memories.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-zinc-700">
-              <button
-                onClick={async () => {
-                  if (!confirm('Delete all memories? This cannot be undone.')) return;
-                  for (const mem of memories) {
-                    await axios.delete(getApiUrl(`/memories/${mem.id}`), { headers: authHeaders }).catch(() => {});
-                  }
-                  setMemories([]);
-                }}
-                className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-              >
-                <Trash2 className="h-3 w-3" />
-                Clear all memories
-              </button>
+          {memories.length > 0 ? (
+            <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
+              {confirmClearAll ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-red-500/20 bg-[rgba(239,68,68,0.08)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-[var(--text-secondary)]">Delete all memories? This cannot be undone.</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmClearAll(false)}
+                      className="inline-flex items-center rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await Promise.all(
+                            memories.map((mem) =>
+                              axios.delete(getApiUrl(`/memories/${mem.id}`), { headers: authHeaders }).catch(() => null)
+                            )
+                          );
+                          setMemories([]);
+                          setConfirmClearAll(false);
+                          toast.success('All memories cleared');
+                        } catch {
+                          toast.error('Failed to clear memories');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Confirm delete
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmClearAll(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-400 transition-colors hover:text-red-300"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Clear all memories
+                </button>
+              )}
             </div>
-          )}
-        </div>
+          ) : null}
+        </SurfaceCard>
 
-        {/* Voice Settings */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <div className="flex items-center space-x-3 mb-1">
-            <Mic className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            <h2 className="text-base font-medium text-gray-900 dark:text-white">Voice</h2>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 ml-8">
-            Configure real-time voice conversations.
-          </p>
-
-          {/* Model selection */}
+        <SurfaceCard
+          className="xl:col-span-5"
+          title="Voice"
+          description="Configure the default real-time model and preferred voice for spoken conversations."
+          icon={<Mic className="h-4 w-4" />}
+        >
           <div className="mb-5">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1 uppercase tracking-wide">
+            <label className="mb-2 ml-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
               Model
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {REALTIME_MODELS.map((m) => {
-                const isSelected = selectedModel === m.id;
+            <div className="grid grid-cols-1 gap-2">
+              {REALTIME_MODELS.map((model) => {
+                const isSelected = selectedModel === model.id;
                 return (
                   <button
-                    key={m.id}
+                    key={model.id}
                     onClick={() => {
-                      setSelectedModel(m.id);
-                      localStorage.setItem('voiceMode_model', m.id);
+                      setSelectedModel(model.id);
+                      localStorage.setItem('voiceMode_model', model.id);
                     }}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`rounded-2xl border p-3 text-left transition-all ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-400 ring-1 ring-blue-500/30'
-                        : 'border-gray-200 dark:border-zinc-600 hover:border-gray-300 dark:hover:border-zinc-500 bg-gray-50 dark:bg-zinc-800'
+                        ? 'border-[var(--brand-indigo)] bg-[rgba(99,102,241,0.12)] ring-1 ring-[rgba(99,102,241,0.24)]'
+                        : 'border-[var(--border-default)] bg-[var(--surface-1)] hover:border-[rgba(99,102,241,0.24)]'
                     }`}
                   >
-                    <span className={`text-sm font-medium ${
-                      isSelected
-                        ? 'text-blue-700 dark:text-blue-300'
-                        : 'text-gray-900 dark:text-gray-100'
-                    }`}>
-                      {m.label}
-                    </span>
-                    <p className="text-[11px] mt-0.5 text-gray-500 dark:text-gray-400">
-                      {m.description}
-                    </p>
-                    <p className="text-[10px] mt-1 font-mono text-gray-400 dark:text-gray-500">
-                      ${m.audioInputPer1M} in / ${m.audioOutputPer1M} out <span className="opacity-60">per 1M</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{model.label}</span>
+                      {isSelected ? (
+                        <span className="rounded-full bg-[rgba(99,102,241,0.14)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--brand-indigo)]">
+                          Active
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{model.description}</p>
+                    <p className="mt-1 text-[10px] font-mono text-[var(--text-muted)]">
+                      ${model.audioInputPer1M} in / ${model.audioOutputPer1M} out <span className="opacity-60">per 1M</span>
                     </p>
                   </button>
                 );
@@ -300,42 +450,41 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Voice selection */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 ml-1 uppercase tracking-wide">
+            <label className="mb-2 ml-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
               Voice
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {VOICE_OPTIONS.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => {
-                    setSelectedVoice(v.id);
-                    localStorage.setItem('voiceMode_voice', v.id);
-                  }}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    selectedVoice === v.id
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-400 ring-1 ring-blue-500/30'
-                      : 'border-gray-200 dark:border-zinc-600 hover:border-gray-300 dark:hover:border-zinc-500 bg-gray-50 dark:bg-zinc-800'
-                  }`}
-                >
-                  <span className={`text-sm font-medium ${
-                    selectedVoice === v.id
-                      ? 'text-blue-700 dark:text-blue-300'
-                      : 'text-gray-900 dark:text-gray-100'
-                  }`}>
-                    {v.label}
-                  </span>
-                  <p className="text-[11px] mt-0.5 text-gray-500 dark:text-gray-400">
-                    {v.description}
-                  </p>
-                </button>
-              ))}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {VOICE_OPTIONS.map((voice) => {
+                const isSelected = selectedVoice === voice.id;
+                return (
+                  <button
+                    key={voice.id}
+                    onClick={() => {
+                      setSelectedVoice(voice.id);
+                      localStorage.setItem('voiceMode_voice', voice.id);
+                    }}
+                    className={`rounded-2xl border p-3 text-left transition-all ${
+                      isSelected
+                        ? 'border-[var(--brand-indigo)] bg-[rgba(99,102,241,0.12)] ring-1 ring-[rgba(99,102,241,0.24)]'
+                        : 'border-[var(--border-default)] bg-[var(--surface-1)] hover:border-[rgba(99,102,241,0.24)]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-[var(--text-primary)]">{voice.label}</span>
+                      {isSelected ? (
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--brand-indigo)]" />
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{voice.description}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
+        </SurfaceCard>
       </div>
-    </div>
+    </AppShell>
   );
 };
 

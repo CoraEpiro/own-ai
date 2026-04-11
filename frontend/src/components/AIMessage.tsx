@@ -280,8 +280,6 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
     );
   }
 
-  const renderContent = useMemo(() => content, [content]);
-
   return (
     <div>
       {/* Collapsed reasoning */}
@@ -409,7 +407,7 @@ export default function AIMessage({ content, darkMode = false, reasoningContent,
             },
           }}
         >
-          {renderContent}
+          {content}
         </ReactMarkdown>
         {isStreaming && (
           <span

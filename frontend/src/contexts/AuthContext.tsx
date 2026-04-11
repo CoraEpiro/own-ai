@@ -8,6 +8,11 @@ interface User {
   isAdmin?: boolean;
 }
 
+interface AuthResponse {
+  token: string;
+  user: User;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -61,13 +66,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post(getApiUrl('/auth/login'), { email, password });
-      const { token: newToken } = response.data;
+      const response = await axios.post<AuthResponse>(getApiUrl('/auth/login'), { email, password });
+      const { token: newToken, user: nextUser } = response.data;
       setToken(newToken);
+      setUser(nextUser);
       localStorage.setItem('token', newToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      const userResponse = await axios.get(getApiUrl('/user/me'));
-      setUser(userResponse.data);
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Login failed');
     }
@@ -75,13 +79,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string) => {
     try {
-      const response = await axios.post(getApiUrl('/auth/register'), { email, password });
-      const { token: newToken } = response.data;
+      const response = await axios.post<AuthResponse>(getApiUrl('/auth/register'), { email, password });
+      const { token: newToken, user: nextUser } = response.data;
       setToken(newToken);
+      setUser(nextUser);
       localStorage.setItem('token', newToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      const userResponse = await axios.get(getApiUrl('/user/me'));
-      setUser(userResponse.data);
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Registration failed');
     }

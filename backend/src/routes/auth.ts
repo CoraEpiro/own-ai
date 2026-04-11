@@ -6,6 +6,12 @@ import { getUserByEmail, createUser } from '../services/databaseService';
 
 const router = express.Router();
 
+const serializeUser = (user: { id: string; email: string; is_admin?: boolean }) => ({
+  id: user.id,
+  email: user.email,
+  isAdmin: !!user.is_admin,
+});
+
 router.post('/register',
   body('email').isEmail(),
   body('password').isLength({ min: 6 }),
@@ -27,7 +33,7 @@ router.post('/register',
         process.env.JWT_SECRET!,
         { expiresIn: '7d' }
       );
-      res.json({ token });
+      res.json({ token, user: serializeUser(user) });
     } catch (err) {
       console.error('Register failed:', err);
       res.status(500).json({ error: 'Registration failed' });
@@ -58,7 +64,7 @@ router.post('/login',
         process.env.JWT_SECRET!,
         { expiresIn: '7d' }
       );
-      res.json({ token });
+      res.json({ token, user: serializeUser(user) });
     } catch (err) {
       console.error('Login failed:', err);
       res.status(500).json({ error: 'Login failed' });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import DashboardCharts from './DashboardCharts';
 import AnimatedNumber from './AnimatedNumber';
 import { getApiUrl } from '../config/api';
@@ -39,7 +39,11 @@ interface Filters {
   providers: string[];
 }
 
-const AnalyticsDashboard: React.FC = () => {
+interface AnalyticsDashboardProps {
+  embedded?: boolean;
+}
+
+const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ embedded = false }) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [availableFilters, setAvailableFilters] = useState<Filters>({ models: [], providers: [] });
   const [dateRange, setDateRange] = useState({
@@ -55,12 +59,6 @@ const AnalyticsDashboard: React.FC = () => {
   useEffect(() => {
     fetchAvailableFilters();
   }, []);
-
-  useEffect(() => {
-    if (selectedModels.length > 0 || selectedProviders.length > 0) {
-      fetchAnalytics();
-    }
-  }, [dateRange, selectedModels, selectedProviders]);
 
   const fetchAvailableFilters = async () => {
     try {
@@ -84,7 +82,7 @@ const AnalyticsDashboard: React.FC = () => {
     }
   };
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
@@ -92,7 +90,8 @@ const AnalyticsDashboard: React.FC = () => {
       if (selectedModels.length > 0) params.append('models', selectedModels.join(','));
       if (selectedProviders.length > 0) params.append('providers', selectedProviders.join(','));
 
-      const response = await fetch(getApiUrl('/dashboard/analytics'), {
+      const query = params.toString();
+      const response = await fetch(`${getApiUrl('/dashboard/analytics')}${query ? `?${query}` : ''}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -104,7 +103,13 @@ const AnalyticsDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange.endDate, dateRange.startDate, selectedModels, selectedProviders]);
+
+  useEffect(() => {
+    if (selectedModels.length > 0 || selectedProviders.length > 0) {
+      fetchAnalytics();
+    }
+  }, [fetchAnalytics, selectedModels.length, selectedProviders.length]);
 
   const handleModelToggle = (model: string) => {
     setSelectedModels(prev => 
@@ -173,21 +178,21 @@ const AnalyticsDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className={`${embedded ? 'surface-panel' : 'min-h-screen bg-gray-50'} flex items-center justify-center`}>
+        <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-[var(--brand-indigo)]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6 transition-opacity duration-300">
+    <div className={`analytics-dashboard ${embedded ? '' : 'min-h-screen bg-gray-50'}`}>
+      <div className={`${embedded ? 'transition-opacity duration-300' : 'p-6 transition-opacity duration-300'}`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          {!embedded && <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
             <p className="text-gray-600">Track your AI usage, costs, and performance</p>
-          </div>
+          </div>}
 
           {/* View Toggle and Refresh */}
           <div className="flex items-center justify-between mb-8">
